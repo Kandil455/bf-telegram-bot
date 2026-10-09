@@ -72,7 +72,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
 
     let lastError = null;
     let modelTries = 0;
-    const maxModelAttempts = Math.min(models.length, 3);
+    const maxModelAttempts = models.length;
 
     for (const model of models) {
       if (modelTries >= maxModelAttempts) break;
@@ -106,10 +106,19 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
           lastError = new Error(`gemini ${res.status} (${model}): ${errText.slice(0, 100)}`);
           logger.warn(`[ai] gemini ${model} with key[${keyIdx}] failed: status ${res.status}`);
 
-          if (res.status === 429 || res.status === 401 || res.status === 403) {
+          if (res.status === 401 || res.status === 403) {
             rotateKey("gemini");
             if (keys.length <= 1) {
-              throw new Error(`gemini key rate-limited/failed (${res.status})`);
+              throw new Error(`gemini key authentication failed (${res.status})`);
+            }
+            continue;
+          }
+
+          if (res.status === 429) {
+            rotateKey("gemini");
+            // Rate limit (429) is per-model in Google AI Studio. Try next configured model!
+            if (k === keys.length - 1) {
+              break;
             }
             continue;
           }
@@ -150,7 +159,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
 
       const attemptMs = Math.max(16000, Math.min(32000, maxTokens * 12));
       let modelTries = 0;
-      const maxModelAttempts = Math.min(models.length, 2);
+      const maxModelAttempts = models.length;
 
       for (const model of models) {
         if (modelTries >= maxModelAttempts) break;
@@ -194,10 +203,18 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
             lastError = new Error(`${name} ${res.status} (${model}): ${errText.slice(0, 100)}`);
             logger.warn(`[ai] ${name} ${model} with key[${keyIdx}] failed: status ${res.status}`);
 
-            if (res.status === 429 || res.status === 401 || res.status === 403) {
+            if (res.status === 401 || res.status === 403) {
               rotateKey(name);
               if (keys.length <= 1) {
-                throw new Error(`${name} key rate-limited/failed (${res.status})`);
+                throw new Error(`${name} key authentication failed (${res.status})`);
+              }
+              continue;
+            }
+
+            if (res.status === 429) {
+              rotateKey(name);
+              if (k === keys.length - 1) {
+                break;
               }
               continue;
             }
