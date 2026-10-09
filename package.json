@@ -6,10 +6,10 @@
   "engines": {
     "node": ">=18.17"
   },
-  "main": "src/index.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "BOT_MODE=polling node src/index.js",
+    "start": "node index.js",
+    "dev": "BOT_MODE=polling node index.js",
     "setup": "node scripts/setup.js",
     "emoji": "node scripts/setup.js --emoji",
     "test": "node --test",

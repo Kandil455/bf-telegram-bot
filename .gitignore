@@ -3,3 +3,8 @@ node_modules
 data
 eval-files/
 eval-report.*
+*.session
+auth_state.json
+lectures_data.json
+*.py
+
