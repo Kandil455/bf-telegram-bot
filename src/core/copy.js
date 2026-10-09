@@ -102,6 +102,9 @@ const EN = {
   stats: (s) =>
     `📈 <b>Bot stats</b>\n${HR}\nUsers today: <b>${s.activeToday}</b>\nTasks today: <b>${s.tasksToday}</b>\nFiles read today: <b>${s.filesToday}</b>\nQuizzes today: <b>${s.quizzesToday}</b>`,
   help: `🧭 <b>How to use me</b>\n${HR}\n• Send a file or photo: I read it and offer actions.\n• Paste text: same as a file.\n• Ask anything: I answer from your material when you've sent one.\n• /new clears the current material.\n• /lang ar or /lang en switches language.`,
+  channelRequired: `📢 <b>Channel Subscription Required</b>\n${HR}\nTo use Black Fighters, please join our official channel first.\n\nTap the button below to join, then tap <b>Check Subscription ✅</b>.`,
+  inviteInfo: ({ botUsername, userId, todayBonus, todayCount, totalCount }) =>
+    `👥 <b>Invite Friends (+1 File / Day)</b>\n${HR}\nShare your invite link with your friends and study groups:\n\n🔗 <b>Your invite link:</b>\n<code>https://t.me/${botUsername}?start=ref_${userId}</code>\n\n🎁 <b>Reward:</b>\nFor every friend who joins using your link, you get <b>+1 bonus file to upload today</b>!\n\n📊 <b>Your stats:</b>\n• Today's invites: <b>${todayCount}</b>\n• Today's bonus files: <b>+${todayBonus}</b>\n• Total friends invited: <b>${totalCount}</b>`,
   providerDown: "⚠️ No AI provider is reachable right now.",
   hour: (n) => `${n} hour${n === 1 ? "" : "s"}`,
   minutes: (n) => `${n} minute${n === 1 ? "" : "s"}`,
@@ -114,6 +117,9 @@ const EN = {
     explain: "Explain simply",
     ask: "Ask a question",
     topic: "Quiz on a topic",
+    invite: "👥 Invite (+1 file)",
+    joinChannel: "📢 Join Channel",
+    checkSub: "✅ Check Subscription",
     menu: "Menu",
     newInput: "New file",
     stats: "My stats",
@@ -235,6 +241,9 @@ const AR = {
   stats: (s) =>
     `📈 <b>إحصائيات البوت</b>\n${HR}\nمستخدمين النهارده: <b>${s.activeToday}</b>\nمهام النهارده: <b>${s.tasksToday}</b>\nملفات اتقرت: <b>${s.filesToday}</b>\nكويزات: <b>${s.quizzesToday}</b>`,
   help: `🧭 <b>إزاي تستخدمني</b>\n${HR}\n• ابعت ملف أو صورة: بقرأه وبعرض عليك الأفعال.\n• الصق نص: زي الملف بالظبط.\n• اسألني أي حاجة: بجاوب من مادتك لو بعتها.\n• /new بيمسح المادة الحالية.\n• /lang ar أو /lang en بيغيّر اللغة.`,
+  channelRequired: `📢 <b>تنبيه: يجب الاشتراك في القناة أولاً!</b>\n${HR}\nلاستخدام البوت والاستفادة من جميع المميزات (تلخيص المحاضرات، الكويزات، الفلاش كاردز)، يجب الانضمام لقناة البوت الرسمية أولاً.\n\nاضغط على الزر بالأسفل للاشتراك، ثم اضغط على <b>تحقق من الاشتراك ✅</b>.`,
+  inviteInfo: ({ botUsername, userId, todayBonus, todayCount, totalCount }) =>
+    `👥 <b>نظام دعوة الأصدقاء (+1 ملف لليوم)</b>\n${HR}\nشارك رابط الدعوة الخاص بك مع زملائك في الكلية أو الجروبات:\n\n🔗 <b>رابط الدعوة الخاص بك:</b>\n<code>https://t.me/${botUsername}?start=ref_${userId}</code>\n\n🎁 <b>المكافأة:</b>\nلكل صديق يسجل من خلال رابطك، ستحصل على <b>+1 ملف إضافي لرفعه اليوم</b>!\n\n📊 <b>إحصائياتك:</b>\n• دعوات اليوم: <b>${todayCount}</b> صديق\n• الملفات الإضافية اليوم: <b>+${todayBonus}</b> ملف\n• إجمالي الأصدقاء المدعوين: <b>${totalCount}</b> صديق`,
   providerDown: "⚠️ مفيش مزوّد ذكاء اصطناعي شغال دلوقتي.",
   hour: (n) => `${n} ساعة`,
   minutes: (n) => `${n} دقيقة`,
@@ -247,6 +256,9 @@ const AR = {
     explain: "اشرحه ببساطة",
     ask: "اسأل سؤال",
     topic: "كويز على موضوع",
+    invite: "👥 دعوة أصدقاء (+1 ملف)",
+    joinChannel: "📢 انضم للقناة الآن",
+    checkSub: "✅ تحقق من الاشتراك",
     menu: "القائمة",
     newInput: "ملف جديد",
     stats: "إحصائياتي",

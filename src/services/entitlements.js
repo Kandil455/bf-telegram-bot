@@ -16,11 +16,14 @@ export function createEntitlements({ store, cfg, plans, admins = new Set(), now 
 
   function filesLimit(userId) {
     const active = plans ? plans.active(userId) : "free";
-    return active === "pro" ? cfg.proFilesPerDay : cfg.freeFilesPerDay;
+    const base = active === "pro" ? cfg.proFilesPerDay : cfg.freeFilesPerDay;
+    const bonusToday = Number(store.get(`ref_bonus:${userId}:${dayKey()}`) || 0);
+    return base + bonusToday;
   }
 
   return {
     filesLimit,
+    referralBonusToday: (userId) => Number(store.get(`ref_bonus:${userId}:${dayKey()}`) || 0),
 
     fileStatus(userId) {
       if (isAdmin(userId)) return { used: 0, limit: Infinity, left: Infinity, unlimited: true };

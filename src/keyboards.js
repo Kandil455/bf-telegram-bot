@@ -23,12 +23,29 @@ export function menuRows(lang, premium, { isAdmin = false } = {}) {
   const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
   const rows = [
     [b(c.ask, "ask", act("ask"), "primary")],
-    [b(c.topic, "topic", act("topic"))],
+    [b(c.topic, "topic", act("topic")), b(c.invite || "👥 دعوة أصدقاء", "credits", act("inv"))],
     [b(c.help, "spark", act("help"))],
   ];
   if (isAdmin) rows.push([b(c.stats, "stats", act("stats"))]);
   rows.push([b(c.langAr, "lang", act("lang", "ar")), b(c.langEn, "lang", act("lang", "en"))]);
   return rows;
+}
+
+export function channelJoinRows(channelUrl, lang, premium) {
+  const c = copy(lang).btn;
+  return [
+    [{ text: c.joinChannel, url: channelUrl }],
+    [button({ label: c.checkSub, icon: "done", action: act("sub"), style: "success", premium })],
+  ];
+}
+
+export function inviteRows(botUsername, userId, lang, premium) {
+  const shareText = encodeURIComponent(lang === "ar" ? "بوت Black Fighters لتلخيص المحاضرات والكويزات الطبية بالذكاء الاصطناعي 🚀📚" : "Black Fighters Telegram AI Study Bot 🚀📚");
+  const shareUrl = `https://t.me/share/url?url=https://t.me/${botUsername}?start=ref_${userId}&text=${shareText}`;
+  return [
+    [{ text: lang === "ar" ? "📤 مشاركة الرابط مع أصدقائك" : "📤 Share with friends", url: shareUrl }],
+    [button({ label: copy(lang).btn.menu, icon: "home", action: act("menu"), premium })],
+  ];
 }
 
 export function quizRows(qIndex, options, premium) {

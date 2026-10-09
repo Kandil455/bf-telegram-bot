@@ -9,7 +9,7 @@ import { detectIntent } from "./core/intent.js";
 import { detectLang, pickLang } from "./core/lang.js";
 import { normaliseCards, normaliseQuiz } from "./core/quiz.js";
 import { HR, chunk, esc, parseJsonLoose, progress, sanitizeHtml, wordCount } from "./core/text.js";
-import { finishRows, inputRows, menuRows, nextRows, quizRows } from "./keyboards.js";
+import { channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows } from "./keyboards.js";
 import { kindOf } from "./services/files.js";
 import { renderDocument, renderOsce, previewLines } from "./render/html.js";
 import { generateDocument } from "./render/pipeline.js";
@@ -743,6 +743,60 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     return ui.send(m.chatId, c.menu, menuRows(lang, premium, { isAdmin: quota.isAdmin(m.userId) }));
   }
 
+  // ───────────── channel subscription & referrals ─────────────
+
+  function channelLink() {
+    if (cfg.channelInviteLink) return cfg.channelInviteLink;
+    if (cfg.requiredChannel) {
+      const clean = cfg.requiredChannel.replace(/^@/, "");
+      return `https://t.me/${clean}`;
+    }
+    return "";
+  }
+
+  async function checkChannelSubscription(userId) {
+    if (!cfg.requiredChannel) return true;
+    if (quota.isAdmin(userId)) return true;
+    if (store.get(`channel_sub:${userId}`)) return true;
+    if (typeof ui?.getChatMember !== "function") return true;
+
+    try {
+      const member = await ui.getChatMember(cfg.requiredChannel, userId);
+      if (!member) return false;
+      const status = member.status;
+      if (["creator", "administrator", "member", "restricted"].includes(status)) {
+        store.set(`channel_sub:${userId}`, 1, 10 * 60 * 1000);
+        return true;
+      }
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
+  function askChannelJoin(m, lang) {
+    const c = copy(lang);
+    const link = channelLink();
+    return ui.send(m.chatId, c.channelRequired, channelJoinRows(link, lang, premium));
+  }
+
+  function showInvite(m, lang) {
+    const c = copy(lang);
+    const day = new Date().toISOString().slice(0, 10);
+    const botUser = cfg.botUsername || "Black_Fighters_FREE_bot";
+    const todayBonus = Number(store.get(`ref_bonus:${m.userId}:${day}`) || 0);
+    const todayCount = Number(store.get(`ref_today:${m.userId}:${day}`) || 0);
+    const totalCount = Number(store.get(`ref_total:${m.userId}`) || 0);
+    const text = c.inviteInfo({
+      botUsername: botUser,
+      userId: m.userId,
+      todayBonus,
+      todayCount,
+      totalCount,
+    });
+    return ui.send(m.chatId, text, inviteRows(botUser, m.userId, lang, premium));
+  }
+
   // ───────────── routing ─────────────
 
   async function onText(m) {
@@ -833,8 +887,34 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const c = copy(lang);
     const admin = quota.isAdmin(m.userId);
     switch (cmd) {
-      case "/start":
+      case "/start": {
+        const refMatch = String(m.text || "").match(/^\/start\s+(?:ref_|r_)?(\d+)/i);
+        if (refMatch) {
+          const referrerId = Number(refMatch[1]);
+          if (referrerId && referrerId !== m.userId) {
+            const alreadyReferred = store.get(`referred_by:${m.userId}`);
+            if (!alreadyReferred) {
+              store.set(`referred_by:${m.userId}`, referrerId);
+              const day = new Date().toISOString().slice(0, 10);
+              const bonusKey = `ref_bonus:${referrerId}:${day}`;
+              const bonus = Number(store.get(bonusKey) || 0) + (cfg.referralBonusFiles || 1);
+              store.set(bonusKey, bonus, 24 * 3600 * 1000);
+              store.set(`ref_today:${referrerId}:${day}`, Number(store.get(`ref_today:${referrerId}:${day}`) || 0) + 1, 24 * 3600 * 1000);
+              store.set(`ref_total:${referrerId}`, Number(store.get(`ref_total:${referrerId}`) || 0) + 1);
+
+              const refLang = pickLang(session(referrerId), "");
+              const notifyMsg = refLang === "ar"
+                ? `🎉 <b>صديق جديد انضم عبر رابطك!</b>\n${HR}\nسجل صديقك <b>${esc(m.firstName || "طالب")}</b> في البوت من خلال رابط الدعوة الخاص بك.\n🎁 <b>حصلت على +${cfg.referralBonusFiles || 1} ملف إضافي لليوم!</b>`
+                : `🎉 <b>A friend joined via your invite link!</b>\n${HR}\n<b>${esc(m.firstName || "A student")}</b> joined through your link.\n🎁 <b>You got +${cfg.referralBonusFiles || 1} bonus file for today!</b>`;
+              ui.send(referrerId, notifyMsg, menuRows(refLang, premium, { isAdmin: quota.isAdmin(referrerId) })).catch(() => {});
+            }
+          }
+        }
         return ui.send(m.chatId, c.welcome(m.firstName), menuRows(lang, premium, { isAdmin: admin }));
+      }
+      case "/invite":
+      case "/share":
+        return showInvite(m, lang);
       case "/menu":
         return ui.send(m.chatId, c.menu, menuRows(lang, premium, { isAdmin: admin }));
       case "/help":
@@ -985,6 +1065,17 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "credits":
         await ui.ack(m.callbackId);
         return showQuota(m, lang);
+      case "inv":
+        await ui.ack(m.callbackId);
+        return showInvite(m, lang);
+      case "sub": {
+        const isSub = await checkChannelSubscription(m.userId);
+        if (isSub) {
+          await ui.ack(m.callbackId, lang === "ar" ? "✅ تم التحقق من اشتراكك بنجاح!" : "✅ Subscription verified!");
+          return ui.send(m.chatId, c.welcome(m.firstName), menuRows(lang, premium, { isAdmin: admin }));
+        }
+        return ui.ack(m.callbackId, lang === "ar" ? "❌ لم تشترك في القناة بعد! اشترك ثم حاول مجدداً." : "❌ You have not joined the channel yet!", true);
+      }
       default:
         return ui.ack(m.callbackId);
     }
@@ -1001,6 +1092,13 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       if (cfg.requirePhone) {
         if (m.contact) return onContact(m);
         if (!isVerified(m.userId)) return askContact(m, pickLang(session(m.chatId), m.text || ""));
+      }
+      if (cfg.requiredChannel && !quota.isAdmin(m.userId)) {
+        const isSub = await checkChannelSubscription(m.userId);
+        if (!isSub) {
+          const lang = pickLang(session(m.chatId), m.text || m.caption || "");
+          return askChannelJoin(m, lang);
+        }
       }
       if (m.successfulPayment) return onPaid(m);
       if ((m.document || m.photo || m.text) && throttled(m.userId)) return ui.send(m.chatId, copy(pickLang(session(m.chatId), m.text || "")).slowDown);
@@ -1022,6 +1120,17 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     async onCallback(m) {
       countUser(m.userId);
       recordUser(m);
+      if (cfg.requiredChannel && !quota.isAdmin(m.userId)) {
+        const parsed = parseAct(m.data);
+        if (parsed?.name !== "sub") {
+          const isSub = await checkChannelSubscription(m.userId);
+          if (!isSub) {
+            await ui.ack(m.callbackId);
+            const lang = pickLang(session(m.chatId), "");
+            return askChannelJoin(m, lang);
+          }
+        }
+      }
       return onCallback(m);
     },
 

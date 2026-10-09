@@ -141,6 +141,9 @@ export function loadConfig(env = process.env) {
     pdfimagesBin: String(env.PDFIMAGES_BIN || "pdfimages").trim(),
     chromePath: String(env.CHROME_PATH || "").trim() || null,
     appUrl: String(env.APP_URL || "").trim().replace(/\/$/, ""),
+    requiredChannel: String(env.REQUIRED_CHANNEL || "").trim() || null,
+    channelInviteLink: String(env.CHANNEL_INVITE_LINK || "").trim() || null,
+    referralBonusFiles: positive("REFERRAL_BONUS_FILES", 1),
   };
 
   if (!cfg.gemini.key && !cfg.groq.key && !cfg.openrouter.key) {

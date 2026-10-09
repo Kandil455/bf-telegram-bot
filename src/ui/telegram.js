@@ -88,8 +88,15 @@ export function createUi(api, { logger = console, premium = {}, inputFile = null
       await api.editMessageReplyMarkup(chatId, messageId, { reply_markup: { inline_keyboard: [] } }).catch(() => {});
     },
 
-    async ack(callbackId, text = "") {
-      await api.answerCallbackQuery(callbackId, text ? { text } : {}).catch(() => {});
+    async ack(callbackId, text = "", alert = false) {
+      await api.answerCallbackQuery(callbackId, text ? { text, show_alert: alert } : {}).catch(() => {});
+    },
+
+    async getChatMember(chatId, userId) {
+      if (typeof api?.getChatMember === "function") {
+        return api.getChatMember(chatId, userId).catch(() => null);
+      }
+      return null;
     },
 
     /** Sends an HTML file as a document. `inputFile(buffer, name)` is injected by the app. */
