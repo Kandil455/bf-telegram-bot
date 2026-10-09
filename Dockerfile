@@ -2,7 +2,7 @@ FROM node:20-alpine
 # poppler-utils: pdfimages (images inside PDFs). chromium: PDF output of summaries.
 RUN apk add --no-cache poppler-utils chromium
 WORKDIR /app
-ENV NODE_ENV=production BOT_MODE=webhook DATA_DIR=/data PORT=8080 \
+ENV NODE_ENV=production BOT_MODE=polling DATA_DIR=/data PORT=8080 \
     PDFIMAGES_BIN=pdfimages CHROME_PATH=/usr/bin/chromium-browser
 COPY package*.json ./
 RUN npm install --omit=dev --no-audit --no-fund
