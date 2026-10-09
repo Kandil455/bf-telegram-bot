@@ -1,0 +1,33 @@
+{
+  "name": "bf-telegram-bot",
+  "version": "3.3.0",
+  "description": "Black Fighters Telegram bot: study documents, quizzes, flashcard reminders, group quizzes, Telegram Stars plans, Redis persistence and a web admin.",
+  "type": "module",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "BOT_MODE=polling node src/index.js",
+    "setup": "node scripts/setup.js",
+    "emoji": "node scripts/setup.js --emoji",
+    "test": "node --test",
+    "check": "node --check src/index.js && npm test",
+    "samples": "node scripts/render-samples.js",
+    "prompts": "node scripts/print-prompts.js > docs/PROMPTS.md"
+  },
+  "dependencies": {
+    "grammy": "^1.36.0",
+    "jszip": "^3.10.1",
+    "mammoth": "^1.9.0",
+    "pdfjs-dist": "^4.10.38",
+    "ioredis": "^5.4.1",
+    "pptxgenjs": "^3.12.0"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "optionalDependencies": {
+    "puppeteer-core": "^23.0.0"
+  }
+}
