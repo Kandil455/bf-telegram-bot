@@ -61,3 +61,17 @@ test("rate limit: one Gemini key that returns 429 stops Gemini at once and Groq 
   assert.equal(r?.provider, "groq", "the answer came from Groq");
   assert.equal(seen.filter((s) => s === "gemini").length, 1, "Gemini was tried once, not once per model");
 });
+
+test("tokenharbor: the request carries the real key, never an undefined one", async () => {
+  const cfg = { tokenharbor: { keys: ["th-key-1"], models: ["claude-haiku-5.5:free"] }, gemini: {}, groq: {}, openrouter: {} };
+  const headers = [];
+  const fetchImpl = async (url, opts) => {
+    headers.push(opts.headers.Authorization);
+    const body = { choices: [{ message: { content: "OK" } }] };
+    return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) };
+  };
+  const ai = createAi(cfg, { fetchImpl, logger: quiet, now: () => 0 });
+  const r = await ai.complete({ system: "s", user: "u" });
+  assert.equal(r?.provider, "tokenharbor");
+  assert.equal(headers[0], "Bearer th-key-1");
+});

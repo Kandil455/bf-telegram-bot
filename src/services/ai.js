@@ -42,10 +42,12 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
     // Optional metrics hook for the daily report. It must never break a request.
     try { onAttempt?.({ provider: name, model, outcome, ms }); } catch {}
   };
+  // Every provider needs a starting key index, or the rotation becomes NaN and sends no key.
   const keyIndices = {
     gemini: 0,
     groq: 0,
     openrouter: 0,
+    tokenharbor: 0,
   };
 
   function getKeys(name) {
