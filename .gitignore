@@ -8,3 +8,7 @@ auth_state.json
 lectures_data.json
 *.py
 
+
+# local-only
+.env.bak
+data-dev/

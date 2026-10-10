@@ -3,6 +3,7 @@
 
 import { parseJsonLoose } from "../core/text.js";
 import { normaliseQuiz } from "../core/quiz.js";
+import { shrinkImage } from "./shrink.js";
 
 const KEEP_TYPES = ["diagram", "chart", "table", "labelled_figure", "clinical_image", "flowchart", "graph", "anatomy", "equation", "other_educational"];
 const DROP_TYPES = ["logo", "cover", "decoration", "blank", "dark", "watermark", "advert", "ui_screenshot", "unrelated"];
@@ -36,11 +37,13 @@ export function parseImageReview(raw) {
 }
 
 /** Reviews images one by one. `ai.complete` gets the image as a vision input. */
-export async function reviewImages({ ai, images, lang = "en", onProgress = () => {} }) {
+export async function reviewImages({ ai, images, lang = "en", onProgress = () => {}, shrink = shrinkImage }) {
   const decisions = [];
   for (let i = 0; i < images.length; i++) {
     const img = images[i];
-    const reply = await ai.complete({ ...imageReviewPrompt(lang), images: [{ mime: img.mime, b64: img.buffer.toString("base64") }] });
+    // Smaller image, same meaning for a review: cheaper and faster, and the verdict is still clear.
+    const small = await shrink({ buffer: img.buffer, mime: img.mime });
+    const reply = await ai.complete({ ...imageReviewPrompt(lang), images: [{ mime: small.mime, b64: small.buffer.toString("base64") }] });
     decisions.push(reply ? parseImageReview(reply.text) : { keep: true, type: "unknown", caption: "", reason: "AI unavailable" });
     onProgress(i + 1, images.length);
   }

@@ -16,6 +16,7 @@ import { generateDocument } from "./render/pipeline.js";
 import { templateFor } from "./render/templates.js";
 import { ensureFigures } from "./render/figures.js";
 import { cachedSummary } from "./services/summary-cache.js";
+import { shrinkImage } from "./media/shrink.js";
 import { afterDocumentRows, stylePickerRows } from "./keyboards.js";
 import { PLANS } from "./services/plans.js";
 import { applyPayment, checkoutDecision, sendPlanInvoice } from "./features/payments.js";
@@ -364,10 +365,15 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       cost: tpl.cost,
       label: c.writing,
       work: async () => {
-        // Same source, images, template and language: reuse the generated document (no AI call).
-        // Only the raw document is cached; rendering runs every time, so the output stays current.
-        const cached = await summaryCache({ text: input.text, template: id, lang: docLang, images: images.map((i) => ({ caption: i.caption, mime: i.mime, b64: i.b64 })) },
-          () => generateDocument({ ai, template: id, lang: docLang, title: input.title, text: input.text, images }));
+        // Images go to the AI smaller (see media/shrink.js). Same source, images, template and
+        // language reuse the generated document, so no AI call. Only the raw document is cached.
+        const sent = await Promise.all(images.map(async (i) => {
+          if (!i.b64) return i;
+          const small = await shrinkImage({ buffer: Buffer.from(i.b64, "base64"), mime: i.mime });
+          return { ...i, mime: small.mime, b64: small.buffer.toString("base64") };
+        }));
+        const cached = await summaryCache({ text: input.text, template: id, lang: docLang, images: sent.map((i) => ({ caption: i.caption, mime: i.mime, b64: i.b64 })) },
+          () => generateDocument({ ai, template: id, lang: docLang, title: input.title, text: input.text, images: sent }));
         const gen = cached;
         if (!gen) return null;
         if (cached?.cached) stat("cache_hits");
