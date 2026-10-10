@@ -10,6 +10,7 @@ import { createGroups, isAddressed } from "./features/groups.js";
 import { createDecks } from "./features/reviews.js";
 import { createRouter } from "./router.js";
 import { createAi } from "./services/ai.js";
+import { createAiMetrics } from "./features/daily-report.js";
 import { copy } from "./core/copy.js";
 import { downloadTelegramFile, extractText } from "./services/files.js";
 import { createPlans } from "./services/plans.js";
@@ -23,9 +24,11 @@ export function createApp(cfg, { store = null, logger = console, fetchImpl } = {
   // When every AI provider fails, the admins are told why (at most once every five minutes),
   // so "AI is busy" always has a cause on record.
   let lastAiAlert = 0;
+  const aiMetrics = createAiMetrics(st);
   const ai = createAi(cfg, {
     fetchImpl,
     logger,
+    onAttempt: (a) => aiMetrics.record(a),
     onAllFailed: (recent) => {
       const now = Date.now();
       if (now - lastAiAlert < 5 * 60 * 1000) return;
@@ -134,7 +137,7 @@ export function createApp(cfg, { store = null, logger = console, fetchImpl } = {
   bot.catch((err) => logger.error("[bot] update failed:", err.error?.message || err.message || err));
 
   const appApi = createAppApi({ store: st, botToken: cfg.botToken });
-  return { bot, ui, router, store: st, quota, plans, decks, groups, ai, admin, cash, media, ent, appApi };
+  return { bot, ui, router, store: st, quota, plans, decks, groups, ai, aiMetrics, admin, cash, media, ent, appApi };
 }
 
 function pick(f) {

@@ -6,7 +6,7 @@
 export const BREAKER_THRESHOLD = 3;
 export const BREAKER_COOLDOWN_MS = 2 * 60 * 1000;
 
-export function createAi(config, { fetchImpl = globalThis.fetch, logger = console, onAllFailed = null, now = () => Date.now() } = {}) {
+export function createAi(config, { fetchImpl = globalThis.fetch, logger = console, onAllFailed = null, onAttempt = null, now = () => Date.now() } = {}) {
   const recent = [];
   const note = (where, err) => {
     recent.unshift({ at: now(), where, message: String(err?.message || err).slice(0, 200) });
@@ -30,7 +30,10 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
   };
   // One line per request: provider, model, outcome and duration, so every failure has a cause on record.
   const logAttempt = (name, model, outcome, startedAt, detail = "") => {
-    logger.info(`[ai-req] provider=${name} model=${model} outcome=${outcome} ms=${now() - startedAt}${detail ? ` detail=${detail}` : ""}`);
+    const ms = now() - startedAt;
+    logger.info(`[ai-req] provider=${name} model=${model} outcome=${outcome} ms=${ms}${detail ? ` detail=${detail}` : ""}`);
+    // Optional metrics hook for the daily report. It must never break a request.
+    try { onAttempt?.({ provider: name, model, outcome, ms }); } catch {}
   };
   const keyIndices = {
     gemini: 0,

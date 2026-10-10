@@ -45,14 +45,20 @@ async function main() {
   log.info(cfg.redisUrl ? "store: redis (write-behind)" : cfg.dataDir ? `store: file (${cfg.dataDir})` : "store: memory");
 
   const app = createApp(cfg, { store, logger: log });
-  const { bot, router } = app;
+  const { bot, router, aiMetrics } = app;
   await bot.init();
   cfg.botUsername = bot.botInfo.username;
   // Premium icons: filled in place, so every keyboard and message that holds this object sees them.
   Object.assign(cfg.premiumEmoji, await loadPremiumSet({ api: bot.api, setName: cfg.premiumEmojiSet, logger: log }));
 
+  // Admin report once a day, at 08:00 Cairo time (UTC+2; the router marks each day as sent).
+  const dailyReport = () => {
+    const cairoHour = new Date(Date.now() + 2 * 3600 * 1000).getUTCHours();
+    if (cairoHour < 8) return Promise.resolve(0);
+    return router.sendDailyReport({ aiToday: aiMetrics?.today() });
+  };
   const stopReminders = startReminderLoop(
-    () => router.sendReminders().then(() => router.sendRenewalNotices()),
+    () => router.sendReminders().then(() => router.sendRenewalNotices()).then(() => dailyReport()),
     10 * 60 * 1000
   );
   const server = createHttpServer({ bot, cfg, admin: app.admin, cash: app.cash, app: app.appApi, logger: log });

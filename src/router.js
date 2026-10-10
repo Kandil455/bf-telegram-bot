@@ -17,6 +17,7 @@ import { templateFor } from "./render/templates.js";
 import { ensureFigures } from "./render/figures.js";
 import { cachedSummary } from "./services/summary-cache.js";
 import { shrinkImage } from "./media/shrink.js";
+import { buildDailyReport } from "./features/daily-report.js";
 import { afterDocumentRows, stylePickerRows } from "./keyboards.js";
 import { PLANS } from "./services/plans.js";
 import { applyPayment, checkoutDecision, sendPlanInvoice } from "./features/payments.js";
@@ -720,6 +721,23 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   /** Heads-up before a plan ends and a notice once it has ended. Each period is announced once. */
+  /** One report per day to every admin, with the day's counters and AI health. */
+  async function sendDailyReport({ aiToday = null, day = DAY() } = {}) {
+    if (store.get(`report:sent:${day}`)) return 0;
+    const text = buildDailyReport({
+      activeUsers: store.get(`stat:users:${day}`) || 0,
+      tasks: store.get(`stat:tasks:${day}`) || 0,
+      files: store.get(`stat:files:${day}`) || 0,
+      quizzes: store.get(`stat:quizzes:${day}`) || 0,
+      cacheHits: store.get(`stat:cache_hits:${day}`) || 0,
+      ai: aiToday || { ok: 0, failed: 0, totalMs: 0, byProvider: {} },
+      lang: "en",
+    });
+    for (const id of cfg.adminIds || []) await ui.send(id, text).catch(() => {});
+    store.set(`report:sent:${day}`, true, 3 * 24 * 3600 * 1000);
+    return 1;
+  }
+
   async function sendRenewalNotices(at = now()) {
     if (!plans) return 0;
     const users = store.keys("user:").map((k) => Number(k.slice(5)));
@@ -1255,6 +1273,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     },
     /** Sends due-card reminders. Call it every ten minutes. */
     sendReminders,
+    sendDailyReport,
     /** Subscription heads-ups and expiry notices. Call it with the reminders. */
     sendRenewalNotices,
     /** Test hooks. */
