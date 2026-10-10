@@ -37,6 +37,38 @@ function chunks(text, size) {
   return out;
 }
 
+const CHUNK_CONCURRENCY = 3;
+
+/** Runs fn over items with at most `limit` in flight. Results keep the input order. */
+export async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i], i);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
+}
+
+const WORD = /[\p{L}\p{N}]{4,}/gu;
+
+/**
+ * The images a part should see: those whose caption shares a word with the part's text.
+ * When no caption matches, the part gets every image, so an approved picture is never dropped.
+ */
+export function imagesForPart(images, partText) {
+  if (!images.length) return [];
+  const words = new Set((String(partText).toLowerCase().match(WORD) || []));
+  const matched = images.filter((img) => {
+    const cap = String(img.caption || "").toLowerCase().match(WORD) || [];
+    return cap.some((w) => words.has(w));
+  });
+  return matched.length ? matched : images;
+}
+
 /**
  * Produces a normalised document. `images` are [{ mime, b64, caption }] in the order
  * the user sent them; captions drive where figures are placed.
@@ -60,10 +92,14 @@ export async function generateDocument({ ai, template, lang, title, text, images
   }
 
   // Long lecture: summarise each part, then merge the section lists.
+  // Parts are independent, so they run in parallel (a few at a time to respect provider limits).
+  // Results are kept in part order, so the merged document still reads top to bottom.
   const parts = chunks(text, LIMITS.chunkChars);
+  const results = await mapLimit(parts, CHUNK_CONCURRENCY, (part, i) =>
+    askJson(ai, buildChunkPrompt({ template, lang: normaliseOpts.lang, part: i + 1, total: parts.length, text: part, images: imagesForPart(images, part) }))
+  );
   const sectionLists = [];
-  for (let i = 0; i < parts.length; i++) {
-    const raw = await askJson(ai, buildChunkPrompt({ template, lang: normaliseOpts.lang, part: i + 1, total: parts.length, text: parts[i], images }));
+  for (const raw of results) {
     if (Array.isArray(raw?.sections)) sectionLists.push(...raw.sections);
   }
   if (!sectionLists.length) return null;
