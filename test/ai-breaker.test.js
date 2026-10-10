@@ -45,3 +45,19 @@ test("logging: each provider attempt leaves one ai-req line with provider, model
   const req = lines.find((l) => l.startsWith("[ai-req]"));
   assert.match(req, /provider=gemini model=bad outcome=http-404/);
 });
+
+test("rate limit: one Gemini key that returns 429 stops Gemini at once and Groq answers", async () => {
+  const cfg = { gemini: { keys: ["k"], models: ["m1", "m2", "m3", "m4"], fast: [], quality: [] }, groq: { keys: ["g"], models: ["llama-test"] }, openrouter: {} };
+  const seen = [];
+  const fetchImpl = async (url) => {
+    seen.push(url.includes("googleapis") ? "gemini" : url.includes("groq") ? "groq" : "other");
+    if (url.includes("googleapis")) return fail(429);
+    // Groq uses the OpenAI-style reply shape, not Gemini's.
+    const body = { choices: [{ message: { content: '{"ok":true}' } }] };
+    return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) };
+  };
+  const ai = createAi(cfg, { fetchImpl, logger: quiet, now: () => 0 });
+  const r = await ai.complete({ system: "s", user: "u", json: true });
+  assert.equal(r?.provider, "groq", "the answer came from Groq");
+  assert.equal(seen.filter((s) => s === "gemini").length, 1, "Gemini was tried once, not once per model");
+});

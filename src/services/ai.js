@@ -100,10 +100,11 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
 
     let lastError = null;
     let modelTries = 0;
+    let rateLimited = false;
     const maxModelAttempts = models.length;
 
     for (const model of models) {
-      if (modelTries >= maxModelAttempts) break;
+      if (modelTries >= maxModelAttempts || rateLimited) break;
       modelTries++;
 
       const startKeyIdx = keyIndices.gemini;
@@ -150,7 +151,12 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
 
           if (res.status === 429) {
             rotateKey("gemini");
-            // Rate limit (429) is per-model in Google AI Studio. Try next configured model!
+            // With one key, every model shares its limit: trying the rest only adds load.
+            // Stop here, so the next provider (Groq, OpenRouter) answers at once.
+            if (keys.length <= 1) {
+              rateLimited = true;
+              break;
+            }
             if (k === keys.length - 1) {
               break;
             }
