@@ -21,14 +21,26 @@ export function inputRows(lang, premium) {
 export function menuRows(lang, premium, { isAdmin = false } = {}) {
   const c = copy(lang).btn;
   const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
+  // Main menu, grouped: study tools, account, then settings. Every feature has a button.
   const rows = [
-    [b(c.ask, "ask", act("ask"), "primary")],
-    [b(c.topic, "topic", act("topic")), b(c.invite || "👥 دعوة أصدقاء", "credits", act("inv"))],
-    [b(c.help, "spark", act("help"))],
+    [b(c.ask, "ask", act("ask"), "primary"), b(c.topic, "topic", act("topic"))],
+    [b(c.plans, "credits", act("plans"), "success"), b(c.invite || "👥 دعوة أصدقاء", "credits", act("inv"))],
+    [b(c.help, "spark", act("help")), b(c.deck, "cards", act("deck"))],
   ];
-  if (isAdmin) rows.push([b(c.stats, "stats", act("stats"))]);
+  if (isAdmin) rows.push([b(c.adminPanel, "stats", act("admin"), "primary")]);
   rows.push([b(c.langAr, "lang", act("lang", "ar")), b(c.langEn, "lang", act("lang", "en"))]);
   return rows;
+}
+
+/** Admin panel inside the bot. Full management stays on the web dashboard. */
+export function adminRows(lang, premium) {
+  const c = copy(lang).btn;
+  const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
+  return [
+    [b(c.stats, "stats", act("stats"), "primary"), b(c.adminPayments, "credits", act("admin", "pay"))],
+    [b(c.adminUsers, "topic", act("admin", "users")), b(c.adminAi, "spark", act("admin", "ai"))],
+    [b(c.menu, "home", act("menu"))],
+  ];
 }
 
 export function channelJoinRows(channelUrl, lang, premium) {

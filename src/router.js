@@ -9,7 +9,7 @@ import { detectIntent } from "./core/intent.js";
 import { detectLang, pickLang } from "./core/lang.js";
 import { normaliseCards, normaliseQuiz } from "./core/quiz.js";
 import { HR, chunk, esc, parseJsonLoose, progress, sanitizeHtml, wordCount } from "./core/text.js";
-import { channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows } from "./keyboards.js";
+import { adminRows, channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows } from "./keyboards.js";
 import { kindOf } from "./services/files.js";
 import { renderDocument, renderOsce, previewLines } from "./render/html.js";
 import { generateDocument } from "./render/pipeline.js";
@@ -879,6 +879,46 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     return ui.send(m.chatId, c.stats(s), menuRows(lang, premium, { isAdmin: true }));
   }
 
+  // ───────────── admin panel inside the bot (admins only) ─────────────
+
+  /** Admin screen: a summary card, and buttons to open payments, users or AI health. */
+  function showAdmin(m, lang) {
+    if (!quota.isAdmin(m.userId)) return showQuota(m, lang);
+    const d = DAY();
+    const lines = lang === "ar"
+      ? [`👥 نشطين النهارده: <b>${store.get(`stat:users:${d}`) || 0}</b>`, `⚙️ مهام: <b>${store.get(`stat:tasks:${d}`) || 0}</b>`, `📄 ملفات: <b>${store.get(`stat:files:${d}`) || 0}</b>`]
+      : [`👥 Active today: <b>${store.get(`stat:users:${d}`) || 0}</b>`, `⚙️ Tasks: <b>${store.get(`stat:tasks:${d}`) || 0}</b>`, `📄 Files: <b>${store.get(`stat:files:${d}`) || 0}</b>`];
+    return ui.send(m.chatId, `🛠 <b>${lang === "ar" ? "لوحة الأدمن" : "Admin panel"}</b>\n${HR}\n${lines.join("\n")}\n\n<i>${lang === "ar" ? "الإدارة الكاملة من لوحة الويب /admin" : "Full management is on the web dashboard /admin"}</i>`, adminRows(lang, premium));
+  }
+
+  /** Recent Stars payments, from the store, newest first. */
+  function showAdminPayments(m, lang) {
+    if (!quota.isAdmin(m.userId)) return showQuota(m, lang);
+    // Same source as the web dashboard: every Stars charge stored under "stars:".
+    const list = store
+      .keys("stars:")
+      .map((k) => ({ chargeId: k.slice(6), ...(store.get(k) || {}) }))
+      .filter((p) => p.userId)
+      .sort((a, b) => (b.at || 0) - (a.at || 0))
+      .slice(0, 10);
+    const body = list.length
+      ? list.map((p) => `• ${esc(String(p.userId))} · ${esc(String(p.stars))} ⭐ · ${esc(new Date(p.at).toISOString().slice(0, 10))}`).join("\n")
+      : (lang === "ar" ? "مفيش مدفوعات لسه." : "No payments yet.");
+    return ui.send(m.chatId, `💳 <b>${lang === "ar" ? "آخر المدفوعات" : "Recent payments"}</b>\n${HR}\n${body}`, adminRows(lang, premium));
+  }
+
+  /** Health of each AI provider: paused or not, and recent failures with their cause. */
+  function showAdminAi(m, lang) {
+    if (!quota.isAdmin(m.userId)) return showQuota(m, lang);
+    const state = ai?.breakerState ? ai.breakerState() : {};
+    const names = Object.keys(state);
+    const rows = names.length
+      ? names.map((n) => `${state[n].paused ? "⏸" : "✅"} <b>${esc(n)}</b> · ${state[n].paused ? (lang === "ar" ? "متوقف مؤقتاً" : "paused") : (lang === "ar" ? "شغال" : "working")}`).join("\n")
+      : (lang === "ar" ? "مفيش طلبات AI لسه." : "No AI requests yet.");
+    const recent = (ai?.diagnose?.() || []).map((r) => `• ${esc(r.where)}: ${esc(r.message)}`).join("\n");
+    return ui.send(m.chatId, `🧠 <b>${lang === "ar" ? "حالة الـAI" : "AI health"}</b>\n${HR}\n${rows}${recent ? `\n\n${HR}\n${recent}` : ""}`, adminRows(lang, premium));
+  }
+
   async function command(m) {
     const [raw, arg] = m.text.trim().split(/\s+/, 2);
     const cmd = raw.toLowerCase().replace(/@\w+$/, "");
@@ -1062,6 +1102,18 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "stats":
         await ui.ack(m.callbackId);
         return showMyStats(m, lang);
+      case "plans":
+        await ui.ack(m.callbackId);
+        return showPlans(m, lang);
+      case "deck":
+        await ui.ack(m.callbackId);
+        return showDeck(m, lang);
+      case "admin":
+        await ui.ack(m.callbackId);
+        if (a0 === "pay") return showAdminPayments(m, lang);
+        if (a0 === "users") return ui.send(m.chatId, `👥 <b>${lang === "ar" ? "المستخدمين" : "Users"}</b>\n${HR}\n${lang === "ar" ? "ابحث وادير المستخدمين من لوحة الويب /admin" : "Search and manage users on the web dashboard /admin"}`, adminRows(lang, premium));
+        if (a0 === "ai") return showAdminAi(m, lang);
+        return showAdmin(m, lang);
       case "credits":
         await ui.ack(m.callbackId);
         return showQuota(m, lang);

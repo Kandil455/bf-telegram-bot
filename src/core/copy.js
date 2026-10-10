@@ -139,6 +139,11 @@ const EN = {
     shareContact: "📱 Share my number",
     format: "Format",
     cards5: "Flashcards",
+    adminPanel: "Admin panel",
+    adminPayments: "Payments",
+    adminUsers: "Users",
+    adminAi: "AI health",
+    adminBack: "Admin menu",
   },
 };
 
@@ -278,6 +283,11 @@ const AR = {
     shareContact: "📱 شارك رقمي",
     format: "الصيغة",
     cards5: "فلاش كاردز",
+    adminPanel: "لوحة الأدمن",
+    adminPayments: "المدفوعات",
+    adminUsers: "المستخدمين",
+    adminAi: "حالة الـAI",
+    adminBack: "قائمة الأدمن",
   },
 };
 
