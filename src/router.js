@@ -15,6 +15,7 @@ import { renderDocument, renderOsce, previewLines } from "./render/html.js";
 import { generateDocument } from "./render/pipeline.js";
 import { templateFor } from "./render/templates.js";
 import { ensureFigures } from "./render/figures.js";
+import { cachedSummary } from "./services/summary-cache.js";
 import { afterDocumentRows, stylePickerRows } from "./keyboards.js";
 import { PLANS } from "./services/plans.js";
 import { applyPayment, checkoutDecision, sendPlanInvoice } from "./features/payments.js";
@@ -28,10 +29,13 @@ const HEAVY_ACTIONS = new Set(["sum", "quiz", "cards", "key", "tpl", "qc", "img"
 import { humanize } from "./services/quota.js";
 
 const DOC_TTL = 7 * 24 * 3600 * 1000;
+// Summary results are reused for a week; see services/summary-cache.js for the key.
+let summaryCache = null;
 const DAY = () => new Date().toISOString().slice(0, 10);
 
 export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, plans = null, decks = null, groups = null, cash = null, media = null, ent = null, logger = console, now = () => Date.now() }) {
   const entitle = ent || { takeFileSlot: () => ({ ok: true }), allowedQuizSizes: () => [5, 10, 15, 20, 30], clampQuizSize: (s, n) => n, questionsLeft: () => 30 };
+  summaryCache = cachedSummary(store, { onHit: () => {} });
   const FRAMES = ["▰▱▱▱▱", "▰▰▱▱▱", "▰▰▰▱▱", "▰▰▰▰▱", "▰▰▰▰▰"];
   const appRows = (qid, lang) => (qid && cfg.appUrl ? [[button({ label: lang === "ar" ? "افتح الكويز في التطبيق" : "Open quiz in the app", icon: "app", webApp: `${cfg.appUrl}/app?qid=${qid}`, style: "primary", premium })]] : []);
   const EFFECT = { confetti: "5046509860389126442", fire: "5104841245755180586" };
@@ -360,8 +364,13 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       cost: tpl.cost,
       label: c.writing,
       work: async () => {
-        const gen = await generateDocument({ ai, template: id, lang: docLang, title: input.title, text: input.text, images });
+        // Same source, images, template and language: reuse the generated document (no AI call).
+        // Only the raw document is cached; rendering runs every time, so the output stays current.
+        const cached = await summaryCache({ text: input.text, template: id, lang: docLang, images: images.map((i) => ({ caption: i.caption, mime: i.mime, b64: i.b64 })) },
+          () => generateDocument({ ai, template: id, lang: docLang, title: input.title, text: input.text, images }));
+        const gen = cached;
         if (!gen) return null;
+        if (cached?.cached) stat("cache_hits");
         const doc = gen.kind === "doc" ? ensureFigures(gen.doc, images) : null;
         const title = gen.kind === "osce" ? gen.osce.title : doc.title;
         const name = `${slug(typeof title === "string" ? title : title.en || title.ar)}-${id}-${docLang}.html`;
