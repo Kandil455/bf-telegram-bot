@@ -4,8 +4,47 @@
 
 import { GLYPH } from "./icons.js";
 
+// One colour per meaning, so a student can read a keyboard at a glance:
+//   success (green)  = confirm, approve, correct answer, start the good action
+//   danger  (red)    = reject, exclude, wrong answer, destructive
+//   primary (blue)   = the main actions (summary, quiz, cards, explain, ask)
+//   no colour        = navigation (back, menu, next), so the main actions stand out
+export const STYLE_BY_ICON = Object.freeze({
+  done: "success",
+  spark: "success",
+  trophy: "success",
+  wrong: "danger",
+  warn: "danger",
+  reset: "danger",
+  summary: "primary",
+  quiz: "primary",
+  cards: "primary",
+  concepts: "primary",
+  explain: "primary",
+  ask: "primary",
+  topic: "primary",
+  file: "primary",
+  image: "primary",
+  upload: "primary",
+  credits: "primary",
+  home: null,
+  back: null,
+  next: null,
+  lang: null,
+  stats: null,
+  clock: null,
+});
+
+/** The colour a button gets: the one passed in, else the one for its icon, else none. */
+export function styleFor(icon, style) {
+  if (style) return style;
+  if (icon && Object.prototype.hasOwnProperty.call(STYLE_BY_ICON, icon)) return STYLE_BY_ICON[icon];
+  return null;
+}
+
 export function button({ label, action = null, data = null, icon = null, style = null, premium = {}, webApp = null, url = null }) {
   const plain = String(label).slice(0, 60);
+  style = styleFor(icon, style);
   const fallback = icon && GLYPH[icon] ? `${GLYPH[icon]} ${plain}` : plain;
   const premiumId = icon && premium[icon] ? premium[icon] : null;
   // With a premium icon the label stands alone (Telegram draws the icon).
