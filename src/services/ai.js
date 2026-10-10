@@ -85,10 +85,10 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
   }
 
   const providers = [];
+  if (getKeys("tokenharbor").length) providers.push({ name: "tokenharbor", vision: true, run: runOpenAiStyle("tokenharbor") });
   if (getKeys("gemini").length) providers.push({ name: "gemini", vision: true, run: runGemini });
   if (getKeys("groq").length) providers.push({ name: "groq", vision: false, run: runOpenAiStyle("groq") });
   if (getKeys("openrouter").length) providers.push({ name: "openrouter", vision: true, run: runOpenAiStyle("openrouter") });
-  if (getKeys("tokenharbor").length) providers.push({ name: "tokenharbor", vision: true, run: runOpenAiStyle("tokenharbor") });
 
   async function runGemini({ system, user, images = [], json = false, maxTokens = 900, temperature, signal, tier = "quality" }) {
     const keys = getKeys("gemini");
