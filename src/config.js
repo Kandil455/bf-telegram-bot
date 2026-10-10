@@ -116,6 +116,12 @@ export function loadConfig(env = process.env) {
       models: parseModelList(env.OPENROUTER_MODELS || env.OPENROUTER_MODEL, OPENROUTER_DEFAULT_MODELS),
       get model() { return this.models[0] || "nvidia/nemotron-3.5-lightning:free"; },
     },
+    tokenharbor: {
+      keys: parseKeyList(env.TOKENHARBOR_API_KEY),
+      get key() { return this.keys[0] || ""; },
+      models: parseModelList(env.TOKENHARBOR_MODELS || env.TOKENHARBOR_MODEL, ["claude-haiku-5.5:free"]),
+      get model() { return this.models[0] || "claude-haiku-5.5:free"; },
+    },
     proDailyTasks: positive("PRO_DAILY_TASKS", 120),
     proStars: positive("PRO_STARS", 150),
     tzOffset: Number(env.TZ_OFFSET_HOURS || 0) || 0,

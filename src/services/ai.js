@@ -6,6 +6,13 @@
 export const BREAKER_THRESHOLD = 3;
 export const BREAKER_COOLDOWN_MS = 2 * 60 * 1000;
 
+// Chat endpoints for the OpenAI-style providers. TokenHarbor speaks the same protocol.
+const ENDPOINTS = {
+  groq: "https://api.groq.com/openai/v1/chat/completions",
+  openrouter: "https://openrouter.ai/api/v1/chat/completions",
+  tokenharbor: "https://tokenharbor.ai/v1/chat/completions",
+};
+
 export function createAi(config, { fetchImpl = globalThis.fetch, logger = console, onAllFailed = null, onAttempt = null, now = () => Date.now() } = {}) {
   const recent = [];
   const note = (where, err) => {
@@ -81,6 +88,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
   if (getKeys("gemini").length) providers.push({ name: "gemini", vision: true, run: runGemini });
   if (getKeys("groq").length) providers.push({ name: "groq", vision: false, run: runOpenAiStyle("groq") });
   if (getKeys("openrouter").length) providers.push({ name: "openrouter", vision: true, run: runOpenAiStyle("openrouter") });
+  if (getKeys("tokenharbor").length) providers.push({ name: "tokenharbor", vision: true, run: runOpenAiStyle("tokenharbor") });
 
   async function runGemini({ system, user, images = [], json = false, maxTokens = 900, temperature, signal, tier = "quality" }) {
     const keys = getKeys("gemini");
@@ -178,7 +186,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
   }
 
   function runOpenAiStyle(name) {
-    const endpoint = name === "groq" ? "https://api.groq.com/openai/v1/chat/completions" : "https://openrouter.ai/api/v1/chat/completions";
+    const endpoint = ENDPOINTS[name];
 
     return async ({ system, user, images = [], json = false, maxTokens = 900, temperature, signal }) => {
       const keys = getKeys(name);
