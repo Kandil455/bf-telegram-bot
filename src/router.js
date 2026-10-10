@@ -345,7 +345,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const input = session(m.chatId).lastInput;
     if (!input?.text) return ui.send(m.chatId, copy(lang).noInput, menuRows(lang, premium));
     const docLang = session(m.chatId).docLang || "en";
-    return ui.send(m.chatId, copy(lang).styles, stylePickerRows(lang, premium, docLang, s0.outputFormat || "html"));
+    return ui.send(m.chatId, copy(lang).styles, stylePickerRows(lang, premium, docLang, s0.outputFormat || "html", s0.detail || "standard"));
   }
 
   async function runStyle(m, lang, id) {
@@ -373,8 +373,8 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
           const small = await shrinkImage({ buffer: Buffer.from(i.b64, "base64"), mime: i.mime });
           return { ...i, mime: small.mime, b64: small.buffer.toString("base64") };
         }));
-        const cached = await summaryCache({ text: input.text, template: id, lang: docLang, images: sent.map((i) => ({ caption: i.caption, mime: i.mime, b64: i.b64 })) },
-          () => generateDocument({ ai, template: id, lang: docLang, title: input.title, text: input.text, images: sent }));
+        const cached = await summaryCache({ text: input.text, template: id, lang: docLang, detail: s.detail || "standard", images: sent.map((i) => ({ caption: i.caption, mime: i.mime, b64: i.b64 })) },
+          () => generateDocument({ ai, template: id, lang: docLang, title: input.title, text: input.text, images: sent, detail: s.detail || "standard" }));
         const gen = cached;
         if (!gen) return null;
         if (cached?.cached) stat("cache_hits");
@@ -1169,6 +1169,10 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "rem":
         await ui.ack(m.callbackId);
         return setReminder(m, lang, a0 === "off" ? "off" : a0);
+      case "len":
+        await ui.ack(m.callbackId);
+        saveSession(m.chatId, { detail: ["concise", "detailed"].includes(a0) ? a0 : "standard" });
+        return showStyles(m, lang);
       case "txid":
         await ui.ack(m.callbackId);
         saveSession(m.chatId, { awaiting: "txid" });

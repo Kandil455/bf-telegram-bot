@@ -9,11 +9,11 @@ export const SUMMARY_CACHE_TTL_MS = 7 * 24 * 3600 * 1000;
  * Stable key: the source text, the approved images, the template and the document language.
  * Images are part of the key, so approving or removing a picture gives a fresh summary.
  */
-export function summaryKey({ text, template, lang, images = [] }) {
+export function summaryKey({ text, template, lang, images = [], detail = "standard" }) {
   const sha = (s) => createHash("sha256").update(String(s)).digest("hex");
   const textHash = sha(text || "").slice(0, 32);
   const imagesHash = sha(images.map((i) => `${i.caption || ""}|${i.mime}|${i.b64?.length || 0}|${(i.b64 || "").slice(0, 64)}`).join(";")).slice(0, 16);
-  return `sumcache:${textHash}:${imagesHash}:${template}:${lang}`;
+  return `sumcache:${textHash}:${imagesHash}:${template}:${lang}:${detail}`;
 }
 
 /**

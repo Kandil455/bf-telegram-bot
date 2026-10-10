@@ -107,3 +107,11 @@ test("txid: the button asks for the transaction ID and the next message is read 
   await router.onCallback(cb(USER, "a:txid"));
   assert.match(calls.at(-1).html, /TxID|رقم العملية/);
 });
+
+test("length: the picker shows shorter, standard and more detail, and the choice is marked", async () => {
+  const rows = (await import("../src/keyboards.js")).stylePickerRows("en", {}, "en", "html", "detailed");
+  const data = dataOf(rows);
+  assert.ok(data.includes("a:len:concise"));
+  assert.ok(data.includes("a:len:standard"));
+  assert.ok(data.includes("a:len:detailed"));
+});

@@ -83,7 +83,7 @@ export function finishRows(lang, premium) {
   ];
 }
 
-export function stylePickerRows(lang, premium, docLang = "en", outputFormat = "html") {
+export function stylePickerRows(lang, premium, docLang = "en", outputFormat = "html", detail = "standard") {
   const c = copy(lang).btn;
   const tiles = TEMPLATE_ORDER.map((id) =>
     button({ label: TEMPLATES[id].label[lang] || TEMPLATES[id].label.en, icon: TEMPLATES[id].icon, action: act("tpl", id), premium })
@@ -100,6 +100,10 @@ export function stylePickerRows(lang, premium, docLang = "en", outputFormat = "h
     button({ label: f.toUpperCase(), icon: "file", action: act("fmt", f), style: outputFormat === f ? "primary" : null, premium })
   );
   rows.push(fmt);
+  // Length: shorter or more detailed. The choice is kept in the session and used by the next summary.
+  const len = ["concise", "standard", "detailed"];
+  const lenLabel = lang === "ar" ? { concise: "أقصر", standard: "عادي", detailed: "أكتر تفصيل" } : { concise: "Shorter", standard: "Standard", detailed: "More detail" };
+  rows.push(len.map((d) => button({ label: lenLabel[d], icon: "summary", action: act("len", d), style: detail === d ? "primary" : null, premium })));
   rows.push([button({ label: c.back, icon: "back", action: act("menu"), premium })]);
   return rows;
 }
