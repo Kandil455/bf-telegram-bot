@@ -130,6 +130,14 @@ export function templateExample(template) {
   return TEMPLATE_EXAMPLES[template] ? JSON.stringify(TEMPLATE_EXAMPLES[template], null, 1) : "";
 }
 
+/**
+ * Positive and negative style rules, shown to the model with every request. The model
+ * copies what the examples show, so the rules say what to do and what never to do.
+ */
+export const STYLE_RULES = `Style:
+DO: a "heading" per topic; "definition" for terms; "formula" for equations; "table" for comparisons; **bold** for key definitions; ==highlight== for the one term the exam asks; short "points" (under 14 words each); "trap" or "callout" for mistakes and memory aids.
+DON'T: write paragraphs; repeat a point; use markdown symbols (#, -, *) outside **bold** and ==highlight==.`;
+
 const DETAIL = {
   concise: "Aim for 6 to 10 sections in total.",
   standard: "Aim for 10 to 16 sections in total.",
@@ -152,6 +160,7 @@ export function buildDocumentPrompt({ template = "cram", lang = "en", title = ""
     `Template: ${template}. Goal: ${STYLE_GOAL[template] || STYLE_GOAL.cram}.`,
     `Size: about ${targetSections} sections and at least ${targetWords} words in total, because the source has ${words} words. Cover every topic in it; a short answer for a long source is a failed answer.`,
     BRIEF[template] || BRIEF.cram,
+    STYLE_RULES,
     `Shape to copy (the content is only an illustration, never reuse it):\n${templateExample(template)}`,
     DETAIL[detail] || DETAIL.standard,
     figureBrief(images),

@@ -24,9 +24,12 @@ body{font:15px/1.7 "Inter","IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe
 h1{font-size:28px;line-height:1.25;margin:6px 0 4px;letter-spacing:-.01em}
 .sub{color:var(--mute);margin:0}
 .meta{color:var(--mute);font-size:12px;margin-top:6px}
-h2{font-size:18px;margin:26px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+h2{font-size:19px;margin:30px 0 10px;padding:6px 12px;border-inline-start:5px solid var(--sig);background:var(--head);border-radius:4px;letter-spacing:-.005em}
 .en{display:block}.ar{display:block;color:var(--mute);font-size:.95em;margin-top:2px}
-ul.pts{margin:0 0 6px;padding-inline-start:20px}ul.pts li{margin:3px 0}
+ul.pts{margin:0 0 8px;padding:0;list-style:none}
+ul.pts li{position:relative;padding:5px 0 5px 22px;margin:2px 0;border-bottom:1px dashed var(--line)}
+ul.pts li::before{content:"";position:absolute;inset-inline-start:4px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--sig)}
+ul.pts li:last-child{border-bottom:0}
 .def{border-inline-start:3px solid var(--sig);padding:6px 12px;margin:10px 0;background:#fafafa;border-radius:4px}
 .def dt{font-weight:700}.def dd{margin:2px 0 0}.def em{color:var(--mute);display:block;margin-top:2px}
 .formula{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin:10px 0}
