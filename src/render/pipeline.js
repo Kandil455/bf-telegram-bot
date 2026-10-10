@@ -63,7 +63,7 @@ export async function generateDocument({ ai, template, lang, title, text, images
   const parts = chunks(text, LIMITS.chunkChars);
   const sectionLists = [];
   for (let i = 0; i < parts.length; i++) {
-    const raw = await askJson(ai, buildChunkPrompt({ template, lang: normaliseOpts.lang, part: i + 1, total: parts.length, text: parts[i] }));
+    const raw = await askJson(ai, buildChunkPrompt({ template, lang: normaliseOpts.lang, part: i + 1, total: parts.length, text: parts[i], images }));
     if (Array.isArray(raw?.sections)) sectionLists.push(...raw.sections);
   }
   if (!sectionLists.length) return null;

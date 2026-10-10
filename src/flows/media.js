@@ -258,14 +258,18 @@ export function createMediaFlow({ ui, store, ai, cfg, ent, premium = {}, extract
     buildOutput,
     getGallery,
     getImages,
-    /** Approved images from the file, ready to put in a summary: [{ mime, b64, caption }]. */
+    /**
+     * Images that go into a summary: every image the student approved, plus every image the
+     * AI kept that the student has not excluded yet. Excluded images never go in.
+     * Returns [{ mime, b64, caption }].
+     */
     approvedForSummary(chatId) {
       const gallery = getGallery(chatId);
       const images = getImages(chatId);
       if (!gallery) return [];
-      return approvedIndexes(gallery)
-        .filter((i) => images[i])
-        .map((i) => ({ mime: images[i].mime, b64: images[i].buffer.toString("base64"), caption: gallery.items[i].caption || gallery.items[i].type || "" }));
+      return gallery.items
+        .filter((i) => (i.status === STATUS.APPROVED || i.status === STATUS.PENDING) && images[i.idx])
+        .map((i) => ({ mime: images[i.idx].mime, b64: images[i.idx].buffer.toString("base64"), caption: i.caption || i.type || "" }));
     },
     hasApproved: (chatId) => approvedIndexes(getGallery(chatId) || { items: [] }).length > 0,
     _cache: cache,

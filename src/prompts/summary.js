@@ -163,12 +163,13 @@ export function buildDocumentPrompt({ template = "cram", lang = "en", title = ""
 }
 
 /** Map step for long sources: sections only, for one chunk. */
-export function buildChunkPrompt({ template, lang, part, total, text }) {
+export function buildChunkPrompt({ template, lang, part, total, text, images = [] }) {
   const system = [CONTRACT, LANGUAGE[lang] || LANGUAGE.en, SCHEMA].join("\n\n");
   const user = [
     `Template: ${template}. This is part ${part} of ${total} of one lecture.`,
     BRIEF[template] || BRIEF.cram,
     "Return a JSON object with only the \"sections\" key, covering this part only.",
+    figureBrief(images),
     `SOURCE PART:\n"""\n${text}\n"""`,
   ].join("\n\n");
   return { system, user, maxTokens: 2000 };
