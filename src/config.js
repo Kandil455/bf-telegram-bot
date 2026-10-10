@@ -120,6 +120,8 @@ export function loadConfig(env = process.env) {
     proStars: positive("PRO_STARS", 150),
     tzOffset: Number(env.TZ_OFFSET_HOURS || 0) || 0,
     adminToken: String(env.ADMIN_TOKEN || "").trim(),
+    // Public address of the web dashboard, sent to admins by /admin. Changes with the tunnel.
+    adminPublicUrl: String(env.ADMIN_PUBLIC_URL || "").trim(),
     redisUrl: String(env.REDIS_URL || "").trim(),
     botUsername: "",
     apiRoot: String(env.TELEGRAM_API_ROOT || "").trim() || null,

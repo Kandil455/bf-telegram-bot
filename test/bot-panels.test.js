@@ -8,7 +8,7 @@ import { menuRows, adminRows } from "../src/keyboards.js";
 const ADMIN = 999;
 const USER = 5;
 
-function setup() {
+function setup({ adminPublicUrl = "" } = {}) {
   const store = createStore({ dataDir: null });
   const quota = createQuota({ store, limit: 10, admins: new Set([ADMIN]) });
   const calls = [];
@@ -30,7 +30,7 @@ function setup() {
     },
   };
   const ai = { complete: async () => null, breakerState: () => ({ gemini: { paused: false, failures: 0 } }), diagnose: () => [] };
-  const cfg = { botToken: "x", maxFileMb: 20, maxTextChars: 60000, premiumEmoji: {}, requirePhone: false, adminIds: new Set([ADMIN]) };
+  const cfg = { botToken: "x", maxFileMb: 20, maxTextChars: 60000, premiumEmoji: {}, requirePhone: false, adminIds: new Set([ADMIN]), adminPublicUrl };
   const router = createRouter({ cfg, ui, store, ai, quota, files: {}, getFilePath: async () => "", logger: { error() {}, warn() {} } });
   return { router, calls, store };
 }
@@ -76,4 +76,18 @@ test("admin panel: AI health screen lists providers and their state", async () =
   await router.onCallback(cb(ADMIN, "a:admin:ai"));
   assert.match(calls.at(-1).html, /AI health/);
   assert.match(calls.at(-1).html, /gemini/);
+});
+
+test("/admin: an admin gets the dashboard link, not the token", async () => {
+  const { router, calls } = setup({ adminPublicUrl: "https://example.ngrok-free.app" });
+  await router.onMessage({ chatId: ADMIN, userId: ADMIN, firstName: "A", messageId: 1, text: "/admin" });
+  const last = calls.at(-1);
+  assert.match(last.html, /https:\/\/example\.ngrok-free\.app\/admin/);
+  assert.doesNotMatch(last.html, /Bearer|token:/i);
+});
+
+test("/admin: a normal user gets the normal menu, not the link", async () => {
+  const { router, calls } = setup();
+  await router.onMessage({ chatId: USER, userId: USER, firstName: "A", messageId: 1, text: "/admin" });
+  assert.doesNotMatch(calls.at(-1).html, /\/admin/);
 });

@@ -881,6 +881,19 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
 
   // ───────────── admin panel inside the bot (admins only) ─────────────
 
+  /**
+   * /admin: sends the web dashboard link to admins only. The token is never sent in chat;
+   * the admin types it into the page. Non-admins get the normal menu, as if the command did not exist.
+   */
+  function showAdminLink(m, lang) {
+    if (!quota.isAdmin(m.userId)) return ui.send(m.chatId, copy(lang).menu, menuRows(lang, premium));
+    const base = (cfg.adminPublicUrl || "").replace(/\/+$/, "");
+    const body = base
+      ? `🔗 <b>${lang === "ar" ? "لوحة الويب" : "Web dashboard"}</b>\n${HR}\n${esc(base)}/admin\n\n<i>${lang === "ar" ? "ادخل بالتوكن بتاعك في الصفحة. التوكن ما بيتبعتش في الشات." : "Open it and enter your token on the page. The token is never sent in chat."}</i>`
+      : `⚠️ ${lang === "ar" ? "الرابط مش متظبط. حط ADMIN_PUBLIC_URL في .env" : "No link set. Add ADMIN_PUBLIC_URL to .env"}`;
+    return ui.send(m.chatId, body, adminRows(lang, premium));
+  }
+
   /** Admin screen: a summary card, and buttons to open payments, users or AI health. */
   function showAdmin(m, lang) {
     if (!quota.isAdmin(m.userId)) return showQuota(m, lang);
@@ -1000,6 +1013,8 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         return showQuota(m, lang);
       case "/stats":
         return showMyStats(m, lang);
+      case "/admin":
+        return showAdminLink(m, lang);
       default:
         return ui.send(m.chatId, c.menu, menuRows(lang, premium, { isAdmin: admin }));
     }

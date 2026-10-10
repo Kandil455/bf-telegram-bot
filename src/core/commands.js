@@ -25,7 +25,8 @@ export const GROUP_COMMANDS = Object.freeze([
 ]);
 
 /** Aliases the router also accepts (not published). */
-export const ALIASES = Object.freeze({ menu: "start", upgrade: "plans", pay: "plans", credits: "quota", stats: "stats", txid: "txid" });
+// /admin is handled by the router but never published: only admins are told it exists.
+export const ALIASES = Object.freeze({ menu: "start", upgrade: "plans", pay: "plans", credits: "quota", stats: "stats", txid: "txid", admin: "admin" });
 
 export function commandsFor(scope, lang) {
   const list = scope === "group" ? GROUP_COMMANDS : PRIVATE_COMMANDS;
