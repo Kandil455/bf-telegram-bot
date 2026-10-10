@@ -91,3 +91,19 @@ test("/admin: a normal user gets the normal menu, not the link", async () => {
   await router.onMessage({ chatId: USER, userId: USER, firstName: "A", messageId: 1, text: "/admin" });
   assert.doesNotMatch(calls.at(-1).html, /\/admin/);
 });
+
+test("reminder: the hour buttons set the reminder with no typing", async () => {
+  const { router, calls } = setup();
+  await router.onCallback(cb(USER, "a:remind"));
+  const menu = calls.at(-1);
+  assert.match(menu.html, /reminder hour|ساعة التذكير/);
+  const hourData = dataOf(menu.rows);
+  assert.ok(hourData.includes("a:rem:20"), "20:00 button present");
+  assert.ok(hourData.includes("a:rem:off"), "turn-off button present");
+});
+
+test("txid: the button asks for the transaction ID and the next message is read as it", async () => {
+  const { router, calls } = setup();
+  await router.onCallback(cb(USER, "a:txid"));
+  assert.match(calls.at(-1).html, /TxID|رقم العملية/);
+});

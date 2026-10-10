@@ -439,6 +439,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         rows.push([button({ label: `${c.btn.cash} · ${p.egp} EGP`, icon: "credits", action: act("cash", p.id), premium })]);
       }
     }
+    if (cash?.enabled) rows.push([button({ label: lang === "ar" ? "🧾 ابعت رقم العملية" : "🧾 Send transaction ID", icon: "file", action: act("txid"), premium })]);
     rows.push([button({ label: c.btn.menu, icon: "home", action: act("menu"), premium })]);
     return ui.send(m.chatId, `${c.plansTitle}\n${HR}\n${lines}`, rows);
   }
@@ -832,6 +833,10 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       saveSession(m.chatId, { awaiting: null });
       return startQuiz(m, lang, 5, text.slice(0, 120));
     }
+    if (s.awaiting === "txid") {
+      saveSession(m.chatId, { awaiting: null });
+      return onTxId(m, lang, text.trim().split(/\s+/)[0] || "");
+    }
     if (s.awaiting === "question") {
       saveSession(m.chatId, { awaiting: null });
       return ask(m, lang, text);
@@ -1135,6 +1140,21 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "plans":
         await ui.ack(m.callbackId);
         return showPlans(m, lang);
+      case "remind": {
+        await ui.ack(m.callbackId);
+        const hours = [8, 12, 16, 20, 22];
+        const rows = [hours.map((h) => button({ label: `${String(h).padStart(2, "0")}:00`, icon: "clock", action: act("rem", String(h)), premium }))];
+        rows.push([button({ label: lang === "ar" ? "إيقاف التذكير" : "Turn off", icon: "back", action: act("rem", "off"), style: "danger", premium })]);
+        rows.push([button({ label: c.btn.menu, icon: "home", action: act("menu"), premium })]);
+        return ui.send(m.chatId, lang === "ar" ? "⏰ <b>اختار ساعة التذكير</b>\nهبعتلك تذكير لما يكون عندك كروت مستحقة." : "⏰ <b>Pick a reminder hour</b>\nI'll remind you when you have cards due.", rows);
+      }
+      case "rem":
+        await ui.ack(m.callbackId);
+        return setReminder(m, lang, a0 === "off" ? "off" : a0);
+      case "txid":
+        await ui.ack(m.callbackId);
+        saveSession(m.chatId, { awaiting: "txid" });
+        return ui.send(m.chatId, lang === "ar" ? "🧾 <b>ابعت رقم العملية (TxID)</b>\nاكتبه في رسالة واحدة." : "🧾 <b>Send the transaction ID (TxID)</b>\nType it in one message.", menuRows(lang, premium));
       case "deck":
         await ui.ack(m.callbackId);
         return showDeck(m, lang);
