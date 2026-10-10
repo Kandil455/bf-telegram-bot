@@ -32,8 +32,16 @@ export function quizPrompt({ lang = "en", source, count = 5, topic = null, avoid
     ].join("\n"),
     user: `${topic ? `Topic: "${topic}". Write questions about this topic.` : `Write questions based only on this material:\n"""\n${String(source).slice(0, LIMITS.maxSourceChars)}\n"""`}\nNumber of questions: ${count}.${avoid.length ? `\nDo not repeat or paraphrase these questions:\n- ${avoid.slice(0, 30).join("\n- ")}` : ""}`,
     json: true,
-    maxTokens: 2400,
+    maxTokens: quizTokenBudget(count),
   };
+}
+
+/**
+ * Output budget for a quiz. A question with four options and an explanation is about 350 tokens,
+ * so a fixed 2400 cut off every quiz above about 8 questions and the JSON never closed.
+ */
+export function quizTokenBudget(count) {
+  return Math.min(16000, Math.max(2400, Math.ceil(Number(count) || 5) * 400));
 }
 
 /** Flashcards for active recall: one fact per card, the question an exam would ask. */
