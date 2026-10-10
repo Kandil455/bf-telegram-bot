@@ -1,11 +1,36 @@
 // AI provider chain: Gemini (vision + JSON) -> Groq (fast text) -> OpenRouter (last resort).
 // Supports multi-key rotation and multi-model fallback per provider.
 
-export function createAi(config, { fetchImpl = globalThis.fetch, logger = console, onAllFailed = null } = {}) {
+// Circuit breaker: after BREAKER_THRESHOLD consecutive provider failures, that provider is
+// skipped for BREAKER_COOLDOWN_MS so requests stop waiting out its timeout. One success resets it.
+export const BREAKER_THRESHOLD = 3;
+export const BREAKER_COOLDOWN_MS = 2 * 60 * 1000;
+
+export function createAi(config, { fetchImpl = globalThis.fetch, logger = console, onAllFailed = null, now = () => Date.now() } = {}) {
   const recent = [];
   const note = (where, err) => {
-    recent.unshift({ at: Date.now(), where, message: String(err?.message || err).slice(0, 200) });
+    recent.unshift({ at: now(), where, message: String(err?.message || err).slice(0, 200) });
     recent.length = Math.min(recent.length, 10);
+  };
+  const breakers = {};
+  const breakerOf = (name) => (breakers[name] ||= { failures: 0, openUntil: 0 });
+  const isOpen = (name) => breakerOf(name).openUntil > now();
+  const recordOk = (name) => {
+    breakerOf(name).failures = 0;
+    breakerOf(name).openUntil = 0;
+  };
+  const recordFail = (name) => {
+    const b = breakerOf(name);
+    b.failures++;
+    if (b.failures >= BREAKER_THRESHOLD) {
+      b.openUntil = now() + BREAKER_COOLDOWN_MS;
+      b.failures = 0;
+      logger.warn(`[ai] ${name} paused for ${BREAKER_COOLDOWN_MS / 1000}s after ${BREAKER_THRESHOLD} failures in a row`);
+    }
+  };
+  // One line per request: provider, model, outcome and duration, so every failure has a cause on record.
+  const logAttempt = (name, model, outcome, startedAt, detail = "") => {
+    logger.info(`[ai-req] provider=${name} model=${model} outcome=${outcome} ms=${now() - startedAt}${detail ? ` detail=${detail}` : ""}`);
   };
   const keyIndices = {
     gemini: 0,
@@ -87,6 +112,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
         const attemptSignals = [AbortSignal.timeout(attemptMs)];
         if (signal) attemptSignals.push(signal);
         const attemptSignal = AbortSignal.any(attemptSignals);
+        const startedAt = now();
 
         try {
           const res = await fetchImpl(url, {
@@ -99,11 +125,16 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
           if (res.ok) {
             const data = await res.json();
             const text = (data?.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("").trim();
-            if (text) return text;
+            if (text) {
+              logAttempt("gemini", model, "ok", startedAt);
+              recordOk("gemini");
+              return text;
+            }
           }
 
           const errText = await res.text().catch(() => "");
           lastError = new Error(`gemini ${res.status} (${model}): ${errText.slice(0, 100)}`);
+          logAttempt("gemini", model, `http-${res.status}`, startedAt);
           logger.warn(`[ai] gemini ${model} with key[${keyIdx}] failed: status ${res.status}`);
 
           if (res.status === 401 || res.status === 403) {
@@ -127,6 +158,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
         } catch (err) {
           if (signal?.aborted) throw err;
           lastError = err;
+          logAttempt("gemini", model, "error", startedAt, String(err.message).slice(0, 80));
           logger.warn(`[ai] gemini ${model} attempt error/timeout: ${err.message}`);
           break;
         }
@@ -185,6 +217,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
           if (signal) attemptSignals.push(signal);
           const attemptSignal = AbortSignal.any(attemptSignals);
 
+          const startedAt = now();
           try {
             const res = await fetchImpl(endpoint, {
               method: "POST",
@@ -196,11 +229,15 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
             if (res.ok) {
               const data = await res.json();
               const text = String(data?.choices?.[0]?.message?.content || "").trim();
-              if (text) return text;
+              if (text) {
+                logAttempt(name, model, "ok", startedAt);
+                return text;
+              }
             }
 
             const errText = await res.text().catch(() => "");
             lastError = new Error(`${name} ${res.status} (${model}): ${errText.slice(0, 100)}`);
+            logAttempt(name, model, `http-${res.status}`, startedAt);
             logger.warn(`[ai] ${name} ${model} with key[${keyIdx}] failed: status ${res.status}`);
 
             if (res.status === 401 || res.status === 403) {
@@ -240,6 +277,10 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
   async function complete({ system, user, images = [], json = false, maxTokens = 900, temperature = 0.4, timeoutMs = 120000, tier = "quality" }) {
     for (const p of providers) {
       if (images.length && !p.vision) continue;
+      if (isOpen(p.name)) {
+        logger.info(`[ai-req] provider=${p.name} outcome=skipped-breaker-open`);
+        continue;
+      }
       try {
         const text = await p.run({
           system,
@@ -251,8 +292,13 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
           tier,
           signal: AbortSignal.timeout(timeoutMs),
         });
-        if (text) return { text, provider: p.name };
+        if (text) {
+          recordOk(p.name);
+          return { text, provider: p.name };
+        }
+        recordFail(p.name);
       } catch (err) {
+        recordFail(p.name);
         note(p.name, err);
         logger.warn(`[ai] ${p.name} failed: ${err?.name || ""} ${err?.message || err}`);
       }
@@ -261,5 +307,8 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
     return null;
   }
 
-  return { complete, providers: providers.map((p) => p.name), diagnose: () => recent.slice(0, 5) };
+  const breakerState = () =>
+    Object.fromEntries(Object.keys(breakers).map((n) => [n, { paused: isOpen(n), failures: breakers[n].failures }]));
+
+  return { complete, providers: providers.map((p) => p.name), diagnose: () => recent.slice(0, 5), breakerState };
 }
