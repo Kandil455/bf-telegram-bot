@@ -7,11 +7,24 @@ import { buildChunkPrompt, buildDocumentPrompt, buildMergePrompt, buildOscePromp
 import { normaliseDocument, normaliseOsce } from "./schema.js";
 import { docText, qualityIssues, reviseDocPrompt, wordsIn } from "../quality/doc.js";
 
+const RETRY_DELAYS_MS = [4000, 12000];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * One JSON reply from the model. When every provider returned nothing (usually a rate limit
+ * or a timeout), it waits and tries again, so a long file does not die on one busy moment.
+ * A reply that came back but is malformed gets one repair attempt, as before.
+ */
 async function askJson(ai, prompt) {
-  const first = await ai.complete({ ...prompt, json: true, timeoutMs: 240000 });
-  const parsed = parseJsonLoose(first?.text);
-  if (parsed) return parsed;
+  let first = null;
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    first = await ai.complete({ ...prompt, json: true, timeoutMs: 240000 });
+    if (first) break;
+    if (attempt < RETRY_DELAYS_MS.length) await sleep(RETRY_DELAYS_MS[attempt]);
+  }
   if (!first) return null;
+  const parsed = parseJsonLoose(first.text);
+  if (parsed) return parsed;
   const again = await ai.complete({ ...buildRepairPrompt(first.text), json: true, timeoutMs: 240000 });
   return parseJsonLoose(again?.text);
 }
@@ -37,7 +50,9 @@ function chunks(text, size) {
   return out;
 }
 
-const CHUNK_CONCURRENCY = 3;
+// One part at a time by default. Parallel parts hit the provider rate limit (429) on free keys,
+// and one rate-limited part used to fail the whole file. Raise it only with paid keys.
+const CHUNK_CONCURRENCY = Number(process.env.SUMMARY_PARALLEL_PARTS) || 1;
 
 /** Runs fn over items with at most `limit` in flight. Results keep the input order. */
 export async function mapLimit(items, limit, fn) {
