@@ -18,6 +18,7 @@ export async function shrinkImage({ buffer, mime }) {
   try {
     const out = await sharp(buffer, { failOn: "none" })
       .rotate()
+      .flatten({ background: "#ffffff" })
       .resize({ width: SHRINK_MAX_SIDE, height: SHRINK_MAX_SIDE, fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: SHRINK_QUALITY, mozjpeg: true })
       .toBuffer();

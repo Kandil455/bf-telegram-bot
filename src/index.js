@@ -51,11 +51,17 @@ async function main() {
   // Premium icons: filled in place, so every keyboard and message that holds this object sees them.
   Object.assign(cfg.premiumEmoji, await loadPremiumSet({ api: bot.api, setName: cfg.premiumEmojiSet, logger: log }));
 
-  // Admin report once a day, at 08:00 Cairo time (UTC+2; the router marks each day as sent).
+  // Admin report once a day, at 08:00 Cairo time (the router marks each day as sent).
   const dailyReport = () => {
-    const cairoHour = new Date(Date.now() + 2 * 3600 * 1000).getUTCHours();
+    let cairoHour = 8;
+    try {
+      cairoHour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Cairo", hour: "numeric", hour12: false }).format(new Date()));
+    } catch {
+      cairoHour = new Date(Date.now() + (cfg.tzOffset || 2) * 3600 * 1000).getUTCHours();
+    }
     if (cairoHour < 8) return Promise.resolve(0);
-    return router.sendDailyReport({ aiToday: aiMetrics?.today() });
+    const yesterday = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10);
+    return router.sendDailyReport({ day: yesterday, aiToday: aiMetrics?.today(yesterday) });
   };
   const stopReminders = startReminderLoop(
     () => router.sendReminders().then(() => router.sendRenewalNotices()).then(() => dailyReport()),

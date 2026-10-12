@@ -26,6 +26,33 @@ export const GLYPH = Object.freeze({
   trophy: "🏆",
 });
 
+export const DEFAULT_PREMIUM_EMOJI_MAP = Object.freeze({
+  file: "5447421246172069841",
+  image: "5447588260270341594",
+  summary: "5445260044398524944",
+  quiz: "5237799019329105246",
+  cards: "5447257461889202335",
+  concepts: "5472146462362048818",
+  explain: "5445255929819854310",
+  ask: "5445140257760639304",
+  upload: "5444988177263654261",
+  home: "5465226866321268133",
+  credits: "5447629406057034342",
+  stats: "5445146408153806223",
+  next: "5445350109862720603",
+  done: "5444987348334965906",
+  wrong: "5445092669522996408",
+  warn: "5447381715293074599",
+  back: "5447506720316225765",
+  lang: "5447602197439218445",
+  reset: "5445365692004071819",
+  topic: "5350460637182993292",
+  spark: "5445388803223091254",
+  clock: "5445350406215465190",
+  trophy: "5444931419270839381",
+});
+
+
 /** Parses PREMIUM_EMOJI_JSON. Unknown names and malformed ids are dropped. */
 export function parsePremiumMap(raw = "") {
   if (!raw || !String(raw).trim()) return {};

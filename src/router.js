@@ -26,6 +26,7 @@ import { stripMention } from "./features/groups.js";
 import { qualityPass, topUpQuiz } from "./quality/quiz.js";
 import { randomBytes } from "node:crypto";
 import { markNotice, renewalNotices } from "./features/subscriptions.js";
+import { normaliseDigits } from "./features/cash.js";
 
 const HEAVY_ACTIONS = new Set(["sum", "quiz", "cards", "key", "tpl", "qc", "img", "ask", "explain", "cash", "buy"]);
 import { humanize } from "./services/quota.js";
@@ -366,15 +367,19 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       cost: tpl.cost,
       label: c.writing,
       work: async () => {
-        // Images go to the AI smaller (see media/shrink.js). Same source, images, template and
-        // language reuse the generated document, so no AI call. Only the raw document is cached.
-        const sent = await Promise.all(images.map(async (i) => {
-          if (!i.b64) return i;
-          const small = await shrinkImage({ buffer: Buffer.from(i.b64, "base64"), mime: i.mime });
-          return { ...i, mime: small.mime, b64: small.buffer.toString("base64") };
-        }));
-        const cached = await summaryCache({ text: input.text, template: id, lang: docLang, detail: s.detail || "standard", images: sent.map((i) => ({ caption: i.caption, mime: i.mime, b64: i.b64 })) },
-          () => generateDocument({ ai, template: id, lang: docLang, title: input.title, text: input.text, images: sent, detail: s.detail || "standard" }));
+        // Images are shrunk for the AI on a cache miss (see media/shrink.js). Same source,
+        // images, template and language reuse the generated document without calling the AI.
+        const cached = await summaryCache(
+          { text: input.text, template: id, lang: docLang, detail: s.detail || "standard", images },
+          async () => {
+            const sent = await Promise.all(images.map(async (i) => {
+              if (!i.b64) return i;
+              const small = await shrinkImage({ buffer: Buffer.from(i.b64, "base64"), mime: i.mime });
+              return { ...i, mime: small.mime, b64: small.buffer.toString("base64") };
+            }));
+            return generateDocument({ ai, template: id, lang: docLang, title: input.title, text: input.text, images: sent, detail: s.detail || "standard" });
+          }
+        );
         const gen = cached;
         if (!gen) return null;
         if (cached?.cached) stat("cache_hits");
@@ -485,19 +490,47 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     if (!cash?.enabled) return ui.send(m.chatId, c.cashOff, menuRows(lang, premium));
     const intent = cash.start(m.userId, planId);
     if (!intent) return showPlans(m, lang);
+    saveSession(m.chatId, { awaiting: "txid" });
     const name = PLANS[planId].name[lang] || PLANS[planId].name.en;
-    return ui.send(m.chatId, c.cashStart(name, intent.amount, intent.number, 30), menuRows(lang, premium));
+    const rows = [
+      [button({ label: lang === "ar" ? "🧾 ابعت رقم العملية (TxID)" : "🧾 Send transaction ID", icon: "file", action: act("txid"), premium })],
+      [button({ label: c.btn.menu, icon: "home", action: act("menu"), premium })],
+    ];
+    return ui.send(m.chatId, c.cashStart(name, intent.amount, intent.number, 30), rows);
   }
 
   function onTxId(m, lang, raw) {
     const c = copy(lang);
     if (!cash?.enabled) return ui.send(m.chatId, c.cashOff, menuRows(lang, premium));
+    if (!cash.intent(m.userId) && PLANS.pro) {
+      cash.start(m.userId, "pro");
+    }
+    const cleanId = String(raw || "").replace(/\D/g, "");
+    if (quota.isAdmin(m.userId) && cleanId.length >= 6) {
+      store.set(`cash:used:${cleanId}`, m.userId, 90 * 24 * 3600 * 1000);
+      const grant = plans.grant(m.userId, "pro", PLANS.pro.days);
+      return ui.send(m.chatId, `🎉 <b>${PLANS.pro.name[lang] || PLANS.pro.name.en} اتفعّل (وضع الأدمن / تجريبي)</b>\n${HR}\nساري لحد <b>${new Date(grant.until).toISOString().slice(0, 10)}</b>.`, menuRows(lang, premium, { isAdmin: true }));
+    }
     const r = cash.claim(m.userId, raw);
     switch (r.status) {
       case "ok":
+        notifyAdmins(`💸 <b>تم استلام دفع فودافون كاش وتفعيله تلقائياً!</b>\n${HR}\n👤 ${esc(m.firstName || "طالب")} (${m.userId})\n🧾 رقم العملية: <code>${cleanId}</code>\n📦 باقة: ${PLANS[r.grant.plan].name.en}`);
         return ui.send(m.chatId, c.cashOk(PLANS[r.grant.plan].name[lang] || PLANS[r.grant.plan].name.en, new Date(r.grant.until).toISOString().slice(0, 10)), menuRows(lang, premium, { isAdmin: quota.isAdmin(m.userId) }));
-      case "pending":
+      case "pending": {
+        const pendingKey = `cash:pending:${cleanId}`;
+        if (!store.get(pendingKey)) {
+          store.set(pendingKey, { userId: m.userId, firstName: m.firstName, txId: cleanId, at: now() }, 7 * 24 * 3600 * 1000);
+          const adminAlert = lang === "ar"
+            ? `🔔 <b>طلب تفعيل فودافون كاش للمراجعة!</b>\n${HR}\n👤 <b>الطالب:</b> ${esc(m.firstName || "طالب")} (<code>${m.userId}</code>)\n🧾 <b>رقم العملية:</b> <code>${cleanId}</code>\n\n<i>لو التحويل وصلك، اضغط اعتماد لتفعيل الباقة فوراً:</i>`
+            : `🔔 <b>New Vodafone Cash payment to review!</b>\n${HR}\n👤 <b>Student:</b> ${esc(m.firstName || "Student")} (<code>${m.userId}</code>)\n🧾 <b>TxID:</b> <code>${cleanId}</code>\n\n<i>Click approve if received:</i>`;
+          const rows = [
+            [button({ label: "✅ اعتماد وتفعيل الباقة", icon: "credits", action: act("adm_cok", String(m.userId), cleanId), style: "primary", premium })],
+            [button({ label: "❌ رفض", icon: "back", action: act("adm_cno", String(m.userId), cleanId), style: "danger", premium })],
+          ];
+          for (const id of cfg.adminIds || []) ui.send(id, adminAlert, rows).catch(() => {});
+        }
         return ui.send(m.chatId, c.cashPending);
+      }
       case "used":
         return ui.send(m.chatId, c.cashUsed);
       case "amount":
@@ -722,19 +755,21 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
 
   /** Heads-up before a plan ends and a notice once it has ended. Each period is announced once. */
   /** One report per day to every admin, with the day's counters and AI health. */
-  async function sendDailyReport({ aiToday = null, day = DAY() } = {}) {
-    if (store.get(`report:sent:${day}`)) return 0;
+  async function sendDailyReport({ aiToday = null, day = null } = {}) {
+    const targetDay = day || new Date(now() - 24 * 3600 * 1000).toISOString().slice(0, 10);
+    if (store.get(`report:sent:${targetDay}`)) return 0;
     const text = buildDailyReport({
-      activeUsers: store.get(`stat:users:${day}`) || 0,
-      tasks: store.get(`stat:tasks:${day}`) || 0,
-      files: store.get(`stat:files:${day}`) || 0,
-      quizzes: store.get(`stat:quizzes:${day}`) || 0,
-      cacheHits: store.get(`stat:cache_hits:${day}`) || 0,
-      ai: aiToday || { ok: 0, failed: 0, totalMs: 0, byProvider: {} },
+      dayLabel: targetDay,
+      activeUsers: store.get(`stat:users:${targetDay}`) || 0,
+      tasks: store.get(`stat:tasks:${targetDay}`) || 0,
+      files: store.get(`stat:files:${targetDay}`) || 0,
+      quizzes: store.get(`stat:quizzes:${targetDay}`) || 0,
+      cacheHits: store.get(`stat:cache_hits:${targetDay}`) || 0,
+      ai: aiToday || store.get(`metric:ai:${targetDay}`) || { ok: 0, failed: 0, totalMs: 0, byProvider: {} },
       lang: "en",
     });
     for (const id of cfg.adminIds || []) await ui.send(id, text).catch(() => {});
-    store.set(`report:sent:${day}`, true, 3 * 24 * 3600 * 1000);
+    store.set(`report:sent:${targetDay}`, true, 3 * 24 * 3600 * 1000);
     return 1;
   }
 
@@ -854,6 +889,11 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     if (s.awaiting === "txid") {
       saveSession(m.chatId, { awaiting: null });
       return onTxId(m, lang, text.trim().split(/\s+/)[0] || "");
+    }
+    const pureDigits = normaliseDigits(text).trim();
+    if (cash?.enabled && /^\d{6,25}$/.test(pureDigits)) {
+      saveSession(m.chatId, { awaiting: null });
+      return onTxId(m, lang, pureDigits);
     }
     if (s.awaiting === "question") {
       saveSession(m.chatId, { awaiting: null });
@@ -1053,6 +1093,24 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         return showMyStats(m, lang);
       case "/admin":
         return showAdminLink(m, lang);
+      case "/grant": {
+        if (!admin) return ui.send(m.chatId, c.menu, menuRows(lang, premium));
+        const parts = m.text.trim().split(/\s+/).slice(1);
+        const targetId = parts[0];
+        const days = parseInt(parts[1], 10) || 30;
+        const planId = (parts[2] || "pro").toLowerCase();
+        if (!targetId || !/^\d+$/.test(targetId)) {
+          return ui.send(m.chatId, `⚠️ <b>طريقة استخدام أمر التفعيل:</b>\n<code>/grant &lt;user_id&gt; [days] [plan]</code>\nمثال: <code>/grant 12345678 30 pro</code>`);
+        }
+        const planObj = PLANS[planId] || PLANS.pro;
+        const grant = plans.grant(targetId, planObj.id, days);
+        const untilDate = new Date(grant.until).toISOString().slice(0, 10);
+        await ui.send(m.chatId, `✅ <b>تم تفعيل الخطة بنجاح!</b>\n${HR}\n👤 المستخدم: <code>${targetId}</code>\n📦 الخطة: <b>${planObj.name.ar || planObj.name.en}</b>\n📅 ساري حتى: <b>${untilDate}</b> (${days} يوم)`);
+        const targetLang = pickLang(session(targetId), "");
+        const targetC = copy(targetLang);
+        ui.send(targetId, targetC.cashOk(planObj.name[targetLang] || planObj.name.en, untilDate), menuRows(targetLang, premium, { isAdmin: quota.isAdmin(targetId) })).catch(() => {});
+        return;
+      }
       default:
         return ui.send(m.chatId, c.menu, menuRows(lang, premium, { isAdmin: admin }));
     }
@@ -1177,6 +1235,36 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         await ui.ack(m.callbackId);
         saveSession(m.chatId, { awaiting: "txid" });
         return ui.send(m.chatId, lang === "ar" ? "🧾 <b>ابعت رقم العملية (TxID)</b>\nاكتبه في رسالة واحدة." : "🧾 <b>Send the transaction ID (TxID)</b>\nType it in one message.", menuRows(lang, premium));
+      case "adm_cok": {
+        if (!admin) return ui.ack(m.callbackId, "للأدمن فقط!", true);
+        const targetId = a0;
+        const txId = a1;
+        const intent = store.get(`cash:intent:${targetId}`);
+        const planId = intent?.planId || "pro";
+        const planObj = PLANS[planId] || PLANS.pro;
+        store.set(`cash:used:${txId}`, targetId, 90 * 24 * 3600 * 1000);
+        store.del(`cash:pending:${txId}`);
+        store.del(`cash:intent:${targetId}`);
+        const grant = plans.grant(targetId, planId, planObj.days);
+        const untilDate = new Date(grant.until).toISOString().slice(0, 10);
+        await ui.ack(m.callbackId, "✅ تم الاعتماد والتفعيل بنجاح!");
+        ui.send(m.chatId, `✅ <b>تم اعتماد التحويل وتفعيل باقة ${planObj.name.ar || planObj.name.en}!</b>\n${HR}\n👤 المستخدم: <code>${targetId}</code>\n🧾 رقم العملية: <code>${txId}</code>\n📅 ساري حتى: <b>${untilDate}</b>`).catch(() => {});
+        const targetLang = pickLang(session(targetId), "");
+        const targetC = copy(targetLang);
+        ui.send(targetId, targetC.cashOk(planObj.name[targetLang] || planObj.name.en, untilDate), menuRows(targetLang, premium, { isAdmin: quota.isAdmin(targetId) })).catch(() => {});
+        return;
+      }
+      case "adm_cno": {
+        if (!admin) return ui.ack(m.callbackId, "للأدمن فقط!", true);
+        const targetId = a0;
+        const txId = a1;
+        store.del(`cash:pending:${txId}`);
+        await ui.ack(m.callbackId, "❌ تم رفض الطلب");
+        ui.send(m.chatId, `❌ <b>تم رفض عملية التحويل</b>\n${HR}\n👤 المستخدم: <code>${targetId}</code>\n🧾 رقم العملية: <code>${txId}</code>`).catch(() => {});
+        const targetLang = pickLang(session(targetId), "");
+        ui.send(targetId, targetLang === "ar" ? `❌ <b>تم رفض عملية الدفع برقم:</b> <code>${txId}</code>\nتأكد من صحة رقم التحويل أو تواصل مع الدعم.` : `❌ <b>Payment rejected for TxID:</b> <code>${txId}</code>\nPlease verify your payment or contact support.`).catch(() => {});
+        return;
+      }
       case "deck":
         await ui.ack(m.callbackId);
         return showDeck(m, lang);

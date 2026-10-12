@@ -21,21 +21,22 @@ export function createAiMetrics(store, { now = () => Date.now() } = {}) {
       cur.byProvider[provider] = p;
       store.set(key, cur, 3 * DAY_MS);
     },
-    today() {
-      return store.get(`metric:ai:${day()}`) || { ok: 0, failed: 0, totalMs: 0, byProvider: {} };
+    today(d = day()) {
+      return store.get(`metric:ai:${d}`) || { ok: 0, failed: 0, totalMs: 0, byProvider: {} };
     },
   };
 }
 
 /** Builds the report text (HTML) for the admins. Works in Arabic or English. */
-export function buildDailyReport({ tasks = 0, files = 0, quizzes = 0, cacheHits = 0, activeUsers = 0, ai = { ok: 0, failed: 0, totalMs: 0, byProvider: {} }, lang = "en" }) {
+export function buildDailyReport({ dayLabel = null, tasks = 0, files = 0, quizzes = 0, cacheHits = 0, activeUsers = 0, ai = { ok: 0, failed: 0, totalMs: 0, byProvider: {} }, lang = "en" }) {
   const total = ai.ok + ai.failed;
   const avg = total ? Math.round(ai.totalMs / total) : 0;
   const failRate = total ? Math.round((ai.failed / total) * 100) : 0;
   const bad = Object.entries(ai.byProvider).filter(([, p]) => p.failed > 0).map(([name, p]) => `${name}: ${p.failed}`);
   const ar = lang === "ar";
+  const title = dayLabel ? (ar ? `تقرير يوم ${dayLabel}` : `Report (${dayLabel})`) : (ar ? "تقرير النهارده" : "Today's report");
   const lines = [
-    `📊 <b>${ar ? "تقرير النهارده" : "Today's report"}</b>`,
+    `📊 <b>${title}</b>`,
     `━━━━━━━━━━━━━━━`,
     `👥 ${ar ? "نشطين" : "Active users"}: <b>${activeUsers}</b>`,
     `⚙️ ${ar ? "مهام" : "Tasks"}: <b>${tasks}</b> · 📄 ${ar ? "ملفات" : "Files"}: <b>${files}</b> · 🎯 ${ar ? "كويزات" : "Quizzes"}: <b>${quizzes}</b>`,

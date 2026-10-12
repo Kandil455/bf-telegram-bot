@@ -1,6 +1,6 @@
 // Reads and validates the environment once, at startup. Fails fast with a clear message.
 
-import { parsePremiumMap } from "./core/icons.js";
+import { parsePremiumMap, DEFAULT_PREMIUM_EMOJI_MAP } from "./core/icons.js";
 
 function compile(src) {
   if (!src) return null;

@@ -23,8 +23,22 @@ export function createStore({ dataDir = null, flushMs = 1000 } = {}) {
     }
   }
 
+  function sweep() {
+    const now = Date.now();
+    let pruned = 0;
+    for (const [k, entry] of data.entries()) {
+      if (entry?.exp && entry.exp < now) {
+        data.delete(k);
+        pruned++;
+      }
+    }
+    if (pruned > 0) dirty = true;
+    return pruned;
+  }
+
   function flush() {
     if (!file || !dirty) return;
+    sweep();
     dirty = false;
     const tmp = `${file}.tmp`;
     writeFileSync(tmp, JSON.stringify(Object.fromEntries(data)));
@@ -82,6 +96,7 @@ export function createStore({ dataDir = null, flushMs = 1000 } = {}) {
       return [...data.keys()].filter((k) => k.startsWith(prefix) && live(k));
     },
     flush,
+    sweep,
     size: () => data.size,
   };
 }

@@ -303,16 +303,15 @@ test("prompts: quiz, cards and group quiz carry their hard rules and output shap
   assert.match(chatPrompt({ lang: "en", question: "q" }).system, /under 250 words/);
 });
 
-test("invoices: Stars invoices pass an empty provider token before the currency", async () => {
+test("invoices: Stars invoices pass currency XTR and prices to grammY", async () => {
   const { createUi } = await import("../src/ui/telegram.js");
   const seen = [];
   const api = { sendInvoice: async (...args) => { seen.push(args); return {}; } };
   const ui = createUi(api, { logger: { warn() {} } });
   await ui.sendInvoice(5, invoiceFor("pro", "en"));
-  const [chat, title, description, payload, providerToken, currency, prices] = seen[0];
+  const [chat, title, description, payload, currency, prices] = seen[0];
   assert.equal(chat, 5);
   assert.equal(payload, "plan:pro");
-  assert.equal(providerToken, "", "provider token must be empty for Stars");
   assert.equal(currency, "XTR");
   assert.equal(prices[0].amount, PLANS.pro.stars);
   assert.ok(title.length > 0 && description.length > 0);

@@ -24,7 +24,7 @@ export function menuRows(lang, premium, { isAdmin = false } = {}) {
   // Main menu, grouped: study tools, account, then settings. Every feature has a button.
   const rows = [
     [b(c.ask, "ask", act("ask"), "primary"), b(c.topic, "topic", act("topic"))],
-    [b(c.plans, "credits", act("plans"), "success"), b(c.invite || "👥 دعوة أصدقاء", "credits", act("inv"))],
+    [b(c.plans, "credits", act("plans"), "success"), b(c.invite || "دعوة أصدقاء", "spark", act("inv"))],
     [b(c.help, "spark", act("help")), b(c.deck, "cards", act("deck"))],
   ];
   if (isAdmin) rows.push([b(c.adminPanel, "stats", act("admin"), "primary")]);

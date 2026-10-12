@@ -106,7 +106,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
     };
 
     // Calculate attempt timeout proportional to output size
-    const attemptMs = Math.max(16000, Math.min(32000, maxTokens * 12));
+    const attemptMs = Math.max(16000, Math.min(80000, maxTokens * 12));
 
     let lastError = null;
     let modelTries = 0;
@@ -208,12 +208,13 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
         ];
       }
 
-      const attemptMs = Math.max(16000, Math.min(32000, maxTokens * 12));
+      const attemptMs = Math.max(16000, Math.min(80000, maxTokens * 12));
       let modelTries = 0;
+      let rateLimited = false;
       const maxModelAttempts = models.length;
 
       for (const model of models) {
-        if (modelTries >= maxModelAttempts) break;
+        if (modelTries >= maxModelAttempts || rateLimited) break;
         modelTries++;
 
         const startKeyIdx = keyIndices[name];
@@ -269,6 +270,10 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
 
             if (res.status === 429) {
               rotateKey(name);
+              if (keys.length <= 1) {
+                rateLimited = true;
+                break;
+              }
               if (k === keys.length - 1) {
                 break;
               }
@@ -279,6 +284,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
           } catch (err) {
             if (signal?.aborted) throw err;
             lastError = err;
+            logAttempt(name, model, "error", startedAt, String(err.message).slice(0, 80));
             logger.warn(`[ai] ${name} ${model} attempt error/timeout: ${err.message}`);
             break;
           }

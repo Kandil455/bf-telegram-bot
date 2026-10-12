@@ -124,8 +124,8 @@ export function createUi(api, { logger = console, premium = {}, inputFile = null
     /** Sends a Telegram Stars invoice (currency XTR). */
     async sendInvoice(chatId, inv) {
       return withRetry(() =>
-        // Bot API order: title, description, payload, provider_token (empty for Stars), currency, prices.
-        api.sendInvoice(chatId, inv.title, inv.description, inv.payload, "", inv.currency, inv.prices)
+        // grammY order: chat_id, title, description, payload, currency, prices, other.
+        api.sendInvoice(chatId, inv.title, inv.description, inv.payload, inv.currency, inv.prices)
       );
     },
 

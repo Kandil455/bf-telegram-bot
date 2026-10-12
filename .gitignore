@@ -12,3 +12,5 @@ lectures_data.json
 # local-only
 .env.bak
 data-dev/
+.DS_Store
+Emergency_Study_Plan/
