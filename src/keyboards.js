@@ -88,12 +88,23 @@ export function nextRows(lang, premium, qIndex, isLast) {
   return [[button({ label: isLast ? c.results : c.next, icon: "next", action: act("qn", String(qIndex)), style: "primary", premium })]];
 }
 
-export function finishRows(lang, premium) {
+export function finishRows(lang, premium, wrongCount = 0) {
   const c = copy(lang).btn;
-  return [
-    [button({ label: c.again, icon: "quiz", action: act("quiz", "5"), style: "primary", premium })],
-    [button({ label: c.menu, icon: "home", action: act("menu"), premium })],
-  ];
+  const rows = [];
+  if (wrongCount > 0) {
+    rows.push([
+      button({
+        label: lang === "ar" ? `🔄 إعادة حل الأخطاء فقط (${wrongCount})` : `🔄 Retry Mistakes Only (${wrongCount})`,
+        icon: "quiz",
+        action: act("qretry"),
+        style: "primary",
+        premium,
+      }),
+    ]);
+  }
+  rows.push([button({ label: c.again, icon: "quiz", action: act("quiz", "5"), style: wrongCount > 0 ? null : "primary", premium })]);
+  rows.push([button({ label: c.menu, icon: "home", action: act("menu"), premium })]);
+  return rows;
 }
 
 export function stylePickerRows(lang, premium, docLang = "en", outputFormat = "html", detail = "standard") {

@@ -251,14 +251,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         raw = await topUpQuiz({ ai, items: raw, count: size, source: input?.text || topic, lang, topic });
         const { items } = await qualityPass({ items: raw, source: input?.text || topic, lang, ai, verify: cfg.quizVerify !== false });
         if (!items.length) return null;
-        const quiz = { items, index: 0, score: 0, answered: -1, title: topic || input.title };
+        const quiz = { items, index: 0, score: 0, answered: -1, title: topic || input.title, wrongItems: [] };
         const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
         return {
-          html: `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q })}`,
+          html: `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q, options: items[0].options })}`,
           rows: [...quizRows(0, items[0].options, premium), ...appRows(qid, lang)],
           after: () => {
             if (qid) store.set(`appquiz:${qid}`, { userId: m.userId, items, at: now() }, 2 * 3600 * 1000);
-            saveSession(m.chatId, { quiz, awaiting: null, questionsUsed: Number(session(m.chatId).questionsUsed || 0) + items.length });
+            saveSession(m.chatId, { quiz, awaiting: null, questionsUsed: Number(session(m.chatId).questionsUsed || 0) + items.length, lastQuizTitle: quiz.title });
           },
         };
       },
@@ -279,10 +279,20 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     quiz.score += correct ? 1 : 0;
     quiz.streak = correct ? (quiz.streak || 0) + 1 : 0;
     quiz.answered = qIndex;
+    if (!correct) {
+      quiz.wrongItems = quiz.wrongItems || [];
+      if (!quiz.wrongItems.some((w) => w.q === item.q)) {
+        quiz.wrongItems.push(item);
+      }
+    }
     saveSession(m.chatId, { quiz });
 
-    const question = c.quizQuestion({ index: qIndex + 1, total: quiz.items.length, q: item.q });
-    const verdict = correct ? c.right(item.explanation) : c.wrong(item.options[item.answer], item.explanation);
+    const question = c.quizQuestion({ index: qIndex + 1, total: quiz.items.length, q: item.q, options: item.options });
+    const verdict = correct
+      ? c.right(item.explanation)
+      : (lang === "ar"
+          ? `❌ <b>إجابتك:</b> ${esc(item.options[choice] || "")}\n✅ <b>الإجابة الصحيحة:</b> <b>${esc(item.options[item.answer])}</b>${item.explanation ? `\n\n💡 <i>${esc(item.explanation)}</i>` : ""}`
+          : c.wrong(item.options[item.answer], item.explanation));
     const isLast = qIndex === quiz.items.length - 1;
     await ui.edit(m.chatId, m.messageId, `${question}\n${HR}\n${verdict}`, nextRows(lang, premium, qIndex, isLast));
     if (correct && quiz.streak >= 3 && quiz.streak % 3 === 0) await ui.sendWithEffect(m.chatId, c.streak(quiz.streak), null, EFFECT.fire);
@@ -301,14 +311,24 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       quiz.index = qIndex + 1;
       saveSession(m.chatId, { quiz });
       const item = quiz.items[quiz.index];
-      const html = c.quizQuestion({ index: quiz.index + 1, total: quiz.items.length, q: item.q });
+      const html = c.quizQuestion({ index: quiz.index + 1, total: quiz.items.length, q: item.q, options: item.options });
       await ui.send(m.chatId, `${html}\n${HR}\n${progress(quiz.index, quiz.items.length)}`, quizRows(quiz.index, item.options, premium));
       return { ok: true };
     }
 
-    saveSession(m.chatId, { quiz: null });
+    const wrongItems = quiz.wrongItems || [];
+    saveSession(m.chatId, {
+      quiz: null,
+      retryQuizItems: wrongItems.length ? wrongItems : null,
+      lastQuizTitle: quiz.title,
+    });
     stat("quizzes");
-    await ui.sendWithEffect(m.chatId, c.quizDone(quiz.score, quiz.items.length), finishRows(lang, premium), quiz.score === quiz.items.length ? EFFECT.confetti : EFFECT.fire);
+    await ui.sendWithEffect(
+      m.chatId,
+      c.quizDone(quiz.score, quiz.items.length),
+      finishRows(lang, premium, wrongItems.length),
+      quiz.score === quiz.items.length ? EFFECT.confetti : EFFECT.fire
+    );
     return { ok: true };
   }
 
@@ -698,9 +718,9 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       const made = await withSpinner(m.chatId, msgId, c.thinking, () => media.imageQuiz(m.chatId, lang, size));
       if (!made) return ui.edit(m.chatId, msgId, c.noQuizFromImages, menuRows(lang, premium));
       await media.sendUsedImages(m.chatId, made.used, lang);
-      const quiz = { items: made.items, index: 0, score: 0, answered: -1, title: "images" };
-      saveSession(m.chatId, { quiz, awaiting: null, questionsUsed: Number(s.questionsUsed || 0) + made.items.length });
-      await ui.edit(m.chatId, msgId, `${c.quizIntro(made.items.length)}\n\n${c.quizQuestion({ index: 1, total: made.items.length, q: made.items[0].q })}`, quizRows(0, made.items[0].options, premium));
+      const quiz = { items: made.items, index: 0, score: 0, answered: -1, title: "images", wrongItems: [] };
+      saveSession(m.chatId, { quiz, awaiting: null, questionsUsed: Number(s.questionsUsed || 0) + made.items.length, lastQuizTitle: "images" });
+      await ui.edit(m.chatId, msgId, `${c.quizIntro(made.items.length)}\n\n${c.quizQuestion({ index: 1, total: made.items.length, q: made.items[0].q, options: made.items[0].options })}`, quizRows(0, made.items[0].options, premium));
     } catch (err) {
       logger.error("[bot] image quiz failed:", err?.message || err);
       if (msgId) await ui.edit(m.chatId, msgId, c.failed).catch(() => {});
@@ -1057,12 +1077,12 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   async function startBurnsInteractive(m, lang) {
     if (!quota.isAdmin(m.userId)) return ui.send(m.chatId, copy(lang).menu, menuRows(lang, premium));
     const items = BURNS_QUIZ_ITEMS.map((item) => ({ ...item }));
-    const quiz = { items, index: 0, score: 0, answered: -1, title: BURNS_QUIZ_TITLE };
+    const quiz = { items, index: 0, score: 0, answered: -1, title: BURNS_QUIZ_TITLE, wrongItems: [] };
     const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
     if (qid) store.set(`appquiz:${qid}`, { userId: m.userId, items, at: now() }, 2 * 3600 * 1000);
-    saveSession(m.chatId, { quiz, awaiting: null });
+    saveSession(m.chatId, { quiz, awaiting: null, lastQuizTitle: BURNS_QUIZ_TITLE });
     const c = copy(lang);
-    const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q })}`;
+    const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q, options: items[0].options })}`;
     return ui.send(m.chatId, html, [...quizRows(0, items[0].options, premium), ...appRows(qid, lang)]);
   }
 
@@ -1256,6 +1276,35 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "qn": {
         const r = await nextQuestion(m, Number(a0));
         return ui.ack(m.callbackId, r.stale ? (lang === "ar" ? "الكويز اتغير" : "That question has moved on") : "");
+      }
+      case "qretry": {
+        await ui.ack(m.callbackId);
+        const s = session(m.chatId);
+        const items = s.retryQuizItems;
+        if (!items || !items.length) {
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? "✅ مفيش أخطاء للمراجعة! حليت كل الأسئلة صح يا بطل 🎯"
+              : "✅ No mistakes to retry! You got them all right 🎯"
+          );
+        }
+        const retryItems = items.map((it) => ({ ...it }));
+        const quiz = {
+          items: retryItems,
+          index: 0,
+          score: 0,
+          answered: -1,
+          title: s.lastQuizTitle ? `${s.lastQuizTitle} (تصحيح الأخطاء)` : (lang === "ar" ? "تصحيح الأخطاء" : "Mistakes Retry"),
+          wrongItems: [],
+        };
+        saveSession(m.chatId, { quiz, retryQuizItems: null });
+        const item0 = retryItems[0];
+        const intro = lang === "ar"
+          ? `🔄 <b>جولة تصحيح الأخطاء (${retryItems.length} سؤال)</b>\n${HR}\nركز وصحح الأسئلة اللي غلطت فيها 👇`
+          : `🔄 <b>Mistakes Retry Round (${retryItems.length} questions)</b>\n${HR}\nFocus and correct the questions you missed 👇`;
+        const html = `${intro}\n\n${c.quizQuestion({ index: 1, total: retryItems.length, q: item0.q, options: item0.options })}`;
+        return ui.send(m.chatId, html, quizRows(0, item0.options, premium));
       }
       case "lang": {
         const next = a0 === "ar" ? "ar" : "en";

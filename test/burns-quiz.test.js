@@ -109,3 +109,48 @@ test("burns quiz: admin in group can trigger /burns with custom timer", async ()
   assert.equal(polls.length, 1);
   assert.equal(polls[0].openPeriod, 30);
 });
+
+test("interactive quiz: options are rendered in full in text and mistakes can be retried", async () => {
+  const { router, calls, store } = setup();
+  store.set(`s:${ADMIN}`, { lang: "ar" });
+
+  // Start burns interactive
+  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 1, callbackId: "cb1", data: act("admin", "burn_i") });
+  const startMsg = calls[calls.length - 1];
+  // Verify full options are in the HTML text
+  assert.match(startMsg.html, /<b>A\)<\/b>/);
+  assert.match(startMsg.html, /<b>B\)<\/b>/);
+
+  // Pick a wrong answer for Q0
+  const sess = store.get(`s:${ADMIN}`);
+  const wrongChoice = (sess.quiz.items[0].answer + 1) % 4;
+  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 2, callbackId: "cb2", data: act("qa", "0", String(wrongChoice)) });
+
+  // Check wrongItems tracked
+  const sessAfter = store.get(`s:${ADMIN}`);
+  assert.equal(sessAfter.quiz.wrongItems.length, 1);
+  assert.equal(sessAfter.quiz.wrongItems[0].q, sess.quiz.items[0].q);
+
+  // Fast-forward to the last question to simulate quiz completion
+  sessAfter.quiz.index = 29;
+  sessAfter.quiz.answered = 29;
+  store.set(`s:${ADMIN}`, sessAfter);
+
+  // Click Next on last question
+  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 3, callbackId: "cb3", data: act("qn", "29") });
+
+  // Check that retryQuizItems is saved and finish screen offers retry button
+  const endSess = store.get(`s:${ADMIN}`);
+  assert.ok(endSess.retryQuizItems);
+  assert.equal(endSess.retryQuizItems.length, 1);
+  const finishMsg = calls[calls.length - 1];
+  const flatRows = (finishMsg.rows || []).flat();
+  assert.ok(flatRows.some((b) => b.callback_data === "a:qretry"));
+
+  // Click retry mistakes button
+  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 4, callbackId: "cb4", data: act("qretry") });
+  const retrySess = store.get(`s:${ADMIN}`);
+  assert.ok(retrySess.quiz);
+  assert.equal(retrySess.quiz.items.length, 1);
+  assert.equal(retrySess.quiz.items[0].q, sess.quiz.items[0].q);
+});

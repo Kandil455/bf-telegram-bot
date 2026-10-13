@@ -25,7 +25,14 @@ const EN = {
     `⛔ <b>Daily limit reached</b>\n${HR}\nYou've used all <b>${limit}</b> tasks for today. Come back in <b>${resetIn}</b>. Questions and chat stay free.`,
   busy: "⏳ Still working on your last request. Hang on a moment.",
   quizIntro: (n) => `🧠 <b>Quiz time</b>\n${HR}\n<b>${n}</b> questions. Tap an answer. Good luck.`,
-  quizQuestion: ({ index, total, q }) => `🧠 <b>Question ${index} of ${total}</b>\n${HR}\n${esc(q)}`,
+  quizQuestion: ({ index, total, q, options }) => {
+    let out = `🧠 <b>Question ${index} of ${total}</b>\n${HR}\n<b>${esc(q)}</b>`;
+    if (Array.isArray(options) && options.length) {
+      const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+      out += "\n\n" + options.map((opt, i) => `<b>${letters[i]})</b> ${esc(opt)}`).join("\n\n");
+    }
+    return out;
+  },
   right: (explanation) => `✅ <b>Correct.</b>${explanation ? `\n<i>${esc(explanation)}</i>` : ""}`,
   wrong: (correct, explanation) =>
     `❌ <b>Not quite.</b>\nThe answer is <b>${esc(correct)}</b>.${explanation ? `\n<i>${esc(explanation)}</i>` : ""}`,
@@ -169,7 +176,14 @@ const AR = {
     `⛔ <b>وصلت للحد اليومي</b>\n${HR}\nخلّصت كل المهام الـ <b>${limit}</b> لليوم ده. ارجع بعد <b>${resetIn}</b>. الأسئلة والشات مجانيين.`,
   busy: "⏳ لسه بشتغل على طلبك اللي قبله. استنى لحظة.",
   quizIntro: (n) => `🧠 <b>وقت الكويز</b>\n${HR}\n<b>${n}</b> سؤال. دوس على الإجابة. بالتوفيق.`,
-  quizQuestion: ({ index, total, q }) => `🧠 <b>سؤال ${index} من ${total}</b>\n${HR}\n${esc(q)}`,
+  quizQuestion: ({ index, total, q, options }) => {
+    let out = `🧠 <b>سؤال ${index} من ${total}</b>\n${HR}\n<b>${esc(q)}</b>`;
+    if (Array.isArray(options) && options.length) {
+      const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+      out += "\n\n" + options.map((opt, i) => `<b>${letters[i]})</b> ${esc(opt)}`).join("\n\n");
+    }
+    return out;
+  },
   right: (explanation) => `✅ <b>صح.</b>${explanation ? `\n<i>${esc(explanation)}</i>` : ""}`,
   wrong: (correct, explanation) =>
     `❌ <b>لأ، مش دقيقة.</b>\nالإجابة الصح: <b>${esc(correct)}</b>.${explanation ? `\n<i>${esc(explanation)}</i>` : ""}`,
