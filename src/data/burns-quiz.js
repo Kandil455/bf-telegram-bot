@@ -1,0 +1,393 @@
+// Fixed Medical Quiz: Burns, Inhalation Injury & Fluid Resuscitation (30 Questions)
+// Admin-only quiz ready on demand. Fully conforms to Telegram Poll limits:
+// question <= 300 chars, options <= 100 chars, explanation <= 200 chars.
+
+export const BURNS_QUIZ_TITLE = "Burns, Inhalation & Fluid Resuscitation";
+
+export const BURNS_QUIZ_PARTS = Object.freeze([
+  { id: 1, name: "Airway, Breathing & Inhalation Injury", range: "Q1 - Q5" },
+  { id: 2, name: "Rule of Nines & Burn Degrees", range: "Q6 - Q10" },
+  { id: 3, name: "Dangerous Burn Patterns & Referral Criteria", range: "Q11 - Q15" },
+  { id: 4, name: "Parkland Formula & Burn Shock", range: "Q16 - Q20" },
+  { id: 5, name: "Body Fluid Compartments & Osmolarity", range: "Q21 - Q25" },
+  { id: 6, name: "Fluid Tonicity, Colloids & Therapy Types", range: "Q26 - Q30" },
+]);
+
+export const BURNS_QUIZ_ITEMS = Object.freeze([
+  // ── Part I: Airway, Breathing & Inhalation Injury ──
+  {
+    id: 1,
+    part: 1,
+    q: "A 34-year-old firefighter is brought to the ER after being trapped in a burning house. He has facial erythema, singed nasal hairs, and black soot in his mouth. He is currently speaking in full sentences without stridor. What is the most appropriate next step?",
+    options: [
+      "Observe closely and intubate only if stridor develops",
+      "Perform early endotracheal intubation before progressive edema occurs",
+      "Administer nebulized bronchodilators and observe in the ward",
+      "Place an emergency surgical cricothyroidotomy",
+    ],
+    answer: 1,
+    explanation: "Early intubation: Progressive edema can close the glottis silently. Singed hairs, soot, and facial burns demand early airway control before anatomical landmarks distort.",
+  },
+  {
+    id: 2,
+    part: 1,
+    q: "Which of the following burn presentations by itself does NOT indicate an airway compromise or require airway intervention?",
+    options: [
+      "Deep facial and anterior neck burns",
+      "Severe uvular and oropharyngeal edema",
+      "Singed nasal hairs with soot in the sputum",
+      "An isolated circumferential third-degree burn to the lower leg",
+    ],
+    answer: 3,
+    explanation: "Isolated lower leg burn: An isolated lower-limb burn does not by itself indicate an airway problem.",
+  },
+  {
+    id: 3,
+    part: 1,
+    q: "Which of the following physical characteristics correctly describes Carbon Monoxide (CO)?",
+    options: [
+      "Pungent, yellow-colored, and highly irritating gas",
+      "Colorless, odorless, tasteless, and non-irritating gas",
+      "Strong sulfur-like odor with immediate upper airway irritation",
+      "Dense, white, sweet-tasting vapor",
+    ],
+    answer: 1,
+    explanation: "Colorless, odorless, tasteless, non-irritating: This makes carbon monoxide a silent killer; patients inhale massive amounts in closed spaces without noticing.",
+  },
+  {
+    id: 4,
+    part: 1,
+    q: "A patient rescued from an enclosed room fire presents with headache, dizziness, nausea, and confusion. What is the most likely cause of these symptoms?",
+    options: [
+      "Hypovolemic shock",
+      "Carbon monoxide (CO) poisoning",
+      "Acute hypercalcemia",
+      "Fournier’s gangrene",
+    ],
+    answer: 1,
+    explanation: "CO poisoning: Headache, dizziness, confusion, and collapse in an enclosed fire setting are hallmark signs of carbon monoxide toxicity.",
+  },
+  {
+    id: 5,
+    part: 1,
+    q: "Why is waiting for severe clinical edema before intubating a burn patient considered a critical medical error?",
+    options: [
+      "Edema resolves spontaneously within 2 hours",
+      "Intubation becomes impossible due to progressive pharyngeal/laryngeal swelling",
+      "Fluid resuscitation cannot be started before intubation",
+      "Endotracheal tubes increase capillary permeability",
+    ],
+    answer: 1,
+    explanation: "Pharyngeal/laryngeal swelling: Waiting for severe edema makes vocal cord visualization and tube passage nearly impossible, turning into a \"can't intubate, can't oxygenate\" catastrophe.",
+  },
+
+  // ── Part II: Rule of Nines & Burn Degrees ──
+  {
+    id: 6,
+    part: 2,
+    q: "Using the Rule of Nines for an adult, what is the estimated %TBSA for a patient with burns covering the entire anterior trunk (chest & abdomen) and the entire right upper limb?",
+    options: ["18%", "22.5%", "27%", "36%"],
+    answer: 2,
+    explanation: "27%: Anterior trunk = 18%. Entire right arm = 9%. Total = 18% + 9% = 27%.",
+  },
+  {
+    id: 7,
+    part: 2,
+    q: "According to the Rule of Nines, if an adult patient sustains a burn involving only one-quarter of an entire arm, what percentage of TBSA does this represent?",
+    options: ["1.0%", "2.25%", "4.5%", "9.0%"],
+    answer: 1,
+    explanation: "2.25%: Entire arm = 9%. Quarter of an arm = 9 ÷ 4 = 2.25%.",
+  },
+  {
+    id: 8,
+    part: 2,
+    q: "A patient has burns covering the entire posterior trunk (back), the entire left leg (front and back), and the genital area. What is the total %TBSA?",
+    options: ["28%", "36%", "37%", "46%"],
+    answer: 2,
+    explanation: "37%: Posterior trunk = 18%. Entire left leg = 18%. Genitals = 1%. Total = 18 + 18 + 1 = 37%.",
+  },
+  {
+    id: 9,
+    part: 2,
+    q: "A chef spills boiling oil on his arm. The area is bright red, weeping, covered with tense blisters (bullae), and is exquisitely painful to touch. How is this burn classified?",
+    options: [
+      "First-degree (Superficial)",
+      "Second-degree (Partial thickness)",
+      "Third-degree (Full thickness)",
+      "Fourth-degree",
+    ],
+    answer: 1,
+    explanation: "Second-degree: Blisters/bullae and excruciating pain (irritated, intact nerve endings) define partial-thickness second-degree burns.",
+  },
+  {
+    id: 10,
+    part: 2,
+    q: "A patient presents with a burn that appears leathery, dry, waxy-white, and charred. When pinpricked, the patient feels no pain at all. Why is this burn painless?",
+    options: [
+      "Endorphin release completely blocks pain pathways",
+      "The burn is superficial and involves only dead epidermal scales",
+      "Sensory nerve endings in the dermis and deep tissues have been completely destroyed",
+      "Local vascular thrombosis acts as a regional local anesthetic",
+    ],
+    answer: 2,
+    explanation: "Sensory nerve endings destroyed: Third-degree (full-thickness) burns completely destroy dermal nerve receptors, leaving the central wound completely anesthetic/painless.",
+  },
+
+  // ── Part III: Dangerous Burn Patterns & Referral Criteria ──
+  {
+    id: 11,
+    part: 3,
+    q: "A patient sustains a circumferential third-degree burn around his entire right forearm. Six hours later, he develops severe pain disproportionate to the exam, numbness in the fingers, and absent radial pulse. What is the mechanism of this complication?",
+    options: [
+      "Deep vein thrombosis occluding the venous plexus",
+      "Inelastic eschar & fascia prevent expansion of edema, causing Compartment Syndrome",
+      "Acute systemic hypocalcemia causing tetany",
+      "Rupture of the radial artery due to direct thermal necrosis",
+    ],
+    answer: 1,
+    explanation: "Inelastic eschar & fascia: The rigid burned skin cannot stretch. As fluid leaks into the deep muscular compartments, pressure spikes, strangling microcirculation (Compartment Syndrome).",
+  },
+  {
+    id: 12,
+    part: 3,
+    q: "What is the primary respiratory danger of a full-thickness circumferential burn of the anterior and posterior chest wall?",
+    options: [
+      "Massive pulmonary aspiration",
+      "Severe restriction of chest wall expansion leading to impaired ventilation",
+      "Sudden spontaneous bilateral pneumothorax",
+      "Direct destruction of alveolar surfactant",
+    ],
+    answer: 1,
+    explanation: "Restriction of chest wall expansion: Leathery circumferential eschar acts like a rigid cuirass/armor, preventing thoracic excursion and causing ventilatory failure.",
+  },
+  {
+    id: 13,
+    part: 3,
+    q: "Why must all rings, watches, and tight bracelets be removed immediately from a burn patient in the emergency department?",
+    options: [
+      "Metal causes toxic galvanic skin reactions",
+      "They act as a tourniquet as progressive tissue edema develops, risking distal limb ischemia",
+      "They interfere with cardiac telemetry leads",
+      "They harbor resistant bacterial pathogens",
+    ],
+    answer: 1,
+    explanation: "Act as a tourniquet: Rings and tight accessories do not stretch. As post-burn interstitial edema accumulates, they cut off arterial blood supply to the digits.",
+  },
+  {
+    id: 14,
+    part: 3,
+    q: "A burn involving the perineal and genital region carries a high risk of developing which life-threatening necrotizing infection?",
+    options: [
+      "Ludwig's angina",
+      "Fournier's gangrene",
+      "Clostridial gas gangrene of the neck",
+      "Toxic shock syndrome",
+    ],
+    answer: 1,
+    explanation: "Fournier's gangrene: High bacterial colonization and moisture in the perineum post-burn create an entry point for fulminant necrotizing fasciitis (Fournier's).",
+  },
+  {
+    id: 15,
+    part: 3,
+    q: "According to standard burn referral criteria, which of the following patients MUST be referred to a specialized burn center?",
+    options: [
+      "A 20-year-old with a 1st-degree sunburn covering 50% TBSA",
+      "A 30-year-old with an isolated 2nd-degree burn covering 4% TBSA",
+      "A patient with a deep (3rd-degree) burn covering > 3% to 5% TBSA",
+      "A patient with a superficial abrasion on the knee",
+    ],
+    answer: 2,
+    explanation: "Deep burn > 3% to 5% TBSA: Red flag referral criteria explicitly include: any deep burn > 3–5%, second-degree > 10–15%, or circumferential burns with edema.",
+  },
+
+  // ── Part IV: Parkland Formula & Burn Shock ──
+  {
+    id: 16,
+    part: 4,
+    q: "What is the underlying pathophysiology of burn shock during the first 24 hours?",
+    options: [
+      "Myocardial infarction leading to cardiogenic failure",
+      "Systemic response: increased capillary permeability & massive plasma leakage into tissues",
+      "Sudden splenic pooling of red blood cells",
+      "Renal tubular obstruction from primary myoglobinuria",
+    ],
+    answer: 1,
+    explanation: "Increased capillary permeability & plasma leakage: Massive systemic cytokine release causes widespread capillary endothelial gaps, dumping intravascular plasma into the interstitium.",
+  },
+  {
+    id: 17,
+    part: 4,
+    q: "An 80-kg male sustains a 40% TBSA burn at 10:00 AM. He arrives at the ER at 12:00 PM (noon). Using the Parkland formula (3 mL x kg x %TBSA), how much fluid should he receive in the remaining 6 hours of the first 8-hour window?",
+    options: ["2,400 mL", "4,800 mL", "9,600 mL", "1,200 mL"],
+    answer: 1,
+    explanation: "4,800 mL: Total 24h = 3 × 80 × 40 = 9,600 mL. The first 8 hours require 50% = 4,800 mL. Because 2 hours elapsed, the remaining 4,800 mL must be infused over the remaining 6 hours.",
+  },
+  {
+    id: 18,
+    part: 4,
+    q: "In the Parkland formula, from what precise moment is the \"first 8-hour window\" calculated?",
+    options: [
+      "From the time the patient arrives at the emergency department",
+      "From the exact time the burn injury occurred",
+      "From the moment the first IV catheter is inserted",
+      "From the time the bladder catheter is placed",
+    ],
+    answer: 1,
+    explanation: "Time of injury: The capillary leakage clock starts the moment the burn happens, NOT when the patient registers at the triage desk.",
+  },
+  {
+    id: 19,
+    part: 4,
+    q: "What is the preferred resuscitative fluid used in the Parkland formula for acute burn resuscitation?",
+    options: [
+      "0.45% Saline with 5% Dextrose",
+      "Ringer's Lactate (Balanced Crystalloid)",
+      "5% Albumin solution",
+      "3% Hypertonic Saline",
+    ],
+    answer: 1,
+    explanation: "Ringer's Lactate: RL is a balanced crystalloid closest in electrolyte balance to human plasma, preventing hyperchloremic acidosis seen with massive Normal Saline infusions.",
+  },
+  {
+    id: 20,
+    part: 4,
+    q: "What is the most reliable clinical parameter used to adjust and titrate the rate of IV fluid administration during burn resuscitation?",
+    options: [
+      "Central venous pressure (CVP) > 20 mmHg",
+      "Hourly urine output (target 0.5 mL/kg/hour in adults)",
+      "Daily body weight measurements",
+      "Hematocrit levels every 30 minutes",
+    ],
+    answer: 1,
+    explanation: "Hourly urine output: Foley catheter output of 0.5 mL/kg/h in adults is the clinical gold standard for titrating resuscitation fluid rates up or down.",
+  },
+
+  // ── Part V: Body Fluid Compartments & Osmolarity ──
+  {
+    id: 21,
+    part: 5,
+    q: "In a healthy 70-kg adult male with a total body water (TBW) of 42 L, how is this water distributed between the intracellular (ICF) and extracellular (ECF) compartments?",
+    options: [
+      "ICF = 14 L (1/3), ECF = 28 L (2/3)",
+      "ICF = 28 L (2/3), ECF = 14 L (1/3)",
+      "ICF = 21 L (1/2), ECF = 21 L (1/2)",
+      "ICF = 35 L, ECF = 7 L",
+    ],
+    answer: 1,
+    explanation: "ICF = 28 L, ECF = 14 L: In a 70-kg adult, TBW is 60% of body weight (42 L). ICF is 2/3 (28 L), and ECF is 1/3 (14 L).",
+  },
+  {
+    id: 22,
+    part: 5,
+    q: "In a 70-kg adult male, what is the approximate volume of fluid located specifically inside the intravascular compartment (plasma)?",
+    options: ["0.5 L", "3.0 L", "10.5 L", "14.0 L"],
+    answer: 1,
+    explanation: "3.0 L: Plasma accounts for 25% of the ECF (14 × 0.25 ≈ 3 L). The remaining 75% of ECF is interstitial fluid (≈ 10.5 L).",
+  },
+  {
+    id: 23,
+    part: 5,
+    q: "Which statement correctly distinguishes the cell membrane from the capillary membrane?",
+    options: [
+      "The cell membrane operates passively; the capillary membrane requires ATP",
+      "Cell membrane uses active Na+/K+ pumps; capillary membrane operates passively via osmolarity",
+      "The capillary membrane is completely impermeable to crystalloids",
+      "The cell membrane is freely permeable to large proteins and colloids",
+    ],
+    answer: 1,
+    explanation: "Cell membrane uses active transport; capillary membrane is passive: Cell membranes use energy-dependent Na+/K+ pumps. Capillary membranes allow passive passage of water and crystalloids.",
+  },
+  {
+    id: 24,
+    part: 5,
+    q: "What is the normal physiological range of human serum osmolarity?",
+    options: [
+      "150 to 180 mOsm/L",
+      "200 to 220 mOsm/L",
+      "285 to 295 mOsm/L",
+      "350 to 380 mOsm/L",
+    ],
+    answer: 2,
+    explanation: "285 to 295 mOsm/L: The physiological baseline osmolarity of human plasma.",
+  },
+  {
+    id: 25,
+    part: 5,
+    q: "If a hypertonic solution (osmolarity > 300 mOsm/L) is infused into the extracellular fluid, what will happen to intracellular water?",
+    options: [
+      "Water moves from the ECF into the ICF, causing cells to swell",
+      "Water moves from the ICF into the ECF by osmosis, causing cells to shrink",
+      "No net fluid shift occurs across the cell membrane",
+      "Proteins will diffuse across the cell membrane to balance the charge",
+    ],
+    answer: 1,
+    explanation: "Water moves from ICF to ECF: Osmosis dictates that water travels from lower solute concentration toward higher solute concentration (hypertonic ECF), causing cellular dehydration.",
+  },
+
+  // ── Part VI: Fluid Tonicity, Colloids & Therapy Types ──
+  {
+    id: 26,
+    part: 6,
+    q: "Why are artificial colloids like Hetastarch (hydroxyethyl starch) obsolete and avoided in resuscitation of shock and burns?",
+    options: [
+      "They cause severe hypoglycemia",
+      "They fail to cross the capillary membrane",
+      "They are associated with acute kidney injury, coagulopathy, and increased mortality",
+      "They trigger severe metabolic alkalosis",
+    ],
+    answer: 2,
+    explanation: "Acute kidney injury and coagulopathy: Large clinical trials proved starches precipitate inside renal tubules and disrupt clotting factors, increasing mortality.",
+  },
+  {
+    id: 27,
+    part: 6,
+    q: "What is the osmolarity, composition, and tonicity classification of 0.9% Normal Saline?",
+    options: [
+      "154 mOsm/L, Na+ 77 / Cl- 77, Hypotonic",
+      "308 mOsm/L, Na+ 154 / Cl- 154, Slightly Hypertonic",
+      "275 mOsm/L, Na+ 130 / Cl- 109, Mildly Hypotonic",
+      "1026 mOsm/L, Na+ 513 / Cl- 513, Severely Hypertonic",
+    ],
+    answer: 1,
+    explanation: "308 mOsm/L, Na+ 154 / Cl- 154, Slightly Hypertonic: Because human plasma is 285–295 mOsm/L, Normal Saline (308 mOsm/L) is technically slightly hypertonic with a low pH of 5.0.",
+  },
+  {
+    id: 28,
+    part: 6,
+    q: "A trauma patient has severe Traumatic Brain Injury (TBI) with cerebral edema. Which IV fluid is STRICTLY CONTRAINDICATED because it worsens cerebral edema and risks brain herniation?",
+    options: [
+      "3% Hypertonic Saline",
+      "0.9% Normal Saline",
+      "Ringer's Lactate (Mildly hypotonic, 275 mOsm/L)",
+      "Packed red blood cells",
+    ],
+    answer: 2,
+    explanation: "Ringer's Lactate: RL has an osmolarity of 275 mOsm/L (mildly hypotonic). Infusing it lowers serum osmolarity, driving free water into injured brain parenchyma and raising ICP.",
+  },
+  {
+    id: 29,
+    part: 6,
+    q: "If you infuse 1 Liter of 0.9% Normal Saline (isotonic) into an adult, how will it be distributed across body fluid compartments after 1 hour?",
+    options: [
+      "670 mL ICF, 250 mL Interstitium, 80 mL Plasma",
+      "0 mL ICF, 750 mL Interstitium, 250 mL Plasma",
+      "1000 mL remains entirely within the plasma",
+      "500 mL ICF, 500 mL Plasma",
+    ],
+    answer: 1,
+    explanation: "0 mL ICF, 750 mL Interstitium, 250 mL Plasma: Isotonic saline creates no osmotic gradient, so 0 mL enters cells. Stays entirely in ECF (75% interstitial, 25% plasma).",
+  },
+  {
+    id: 30,
+    part: 6,
+    q: "What is the recommended fluid composition and daily dosage for Maintenance IV Fluid Therapy in an adult patient kept NPO?",
+    options: [
+      "0.9% NS at 4 mL/kg/day",
+      "0.45% NS + 5% Glucose at 25 to 30 mL/kg/day",
+      "3% Saline at 50 mL/kg/day",
+      "Balanced Ringer at 100 mL/kg/day",
+    ],
+    answer: 1,
+    explanation: "0.45% NS + 5% Glucose at 25–30 mL/kg/day: Standard daily maintenance therapy designed to meet baseline water, sodium, and basal caloric needs without overloading the patient.",
+  },
+]);

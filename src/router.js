@@ -9,7 +9,8 @@ import { detectIntent } from "./core/intent.js";
 import { detectLang, pickLang } from "./core/lang.js";
 import { normaliseCards, normaliseQuiz } from "./core/quiz.js";
 import { HR, chunk, esc, parseJsonLoose, progress, sanitizeHtml, wordCount } from "./core/text.js";
-import { adminRows, channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows } from "./keyboards.js";
+import { adminRows, burnsQuizRows, channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows } from "./keyboards.js";
+import { BURNS_QUIZ_ITEMS, BURNS_QUIZ_TITLE } from "./data/burns-quiz.js";
 import { kindOf } from "./services/files.js";
 import { renderDocument, renderOsce, previewLines } from "./render/html.js";
 import { generateDocument } from "./render/pipeline.js";
@@ -613,6 +614,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       await groups.start(m.chatId, items);
       return ui.send(m.chatId, c.groupStarted(items.length));
     }
+    if (groups && (/^\/burns\b/i.test(text) || /^\/burnquiz\b/i.test(text))) {
+      if (!quota.isAdmin(m.userId)) return null;
+      if (groups.get(m.chatId)) return ui.send(m.chatId, c.groupBusy);
+      const match = text.match(/\b(?:burns|burnquiz)\s*(\d+)?/i);
+      const openPeriod = match && match[1] ? Number(match[1]) : 45;
+      await groups.start(m.chatId, BURNS_QUIZ_ITEMS, openPeriod);
+      return ui.send(m.chatId, lang === "ar" ? `🔥 <b>تم بدء كويز الحروق (${BURNS_QUIZ_ITEMS.length} سؤال)!</b>\n⏱️ المؤقت: <b>${openPeriod} ثانية</b> لكل سؤال.` : `🔥 <b>Started Burns Quiz (${BURNS_QUIZ_ITEMS.length} Qs)!</b>\n⏱️ Timer: <b>${openPeriod}s</b> per question.`);
+    }
     const question = stripMention(text, cfg.botUsername);
     if (!question) return null;
     const r = await ai.complete(m.replyText ? groundedAnswerPrompt({ lang, material: m.replyText, question }) : chatPrompt({ lang, question }));
@@ -1010,6 +1019,72 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     return ui.send(m.chatId, `🧠 <b>${lang === "ar" ? "حالة الـAI" : "AI health"}</b>\n${HR}\n${rows}${recent ? `\n\n${HR}\n${recent}` : ""}`, adminRows(lang, premium));
   }
 
+  /** Burns & Fluid Resuscitation 30-Question Quiz (Admins only) */
+  function showBurnsMenu(m, lang) {
+    if (!quota.isAdmin(m.userId)) return ui.send(m.chatId, copy(lang).menu, menuRows(lang, premium));
+    const title = lang === "ar" ? "🔥 <b>كويز الحروق والمحاليل (Burns & Fluids)</b>" : "🔥 <b>Burns & Fluid Resuscitation Quiz</b>";
+    const desc = lang === "ar"
+      ? `${title}\n${HR}\nبنك أسئلة طبي متكامل (30 سؤال) مقسم على 6 محاور رئيسية:\n` +
+        `• <b>Part I:</b> مجرى الهواء وإصابات الاستنشاق (Q1 - Q5)\n` +
+        `• <b>Part II:</b> قاعدة التسعات ودرجات الحروق (Q6 - Q10)\n` +
+        `• <b>Part III:</b> الأنماط الخطرة ومعايير التحويل (Q11 - Q15)\n` +
+        `• <b>Part IV:</b> معادلة باركلاند وصدمة الحروق (Q16 - Q20)\n` +
+        `• <b>Part V:</b> مقصورات سوائل الجسم والأسمولية (Q21 - Q25)\n` +
+        `• <b>Part VI:</b> التوترية والغرويات وأنواع المحاليل (Q26 - Q30)\n\n` +
+        `<i>اختر نمط التشغيل المفضل بالأسفل:</i>`
+      : `${title}\n${HR}\nStandard 30-question medical quiz across 6 core domains:\n` +
+        `• <b>Part I:</b> Airway & Inhalation Injury (Q1 - Q5)\n` +
+        `• <b>Part II:</b> Rule of Nines & Burn Degrees (Q6 - Q10)\n` +
+        `• <b>Part III:</b> Dangerous Patterns & Referral (Q11 - Q15)\n` +
+        `• <b>Part IV:</b> Parkland Formula & Burn Shock (Q16 - Q20)\n` +
+        `• <b>Part V:</b> Fluid Compartments & Osmolarity (Q21 - Q25)\n` +
+        `• <b>Part VI:</b> Tonicity, Colloids & Therapy (Q26 - Q30)\n\n` +
+        `<i>Choose launch mode below:</i>`;
+    return ui.send(m.chatId, desc, burnsQuizRows(lang, premium));
+  }
+
+  async function startBurnsPolls(m, lang, openPeriod = 45) {
+    if (!quota.isAdmin(m.userId)) return ui.send(m.chatId, copy(lang).menu, menuRows(lang, premium));
+    if (!groups) return ui.send(m.chatId, lang === "ar" ? "⚠️ ميزة الاستفتاءات غير متوفرة." : "⚠️ Poll feature unavailable.");
+    const sec = Math.max(5, Math.min(600, Number(openPeriod) || 45));
+    await groups.start(m.chatId, BURNS_QUIZ_ITEMS, sec);
+    const msg = lang === "ar"
+      ? `🔥 <b>تم إطلاق كويز الحروق والمحاليل (${BURNS_QUIZ_ITEMS.length} سؤال)!</b>\n${HR}\n⏱️ المؤقت: <b>${sec} ثانية</b> لكل سؤال.\nانطلق بالحل في الاستفتاء بالأسفل 👇`
+      : `🔥 <b>Burns & Fluids Quiz launched (${BURNS_QUIZ_ITEMS.length} Qs)!</b>\n${HR}\n⏱️ Timer: <b>${sec}s</b> per question.\nCast your vote in the poll below 👇`;
+    return ui.send(m.chatId, msg);
+  }
+
+  async function startBurnsInteractive(m, lang) {
+    if (!quota.isAdmin(m.userId)) return ui.send(m.chatId, copy(lang).menu, menuRows(lang, premium));
+    const items = BURNS_QUIZ_ITEMS.map((item) => ({ ...item }));
+    const quiz = { items, index: 0, score: 0, answered: -1, title: BURNS_QUIZ_TITLE };
+    const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
+    if (qid) store.set(`appquiz:${qid}`, { userId: m.userId, items, at: now() }, 2 * 3600 * 1000);
+    saveSession(m.chatId, { quiz, awaiting: null });
+    const c = copy(lang);
+    const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q })}`;
+    return ui.send(m.chatId, html, [...quizRows(0, items[0].options, premium), ...appRows(qid, lang)]);
+  }
+
+  async function sendAllBurnsPolls(m, lang) {
+    if (!quota.isAdmin(m.userId)) return ui.send(m.chatId, copy(lang).menu, menuRows(lang, premium));
+    await ui.send(m.chatId, lang === "ar" ? "⏳ جاري إرسال جميع أسئلة كويز الحروق (30 سؤال) كاستفتاءات تيليجرام..." : "⏳ Sending all 30 Burns Quiz questions as polls...");
+    let sent = 0;
+    for (let i = 0; i < BURNS_QUIZ_ITEMS.length; i++) {
+      const item = BURNS_QUIZ_ITEMS[i];
+      await ui.sendPoll(m.chatId, {
+        question: `Q${i + 1}/${BURNS_QUIZ_ITEMS.length} · ${item.q}`,
+        options: item.options,
+        correct: item.answer,
+        explanation: item.explanation || "",
+        openPeriod: 0,
+      });
+      sent += 1;
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    return ui.send(m.chatId, lang === "ar" ? `✅ تم إرسال كل أسئلة الحروق والمحاليل (${sent} سؤال) بنجاح!` : `✅ Successfully sent all ${sent} Burns Quiz questions!`);
+  }
+
   async function command(m) {
     const [raw, arg] = m.text.trim().split(/\s+/, 2);
     const cmd = raw.toLowerCase().replace(/@\w+$/, "");
@@ -1093,6 +1168,16 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         return showMyStats(m, lang);
       case "/admin":
         return showAdminLink(m, lang);
+      case "/burns":
+      case "/burnquiz":
+        if (!admin) return ui.send(m.chatId, c.menu, menuRows(lang, premium));
+        return showBurnsMenu(m, lang);
+      case "/stop":
+        if (groups && groups.get(m.chatId)) {
+          await groups.stop(m.chatId);
+          return;
+        }
+        return ui.send(m.chatId, c.menu, menuRows(lang, premium, { isAdmin: admin }));
       case "/grant": {
         if (!admin) return ui.send(m.chatId, c.menu, menuRows(lang, premium));
         const parts = m.text.trim().split(/\s+/).slice(1);
@@ -1269,10 +1354,15 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         await ui.ack(m.callbackId);
         return showDeck(m, lang);
       case "admin":
+        if (!admin) return ui.ack(m.callbackId, "للأدمن فقط!", true);
         await ui.ack(m.callbackId);
         if (a0 === "pay") return showAdminPayments(m, lang);
         if (a0 === "users") return ui.send(m.chatId, `👥 <b>${lang === "ar" ? "المستخدمين" : "Users"}</b>\n${HR}\n${lang === "ar" ? "ابحث وادير المستخدمين من لوحة الويب /admin" : "Search and manage users on the web dashboard /admin"}`, adminRows(lang, premium));
         if (a0 === "ai") return showAdminAi(m, lang);
+        if (a0 === "burn") return showBurnsMenu(m, lang);
+        if (a0 === "burn_p") return startBurnsPolls(m, lang, Number(a1) || 45);
+        if (a0 === "burn_i") return startBurnsInteractive(m, lang);
+        if (a0 === "burn_all") return sendAllBurnsPolls(m, lang);
         return showAdmin(m, lang);
       case "credits":
         await ui.ack(m.callbackId);

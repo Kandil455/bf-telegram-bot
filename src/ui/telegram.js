@@ -108,15 +108,18 @@ export function createUi(api, { logger = console, premium = {}, inputFile = null
     },
 
     /** Sends a quiz poll (non-anonymous, so answers reach the bot). Returns the poll id. */
-    async sendPoll(chatId, { question, options, correct, explanation = "" }) {
+    async sendPoll(chatId, { question, options, correct, explanation = "", openPeriod = 600 }) {
+      const extra = {
+        type: "quiz",
+        is_anonymous: false,
+        correct_option_id: correct,
+        explanation: explanation.slice(0, 180),
+      };
+      if (openPeriod && Number(openPeriod) >= 5) {
+        extra.open_period = Math.min(600, Math.max(5, Number(openPeriod)));
+      }
       const msg = await withRetry(() =>
-        api.sendPoll(chatId, question.slice(0, 300), options.map((o) => o.slice(0, 100)), {
-          type: "quiz",
-          is_anonymous: false,
-          correct_option_id: correct,
-          explanation: explanation.slice(0, 180),
-          open_period: 600,
-        })
+        api.sendPoll(chatId, question.slice(0, 300), options.map((o) => o.slice(0, 100)), extra)
       );
       return msg?.poll?.id;
     },

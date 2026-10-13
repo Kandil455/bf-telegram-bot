@@ -25,6 +25,7 @@ export function createGroups({ store, ui, now = () => Date.now(), logger = conso
       options: item.options,
       correct: item.answer,
       explanation: item.explanation || "",
+      openPeriod: state.openPeriod || 60,
     });
     if (pollId) store.set(pollKey(pollId), { chatId, index: state.index }, 3 * 3600 * 1000);
     state.currentPollId = pollId || null;
@@ -34,7 +35,7 @@ export function createGroups({ store, ui, now = () => Date.now(), logger = conso
   function board(state) {
     const rows = Object.values(state.scores).sort((a, b) => b.pts - a.pts).slice(0, 10);
     if (!rows.length) return "No one scored yet.";
-    return rows.map((r, i) => `${["🥇", "🥈", "🥉"][i] || `${i + 1}.`} <b>${r.name}</b> · ${r.pts}`).join("\n");
+    return rows.map((r, i) => `${["🥇", "🥈", "🥉"][i] || `${i + 1}.`} <b>${r.name}</b> · ${r.pts}/${state.items.length}`).join("\n");
   }
 
   return {
@@ -42,8 +43,8 @@ export function createGroups({ store, ui, now = () => Date.now(), logger = conso
       return store.get(stateKey(chatId)) || null;
     },
     /** items: normalised quiz questions. Starts the run and sends the first poll. */
-    async start(chatId, items) {
-      const state = { items, index: 0, scores: {}, answeredIndex: -1, currentPollId: null, startedAt: now() };
+    async start(chatId, items, openPeriod = 60) {
+      const state = { items, index: 0, scores: {}, answeredIndex: -1, currentPollId: null, startedAt: now(), openPeriod };
       store.set(stateKey(chatId), state, 3 * 3600 * 1000);
       await askNext(chatId, state);
       return state;

@@ -37,9 +37,22 @@ export function adminRows(lang, premium) {
   const c = copy(lang).btn;
   const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
   return [
+    [b(lang === "ar" ? "🔥 كويز الحروق والمحاليل (30 سؤال)" : "🔥 Burns & Fluids Quiz (30 Qs)", "quiz", act("admin", "burn"), "primary")],
     [b(c.stats, "stats", act("stats"), "primary"), b(c.adminPayments, "credits", act("admin", "pay"))],
     [b(c.adminUsers, "topic", act("admin", "users")), b(c.adminAi, "spark", act("admin", "ai"))],
     [b(c.menu, "home", act("menu"))],
+  ];
+}
+
+export function burnsQuizRows(lang, premium) {
+  const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
+  const ar = lang === "ar";
+  return [
+    [b(ar ? "⏱️ بدء باستفتاءات تيليجرام (مؤقت 45 ثانية)" : "⏱️ Telegram Polls (45s Timer)", "clock", act("admin", "burn_p", "45"), "primary")],
+    [b(ar ? "⏱️ مؤقت 60 ثانية" : "⏱️ 60s Timer", "clock", act("admin", "burn_p", "60")), b(ar ? "⏱️ مؤقت 30 ثانية" : "⏱️ 30s Timer", "clock", act("admin", "burn_p", "30"))],
+    [b(ar ? "🧠 كويز تفاعلي بأزرار البوت" : "🧠 In-Bot Interactive Quiz", "quiz", act("admin", "burn_i"), "success")],
+    [b(ar ? "📤 إرسال الـ 30 سؤال كاملة للشات" : "📤 Send All 30 Polls to Chat", "upload", act("admin", "burn_all", "45"))],
+    [b(ar ? "⬅️ رجوع للوحة الأدمن" : "⬅️ Back to Admin", "back", act("admin"))],
   ];
 }
 
