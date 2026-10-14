@@ -10,19 +10,24 @@ import { TEMPLATE_ORDER, TEMPLATES } from "./render/templates.js";
 export function inputRows(lang, premium) {
   const c = copy(lang).btn;
   const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
+  const podLabel = lang === "ar" ? "بودكاست المحاضرة" : "Lecture Podcast";
   return [
     [b(c.summary, "summary", act("sum", "basic"), "primary"), b(c.quiz, "quiz", act("qc", "pick", "text"), "success")],
+    [b(c.explain, "explain", act("explain"), "primary"), b(podLabel, "spark", act("pod"))],
     [b(c.cards, "cards", act("cards")), b(c.key, "concepts", act("key"))],
-    [b(c.explain, "explain", act("explain")), b(c.ask, "ask", act("ask"))],
-    [b(c.newInput, "upload", act("new")), b(c.menu, "home", act("menu"))],
+    [b(c.ask, "ask", act("ask")), b(c.newInput, "upload", act("new"))],
+    [b(c.menu, "home", act("menu"))],
   ];
 }
 
 export function menuRows(lang, premium, { isAdmin = false } = {}) {
   const c = copy(lang).btn;
   const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
-  // Main menu, grouped: study tools, account, then settings. Every feature has a button.
+  const podLabel = lang === "ar" ? "بودكاست المحاضرة" : "Lecture Podcast";
+  // Main menu, grouped: core study tools first, then Q&A, account, admin, and language.
   const rows = [
+    [b(c.summary, "summary", act("sum", "basic"), "primary"), b(c.quiz, "quiz", act("qc", "pick", "text"), "success")],
+    [b(c.explain, "explain", act("explain"), "primary"), b(podLabel, "spark", act("pod"))],
     [b(c.ask, "ask", act("ask"), "primary"), b(c.topic, "topic", act("topic"))],
     [b(c.plans, "credits", act("plans"), "success"), b(c.invite || "دعوة أصدقاء", "spark", act("inv"))],
     [b(c.help, "spark", act("help")), b(c.deck, "cards", act("deck"))],
@@ -32,14 +37,17 @@ export function menuRows(lang, premium, { isAdmin = false } = {}) {
   return rows;
 }
 
-/** Admin panel inside the bot. Full management stays on the web dashboard. */
+/** Complete In-Bot Admin Control Panel — manage everything directly inside Telegram. */
 export function adminRows(lang, premium) {
   const c = copy(lang).btn;
+  const ar = lang === "ar";
   const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
   return [
-    [b(lang === "ar" ? "🔥 كويز الحروق والمحاليل (30 سؤال)" : "🔥 Burns & Fluids Quiz (30 Qs)", "quiz", act("admin", "burn"), "primary")],
+    [b(ar ? "إذاعة لكل المشتركين (Broadcast)" : "Broadcast to All Users", "spark", act("admin", "bcast"), "primary")],
+    [b(ar ? "تفعيل Pro / شحن توكنز" : "Grant Pro / Add Tokens", "credits", act("admin", "grant"), "success"), b(ar ? "حظر / فك حظر" : "Ban / Unban User", "back", act("admin", "ban"), "danger")],
+    [b(ar ? "تصفير استهلاك مستخدم" : "Reset User Quota", "clock", act("admin", "reset")), b(c.adminUsers, "topic", act("admin", "users"))],
     [b(c.stats, "stats", act("stats"), "primary"), b(c.adminPayments, "credits", act("admin", "pay"))],
-    [b(c.adminUsers, "topic", act("admin", "users")), b(c.adminAi, "spark", act("admin", "ai"))],
+    [b(c.adminAi, "spark", act("admin", "ai")), b(ar ? "كويز الحروق (30 س)" : "Burns Quiz (30 Qs)", "quiz", act("admin", "burn"))],
     [b(c.menu, "home", act("menu"))],
   ];
 }
@@ -48,11 +56,11 @@ export function burnsQuizRows(lang, premium) {
   const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
   const ar = lang === "ar";
   return [
-    [b(ar ? "⏱️ بدء باستفتاءات تيليجرام (مؤقت 45 ثانية)" : "⏱️ Telegram Polls (45s Timer)", "clock", act("admin", "burn_p", "45"), "primary")],
-    [b(ar ? "⏱️ مؤقت 60 ثانية" : "⏱️ 60s Timer", "clock", act("admin", "burn_p", "60")), b(ar ? "⏱️ مؤقت 30 ثانية" : "⏱️ 30s Timer", "clock", act("admin", "burn_p", "30"))],
-    [b(ar ? "🧠 كويز تفاعلي بأزرار البوت" : "🧠 In-Bot Interactive Quiz", "quiz", act("admin", "burn_i"), "success")],
-    [b(ar ? "📤 إرسال الـ 30 سؤال كاملة للشات" : "📤 Send All 30 Polls to Chat", "upload", act("admin", "burn_all", "45"))],
-    [b(ar ? "⬅️ رجوع للوحة الأدمن" : "⬅️ Back to Admin", "back", act("admin"))],
+    [b(ar ? "بدء باستفتاءات تيليجرام (مؤقت 45 ثانية)" : "Telegram Polls (45s Timer)", "clock", act("admin", "burn_p", "45"), "primary")],
+    [b(ar ? "مؤقت 60 ثانية" : "60s Timer", "clock", act("admin", "burn_p", "60")), b(ar ? "مؤقت 30 ثانية" : "30s Timer", "clock", act("admin", "burn_p", "30"))],
+    [b(ar ? "كويز تفاعلي بأزرار البوت" : "In-Bot Interactive Quiz", "quiz", act("admin", "burn_i"), "success")],
+    [b(ar ? "إرسال الـ 30 سؤال كاملة للشات" : "Send All 30 Polls to Chat", "upload", act("admin", "burn_all", "45"))],
+    [b(ar ? "رجوع للوحة الأدمن" : "Back to Admin", "back", act("admin"))],
   ];
 }
 
@@ -74,13 +82,23 @@ export function inviteRows(botUsername, userId, lang, premium) {
 }
 
 export function quizRows(qIndex, options, premium) {
-  return options.map((opt, i) =>
-    button({
-      label: `${String.fromCharCode(65 + i)}.  ${opt}`,
-      action: act("qa", String(qIndex), String(i)),
-      premium,
-    })
-  ).map((b) => [b]);
+  const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+  const count = Math.min(letters.length, options.length);
+  const btns = [];
+  for (let i = 0; i < count; i++) {
+    btns.push(
+      button({
+        label: letters[i],
+        action: act("qa", String(qIndex), String(i)),
+        premium,
+      })
+    );
+  }
+  const rows = [];
+  for (let i = 0; i < btns.length; i += 2) {
+    rows.push(btns.slice(i, i + 2));
+  }
+  return rows;
 }
 
 export function nextRows(lang, premium, qIndex, isLast) {
@@ -88,9 +106,21 @@ export function nextRows(lang, premium, qIndex, isLast) {
   return [[button({ label: isLast ? c.results : c.next, icon: "next", action: act("qn", String(qIndex)), style: "primary", premium })]];
 }
 
-export function finishRows(lang, premium, wrongCount = 0) {
+export function finishRows(lang, premium, wrongCount = 0, remainingQuestions = 0) {
   const c = copy(lang).btn;
   const rows = [];
+  if (remainingQuestions > 0) {
+    const nextBatch = Math.min(50, remainingQuestions);
+    rows.push([
+      button({
+        label: lang === "ar" ? `➕ الدفعة التالية (${nextBatch} سؤال متبقي من ${remainingQuestions})` : `➕ Next Batch (${nextBatch} Qs of ${remainingQuestions} left)`,
+        icon: "quiz",
+        action: act("qbatch"),
+        style: "success",
+        premium,
+      }),
+    ]);
+  }
   if (wrongCount > 0) {
     rows.push([
       button({
@@ -102,19 +132,20 @@ export function finishRows(lang, premium, wrongCount = 0) {
       }),
     ]);
   }
-  rows.push([button({ label: c.again, icon: "quiz", action: act("quiz", "5"), style: wrongCount > 0 ? null : "primary", premium })]);
+  rows.push([button({ label: c.again, icon: "quiz", action: act("quiz", "5"), style: wrongCount > 0 || remainingQuestions > 0 ? null : "primary", premium })]);
   rows.push([button({ label: c.menu, icon: "home", action: act("menu"), premium })]);
   return rows;
 }
 
-export function stylePickerRows(lang, premium, docLang = "en", outputFormat = "html", detail = "standard") {
+export function stylePickerRows(lang, premium, docLang = "en", outputFormat = "html", detail = "standard", targetPages = null, suggested = null) {
   const c = copy(lang).btn;
+  const ar = lang === "ar";
   const tiles = TEMPLATE_ORDER.map((id) =>
     button({ label: TEMPLATES[id].label[lang] || TEMPLATES[id].label.en, icon: TEMPLATES[id].icon, action: act("tpl", id), premium })
   );
   const rows = [];
   for (let i = 0; i < tiles.length; i += 2) rows.push(tiles.slice(i, i + 2));
-  const langName = { en: "English", ar: "عربي", bilingual: lang === "ar" ? "الاتنين" : "Both" };
+  const langName = { en: "English", ar: "عربي", bilingual: ar ? "الاتنين (Bilingual Parts)" : "Both (Bilingual Parts)" };
   rows.push(
     ["en", "ar", "bilingual"].map((code) =>
       button({ label: langName[code], icon: "lang", action: act("docl", code), style: docLang === code ? "primary" : null, premium })
@@ -126,8 +157,18 @@ export function stylePickerRows(lang, premium, docLang = "en", outputFormat = "h
   rows.push(fmt);
   // Length: shorter or more detailed. The choice is kept in the session and used by the next summary.
   const len = ["concise", "standard", "detailed"];
-  const lenLabel = lang === "ar" ? { concise: "أقصر", standard: "عادي", detailed: "أكتر تفصيل" } : { concise: "Shorter", standard: "Standard", detailed: "More detail" };
-  rows.push(len.map((d) => button({ label: lenLabel[d], icon: "summary", action: act("len", d), style: detail === d ? "primary" : null, premium })));
+  const lenLabel = ar ? { concise: "أقصر", standard: "عادي", detailed: "أكتر تفصيل" } : { concise: "Shorter", standard: "Standard", detailed: "More detail" };
+  rows.push(len.map((d) => button({ label: lenLabel[d], icon: "summary", action: act("len", d), style: detail === d && !targetPages ? "primary" : null, premium })));
+  // Page count selector: suggested auto pages, presets, or custom typed page count
+  const sugLabel = ar ? `مقترح (${suggested || 4} ص)` : `Suggested (${suggested || 4}p)`;
+  rows.push([
+    button({ label: sugLabel, icon: "file", action: act("pg", String(suggested || 4)), style: Number(targetPages) === Number(suggested) ? "primary" : null, premium }),
+    button({ label: ar ? "4 صفحات" : "4 Pages", icon: "file", action: act("pg", "4"), style: Number(targetPages) === 4 ? "primary" : null, premium }),
+    button({ label: ar ? "8 صفحات" : "8 Pages", icon: "file", action: act("pg", "8"), style: Number(targetPages) === 8 ? "primary" : null, premium }),
+  ]);
+  rows.push([
+    button({ label: ar ? "اكتب عدد الصفحات بنفسك" : "Type Custom Page Count", icon: "summary", action: act("pg", "custom"), style: targetPages && ![4, 8, Number(suggested)].includes(Number(targetPages)) ? "primary" : null, premium }),
+  ]);
   rows.push([button({ label: c.back, icon: "back", action: act("menu"), premium })]);
   return rows;
 }

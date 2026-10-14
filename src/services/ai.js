@@ -1,17 +1,38 @@
-// AI provider chain: Gemini (vision + JSON) -> Groq (fast text) -> OpenRouter (last resort).
-// Supports multi-key rotation and multi-model fallback per provider.
+// AI provider chain: DeepSeek / TokenHarbor / Gemini (vision + JSON) -> Groq (fast text) -> OpenRouter.
+// Supports multi-key rotation, multi-model fallback per provider, and exact token usage accounting.
 
 // Circuit breaker: after BREAKER_THRESHOLD consecutive provider failures, that provider is
 // skipped for BREAKER_COOLDOWN_MS so requests stop waiting out its timeout. One success resets it.
 export const BREAKER_THRESHOLD = 3;
 export const BREAKER_COOLDOWN_MS = 2 * 60 * 1000;
 
-// Chat endpoints for the OpenAI-style providers. TokenHarbor speaks the same protocol.
+// Chat endpoints for the OpenAI-style providers. DeepSeek and TokenHarbor speak the same protocol.
 const ENDPOINTS = {
+  deepseek: "https://api.deepseek.com/chat/completions",
   groq: "https://api.groq.com/openai/v1/chat/completions",
   openrouter: "https://openrouter.ai/api/v1/chat/completions",
   tokenharbor: "https://tokenharbor.ai/v1/chat/completions",
 };
+
+/** Deterministic token estimation (~3.8 chars per token for mixed EN/AR text) when API omits usage. */
+export function estimateTokens(text = "") {
+  const s = String(text || "");
+  if (!s) return 0;
+  return Math.max(1, Math.ceil(s.length / 3.8));
+}
+
+export function normaliseUsage(rawUsage, promptText = "", completionText = "") {
+  const promptTokens =
+    Number(rawUsage?.prompt_tokens ?? rawUsage?.promptTokenCount ?? rawUsage?.promptTokens) ||
+    estimateTokens(promptText);
+  const completionTokens =
+    Number(rawUsage?.completion_tokens ?? rawUsage?.candidatesTokenCount ?? rawUsage?.completionTokens) ||
+    estimateTokens(completionText);
+  const totalTokens =
+    Number(rawUsage?.total_tokens ?? rawUsage?.totalTokenCount ?? rawUsage?.totalTokens) ||
+    promptTokens + completionTokens;
+  return { promptTokens, completionTokens, totalTokens };
+}
 
 export function createAi(config, { fetchImpl = globalThis.fetch, logger = console, onAllFailed = null, onAttempt = null, now = () => Date.now() } = {}) {
   const recent = [];
@@ -44,6 +65,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
   };
   // Every provider needs a starting key index, or the rotation becomes NaN and sends no key.
   const keyIndices = {
+    deepseek: 0,
     gemini: 0,
     groq: 0,
     openrouter: 0,
@@ -87,6 +109,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
   }
 
   const providers = [];
+  if (getKeys("deepseek").length) providers.push({ name: "deepseek", vision: false, run: runOpenAiStyle("deepseek") });
   if (getKeys("tokenharbor").length) providers.push({ name: "tokenharbor", vision: true, run: runOpenAiStyle("tokenharbor") });
   if (getKeys("gemini").length) providers.push({ name: "gemini", vision: true, run: runGemini });
   if (getKeys("groq").length) providers.push({ name: "groq", vision: false, run: runOpenAiStyle("groq") });
@@ -142,7 +165,8 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
             if (text) {
               logAttempt("gemini", model, "ok", startedAt);
               recordOk("gemini");
-              return text;
+              const usage = normaliseUsage(data?.usageMetadata, `${system || ""}\n${user || ""}`, text);
+              return { text, usage };
             }
           }
 
@@ -230,7 +254,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
             ],
             temperature,
             max_tokens: maxTokens,
-            ...(json && name === "groq" ? { response_format: { type: "json_object" } } : {}),
+            ...(json && (name === "groq" || name === "deepseek") ? { response_format: { type: "json_object" } } : {}),
           };
 
           const attemptSignals = [AbortSignal.timeout(attemptMs)];
@@ -251,7 +275,8 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
               const text = String(data?.choices?.[0]?.message?.content || "").trim();
               if (text) {
                 logAttempt(name, model, "ok", startedAt);
-                return text;
+                const usage = normaliseUsage(data?.usage, `${system || ""}\n${user || ""}`, text);
+                return { text, usage };
               }
             }
 
@@ -296,7 +321,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
   }
 
   /**
-   * Returns { text, provider } or null when every provider failed.
+   * Returns { text, provider, usage } or null when every provider failed.
    * `images` ([{ mime, b64 }]) restricts the chain to vision-capable providers.
    */
   async function complete({ system, user, images = [], json = false, maxTokens = 900, temperature = 0.4, timeoutMs = 120000, tier = "quality" }) {
@@ -307,7 +332,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
         continue;
       }
       try {
-        const text = await p.run({
+        const res = await p.run({
           system,
           user,
           images,
@@ -317,9 +342,11 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
           tier,
           signal: AbortSignal.timeout(timeoutMs),
         });
+        const text = typeof res === "string" ? res : res?.text;
         if (text) {
           recordOk(p.name);
-          return { text, provider: p.name };
+          const usage = res?.usage || normaliseUsage(null, `${system || ""}\n${user || ""}`, text);
+          return { text, provider: p.name, usage };
         }
         recordFail(p.name);
       } catch (err) {

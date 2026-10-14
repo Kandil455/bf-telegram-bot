@@ -41,7 +41,7 @@ export function createApp(cfg, { store = null, logger = console, fetchImpl } = {
   });
   const plans = createPlans({ store: st, cfg });
   const exempt = cfg.enforceLimitsForAdmins ? new Set() : cfg.adminIds;
-  const quota = createQuota({ store: st, limit: (userId) => plans.limitFor(userId), admins: cfg.adminIds, exempt });
+  const quota = createQuota({ store: st, limit: (userId) => plans.limitFor(userId), tokenLimit: (userId) => plans.tokenLimitFor(userId), admins: cfg.adminIds, exempt });
   const decks = createDecks({ store: st });
   const bot = new Bot(cfg.botToken, cfg.apiRoot ? { client: { apiRoot: cfg.apiRoot } } : undefined);
   const ui = createUi(bot.api, { logger, premium: cfg.premiumEmoji, inputFile: (buf, name) => new InputFile(buf, name) });

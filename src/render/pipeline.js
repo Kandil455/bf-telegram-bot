@@ -6,16 +6,25 @@ import { parseJsonLoose } from "../core/text.js";
 import { buildChunkPrompt, buildDocumentPrompt, buildMergePrompt, buildOscePrompt, buildRepairPrompt, LIMITS } from "../prompts/summary.js";
 import { normaliseDocument, normaliseOsce } from "./schema.js";
 import { docText, qualityIssues, reviseDocPrompt, wordsIn } from "../quality/doc.js";
+import { normaliseUsage } from "../services/ai.js";
 
-const RETRY_DELAYS_MS = [4000, 12000];
+const RETRY_DELAYS_MS = process.env.NODE_TEST_CONTEXT ? [1, 2] : [4000, 12000];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function addUsage(acc, u) {
+  if (!u) return acc;
+  acc.promptTokens += Number(u.promptTokens) || 0;
+  acc.completionTokens += Number(u.completionTokens) || 0;
+  acc.totalTokens += Number(u.totalTokens) || 0;
+  return acc;
+}
 
 /**
  * One JSON reply from the model. When every provider returned nothing (usually a rate limit
  * or a timeout), it waits and tries again, so a long file does not die on one busy moment.
  * A reply that came back but is malformed gets one repair attempt, as before.
  */
-async function askJson(ai, prompt) {
+async function askJson(ai, prompt, usageAcc = null) {
   let first = null;
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     first = await ai.complete({ ...prompt, json: true, timeoutMs: 240000 });
@@ -23,9 +32,16 @@ async function askJson(ai, prompt) {
     if (attempt < RETRY_DELAYS_MS.length) await sleep(RETRY_DELAYS_MS[attempt]);
   }
   if (!first) return null;
+  if (usageAcc) {
+    addUsage(usageAcc, first.usage || normaliseUsage(null, `${prompt.system || ""}\n${prompt.user || ""}`, first.text));
+  }
   const parsed = parseJsonLoose(first.text);
   if (parsed) return parsed;
-  const again = await ai.complete({ ...buildRepairPrompt(first.text), json: true, timeoutMs: 240000 });
+  const repairPrompt = buildRepairPrompt(first.text);
+  const again = await ai.complete({ ...repairPrompt, json: true, timeoutMs: 240000 });
+  if (again && usageAcc) {
+    addUsage(usageAcc, again.usage || normaliseUsage(null, `${repairPrompt.system}\n${repairPrompt.user}`, again.text));
+  }
   return parseJsonLoose(again?.text);
 }
 
@@ -33,10 +49,14 @@ async function askJson(ai, prompt) {
  * One revision pass when the document has grounding or coverage problems. The revised
  * document is used only if it still keeps most of its sections; otherwise the original stays.
  */
-async function reviseIfNeeded({ ai, doc, text, lang, opts, detail = "standard" }) {
+async function reviseIfNeeded({ ai, doc, text, lang, opts, detail = "standard", usageAcc = null }) {
   const issues = qualityIssues(doc, text, detail);
   if (!issues.length) return doc;
-  const raw = await askJson(ai, reviseDocPrompt({ docJson: JSON.stringify(doc).slice(0, 30000), issues, sourceText: text, lang }));
+  const raw = await askJson(
+    ai,
+    reviseDocPrompt({ docJson: JSON.stringify(doc).slice(0, 30000), issues, sourceText: text, lang }),
+    usageAcc
+  );
   if (!raw) return doc;
   const revised = normaliseDocument(raw, opts);
   const keepsStructure = revised.sections.length >= Math.max(1, Math.floor(doc.sections.length * 0.7));
@@ -88,47 +108,53 @@ export function imagesForPart(images, partText) {
  * Produces a normalised document. `images` are [{ mime, b64, caption }] in the order
  * the user sent them; captions drive where figures are placed.
  */
-export async function generateDocument({ ai, template, lang, title, text, images = [], detail = "standard" }) {
+export async function generateDocument({ ai, template, lang, title, text, images = [], detail = "standard", pages = null }) {
   const normaliseOpts = { lang: lang === "ar" ? "ar" : lang === "bilingual" ? "bilingual" : "en", images };
+  const usageAcc = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
   if (template === "osce") {
     const prompt = buildOscePrompt({ lang: normaliseOpts.lang, title, text });
-    const raw = await askJson(ai, prompt);
+    const raw = await askJson(ai, prompt, usageAcc);
     const osce = normaliseOsce(raw, { lang: normaliseOpts.lang });
-    return osce.stations.length ? { kind: "osce", osce } : null;
+    return osce.stations.length ? { kind: "osce", osce, usage: usageAcc } : null;
   }
 
   if (text.length <= LIMITS.maxSourceChars) {
-    const raw = await askJson(ai, buildDocumentPrompt({ template, lang: normaliseOpts.lang, title, text, images, detail }));
+    const raw = await askJson(
+      ai,
+      buildDocumentPrompt({ template, lang: normaliseOpts.lang, title, text, images, detail, pages }),
+      usageAcc
+    );
     const first = normaliseDocument(raw, normaliseOpts);
     if (!first.sections.length) return null;
-    const doc = await reviseIfNeeded({ ai, doc: first, text, lang: normaliseOpts.lang, opts: normaliseOpts, detail });
-    return { kind: "doc", doc };
+    const doc = await reviseIfNeeded({ ai, doc: first, text, lang: normaliseOpts.lang, opts: normaliseOpts, detail, usageAcc });
+    return { kind: "doc", doc, usage: usageAcc };
   }
 
   // Long lecture: summarise each part, then merge the section lists.
-  // Parts are independent, so they run in parallel (a few at a time to respect provider limits).
-  // Results are kept in part order, so the merged document still reads top to bottom.
   const parts = chunks(text, LIMITS.chunkChars);
   const results = await mapLimit(parts, CHUNK_CONCURRENCY, (part, i) =>
-    askJson(ai, buildChunkPrompt({ template, lang: normaliseOpts.lang, part: i + 1, total: parts.length, text: part, images: imagesForPart(images, part) }))
+    askJson(
+      ai,
+      buildChunkPrompt({ template, lang: normaliseOpts.lang, part: i + 1, total: parts.length, text: part, images: imagesForPart(images, part) }),
+      usageAcc
+    )
   );
   const sectionLists = [];
   for (const raw of results) {
     if (Array.isArray(raw?.sections)) sectionLists.push(...raw.sections);
   }
   if (!sectionLists.length) return null;
-  // Keep every part's sections. A merge that asks the model to shrink them is what made big
-  // files come out small, so it only runs when there are too many sections to show at once.
   let merged = null;
   if (sectionLists.length > 150) {
     merged = await askJson(
       ai,
-      buildMergePrompt({ template, lang: normaliseOpts.lang, title, sectionsJson: JSON.stringify(sectionLists).slice(0, 40000) })
+      buildMergePrompt({ template, lang: normaliseOpts.lang, title, sectionsJson: JSON.stringify(sectionLists).slice(0, 40000) }),
+      usageAcc
     );
   }
   const first = normaliseDocument(merged ?? { title, sections: sectionLists }, normaliseOpts);
   if (!first.sections.length) return null;
-  const doc = await reviseIfNeeded({ ai, doc: first, text, lang: normaliseOpts.lang, opts: normaliseOpts, detail });
-  return { kind: "doc", doc };
+  const doc = await reviseIfNeeded({ ai, doc: first, text, lang: normaliseOpts.lang, opts: normaliseOpts, detail, usageAcc });
+  return { kind: "doc", doc, usage: usageAcc };
 }

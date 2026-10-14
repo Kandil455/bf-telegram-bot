@@ -1,6 +1,7 @@
 // Renders a normalised document to one self-contained HTML file: white paper,
-// print-ready, RTL/LTR aware, with optional bilingual lines and embedded lecture images.
-// No external resources, so the file works offline and prints cleanly to PDF.
+// print-ready, RTL/LTR aware, with Part-by-Part bilingual blocks (English Exam Focus +
+// العربي الفهم والتفصيل), structured tables, and high-contrast yellow highlights (#fde047)
+// with crisp black text (#000000). No external resources, so it works offline and prints to PDF.
 
 import { esc } from "../core/text.js";
 
@@ -14,76 +15,90 @@ const TEMPLATE_LABEL = {
 };
 
 const CSS = `
-:root{--ink:#111;--mute:#5b5b5b;--line:#e4e4e7;--head:#f6f6f5;--sig:#e8462a;--paper:#fff}
+:root{--ink:#0f172a;--mute:#475569;--line:#cbd5e1;--head:#f8fafc;--sig:#ea580c;--paper:#ffffff;--dark-pill:#1e293b}
 *{box-sizing:border-box}
-html,body{background:#f3f3f2;margin:0;padding:0}
-body{font:15px/1.7 "Inter","IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink)}
-.page{background:var(--paper);max-width:860px;margin:24px auto;padding:44px 52px 56px;border:1px solid var(--line);border-radius:6px}
-.doc-head{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:24px}
-.kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sig);font-weight:700}
-h1{font-size:28px;line-height:1.25;margin:6px 0 4px;letter-spacing:-.01em}
-.sub{color:var(--mute);margin:0}
-.meta{color:var(--mute);font-size:12px;margin-top:6px}
-h2{font-size:19px;margin:30px 0 10px;padding:6px 12px;border-inline-start:5px solid var(--sig);background:var(--head);border-radius:4px;letter-spacing:-.005em}
-.en{display:block}.ar{display:block;color:var(--mute);font-size:.95em;margin-top:2px}
-ul.pts{margin:0 0 8px;padding:0;list-style:none}
-ul.pts li{position:relative;padding:5px 0 5px 22px;margin:2px 0;border-bottom:1px dashed var(--line)}
-ul.pts li::before{content:"";position:absolute;inset-inline-start:4px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--sig)}
+html,body{background:#f1f5f9;margin:0;padding:0;color:#0f172a}
+body{font:15.5px/1.75 "Inter","IBM Plex Sans Arabic","Geeza Pro","Cairo",system-ui,-apple-system,"Segoe UI",sans-serif;color:#0f172a}
+.page{background:var(--paper);max-width:900px;margin:24px auto;padding:44px 52px 56px;border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 20px rgba(15,23,42,.05)}
+.doc-head{border-bottom:3px solid var(--dark-pill);padding-bottom:16px;margin-bottom:26px}
+.kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sig);font-weight:800}
+h1{font-size:28px;line-height:1.3;margin:6px 0 6px;letter-spacing:-.01em;color:#0f172a}
+.sub{color:var(--mute);margin:0;font-size:15px}
+.meta{color:var(--mute);font-size:12.5px;margin-top:8px;font-weight:600}
+h2{font-size:19px;margin:32px 0 14px;padding:8px 16px;background:var(--dark-pill);color:#ffffff !important;border-radius:6px;letter-spacing:-.005em;font-weight:800;display:inline-block;min-width:60%}
+h2 .en,h2 .ar,h2 span,h2 strong{color:#ffffff !important}
+.part-block{margin:28px 0 34px;padding-bottom:18px;border-bottom:2px dashed #e2e8f0}
+.part-block:last-of-type{border-bottom:0}
+.part-title{font-size:19px;margin:0 0 16px;padding:8px 16px;background:#1e293b;color:#ffffff !important;border-radius:6px;font-weight:800;display:inline-block}
+.part-title span,.part-title strong{color:#ffffff !important}
+.lang-badge{display:inline-block;background:#1e293b;color:#ffffff !important;font-weight:800;font-size:13.5px;padding:4px 12px;border-radius:5px;margin:12px 0 10px}
+.lang-wrap-ar{direction:rtl;text-align:right;margin-top:16px;padding-top:12px;border-top:1px solid #f1f5f9}
+.lang-wrap-en{direction:ltr;text-align:left}
+.en{display:block;color:#0f172a}.ar{display:block;color:#0f172a;font-size:1em;margin-top:3px}
+strong,b{font-weight:800;color:inherit}
+mark.hl,.hl{background-color:#fde047 !important;color:#000000 !important;font-weight:700;padding:1px 6px;border-radius:4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.key{background-color:#bae6fd !important;color:#000000 !important;font-weight:700;padding:1px 6px;border-radius:4px}
+ul.pts{margin:0 0 12px;padding:0;list-style:none}
+ul.pts li{position:relative;padding:6px 0 6px 24px;margin:3px 0;border-bottom:1px dashed #e2e8f0;color:#0f172a}
+[dir="rtl"] ul.pts li,.lang-wrap-ar ul.pts li{padding:6px 24px 6px 0}
+ul.pts li::before{content:"";position:absolute;inset-inline-start:6px;top:15px;width:8px;height:8px;border-radius:50%;background:var(--sig)}
 ul.pts li:last-child{border-bottom:0}
-.def{border-inline-start:3px solid var(--sig);padding:6px 12px;margin:10px 0;background:#fafafa;border-radius:4px}
-.def dt{font-weight:700}.def dd{margin:2px 0 0}.def em{color:var(--mute);display:block;margin-top:2px}
-.formula{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin:10px 0}
-.formula .flabel{font-weight:600;min-width:120px}
-.formula code{font:600 15px/1.4 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;background:var(--head);padding:4px 8px;border-radius:4px}
-.formula small{color:var(--mute);width:100%}
-figure.tbl{margin:14px 0}figure.tbl figcaption{font-weight:600;margin-bottom:6px}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{border:1px solid var(--line);padding:7px 9px;vertical-align:top;text-align:start}
-thead th{background:var(--head);font-weight:700}
-ol.steps{counter-reset:s;list-style:none;padding:0;margin:8px 0}
-ol.steps li{counter-increment:s;position:relative;padding:6px 0 6px 40px;margin:4px 0}
-ol.steps li::before{content:counter(s);position:absolute;inset-inline-start:0;top:4px;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
-.hl{background:linear-gradient(transparent 55%,#fde68a 55%);padding:0 2px;border-radius:2px}
-.key{color:#1d4ed8;font-weight:600}
-.callout{border-radius:8px;padding:10px 14px;margin:12px 0;font-size:14px;border:1px solid}
-.callout b{display:inline-block;margin-inline-end:6px}
-.tone-info{background:#eff6ff;border-color:#bfdbfe;color:#1e3a8a}
-.tone-tip{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
-.tone-warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
-.tone-danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+.def{border-inline-start:4px solid var(--sig);padding:10px 14px;margin:10px 0;background:#f8fafc;border-radius:6px;color:#0f172a}
+.def dt{font-weight:800;color:#0f172a;font-size:15.5px}.def dd{margin:4px 0 0;color:#0f172a}.def em{color:#334155;display:block;margin-top:4px;font-style:italic}
+.formula{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;border:1.5px solid #94a3b8;background:#f8fafc;border-radius:8px;padding:12px 16px;margin:12px 0;color:#0f172a}
+.formula .flabel{font-weight:800;min-width:120px;color:#0f172a}
+.formula code{font:700 15px/1.4 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;background:#fde047;color:#000000 !important;padding:4px 10px;border-radius:5px}
+.formula small{color:#334155;width:100%;font-weight:500}
+figure.tbl{margin:16px 0;overflow-x:auto}
+figure.tbl figcaption{font-weight:800;margin-bottom:8px;color:#0f172a;font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:14.5px;background:#ffffff;color:#0f172a}
+th,td{border:1px solid #cbd5e1;padding:9px 12px;vertical-align:top;text-align:start;color:#0f172a}
+thead th{background:#1e293b;color:#ffffff !important;font-weight:800}
+thead th .en,thead th .ar,thead th span,thead th strong{color:#ffffff !important}
+thead th mark.hl{background-color:#fde047 !important;color:#000000 !important}
+tbody tr:nth-child(even) td{background:#f8fafc}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:10px 0}
+ol.steps li{counter-increment:s;position:relative;padding:6px 0 6px 40px;margin:6px 0;color:#0f172a}
+[dir="rtl"] ol.steps li,.lang-wrap-ar ol.steps li{padding:6px 40px 6px 0}
+ol.steps li::before{content:counter(s);position:absolute;inset-inline-start:0;top:4px;width:28px;height:28px;border-radius:50%;background:var(--dark-pill);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
+.callout{border-radius:8px;padding:10px 14px;margin:12px 0;font-size:14.5px;border:1.5px solid}
+.callout b{display:inline-block;margin-inline-end:6px;font-weight:800}
+.tone-info{background:#eff6ff;border-color:#93c5fd;color:#1e3a8a}
+.tone-tip{background:#ecfdf5;border-color:#6ee7b7;color:#065f46}
+.tone-warn{background:#fefce8;border-color:#fde047;color:#713f12}
+.tone-danger{background:#fef2f2;border-color:#fca5a5;color:#7f1d1d}
 figure.diagram{margin:16px 0;text-align:center;break-inside:avoid}
-figure.diagram svg{max-width:100%;height:auto;background:#fff}
-figure.diagram figcaption{color:var(--mute);font-size:13px;margin-top:6px}
-.trap{background:#fff7ed;border:1px solid #fed7aa;border-inline-start:4px solid #ea580c;padding:8px 12px;border-radius:6px;margin:10px 0;font-size:14px}
-.trap b{color:#9a3412}
-.qa{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:8px 0;break-inside:avoid}
-.qa .q{font-weight:700}.qa .a{margin-top:4px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+figure.diagram svg{max-width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px}
+figure.diagram figcaption{color:var(--mute);font-size:13px;margin-top:6px;font-weight:600}
+.trap{background:#fef2f2;border:1.5px solid #fca5a5;border-inline-start:5px solid #dc2626;padding:10px 14px;border-radius:6px;margin:12px 0;font-size:14.5px;color:#7f1d1d}
+.trap b{color:#991b1b;font-weight:800}
+.qa{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;break-inside:avoid;background:#ffffff}
+.qa .q{font-weight:800;color:#0f172a}.qa .a{margin-top:6px;color:#1e293b}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .cornell .qa{display:grid;grid-template-columns:38% 1fr;gap:0;padding:0;overflow:hidden}
-.cornell .qa .q{background:var(--head);padding:10px;border-inline-end:1px solid var(--line)}
-.cornell .qa .a{padding:10px;margin:0}
-.cram{columns:2;column-gap:28px}.cram h2{column-span:all}
+.cornell .qa .q{background:var(--head);padding:12px;border-inline-end:1px solid var(--line)}
+.cornell .qa .a{padding:12px;margin:0}
 .cram .def,.cram .formula,.cram .trap{break-inside:avoid}
-.flow h2{counter-increment:phase;position:relative;padding-inline-start:0}
-.flow h2::before{content:"Phase " counter(phase)" · ";color:var(--sig);font-size:13px}
+.flow h2{counter-increment:phase;position:relative}
+.flow h2::before{content:"Phase " counter(phase)" · ";color:#fde047;font-size:13px}
 .flow{counter-reset:phase}
 figure.fig{margin:16px 0;break-inside:avoid;text-align:center}
-figure.fig img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:6px}
-figure.fig figcaption{color:var(--mute);font-size:13px;margin-top:6px}
+figure.fig img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+figure.fig figcaption{color:var(--mute);font-size:13px;margin-top:6px;font-weight:600}
 footer.kw{margin-top:30px;border-top:1px solid var(--line);padding-top:12px}
-footer.kw span{display:inline-block;margin:3px 6px 3px 0;padding:3px 10px;border:1px solid var(--line);border-radius:99px;font-size:12px;color:var(--mute)}
+footer.kw span{display:inline-block;margin:3px 6px 3px 0;padding:4px 11px;border:1px solid var(--line);border-radius:99px;font-size:12px;color:#334155;background:#f8fafc;font-weight:600}
 .station{border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:18px 0;break-inside:avoid}
 .station header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:10px}
-.station .no{background:var(--ink);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px}
+.station .no{background:var(--dark-pill);color:#fff;font-size:12px;font-weight:800;padding:3px 9px;border-radius:99px}
 .station h3{font-size:17px;margin:0}.station .setting{color:var(--mute);margin:0;font-size:13px}
 .scenario{background:var(--head);border-radius:6px;padding:10px 12px;margin:8px 0}
 table.check td:nth-child(3),table.check th:nth-child(3){text-align:center;width:70px}
-table.check tfoot td{font-weight:700;background:var(--head)}
-.chips span{display:inline-block;margin:3px 6px 3px 0;padding:2px 9px;border-radius:99px;background:#eef2ff;color:#3730a3;font-size:12px}
+table.check tfoot td{font-weight:800;background:var(--head)}
+.chips span{display:inline-block;margin:3px 6px 3px 0;padding:2px 9px;border-radius:99px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:600}
 .errors{font-size:14px;color:#7f1d1d}
-.brand{margin-top:28px;color:var(--mute);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center}
-@page{size:A4;margin:14mm}
-@media print{html,body{background:#fff}.page{margin:0;border:0;max-width:none;padding:0 4mm;box-shadow:none}h2{break-after:avoid}}
+.brand{margin-top:28px;color:var(--mute);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;font-weight:700}
+@page{size:A4;margin:12mm}
+@media print{html,body{background:#fff}.page{margin:0;border:0;max-width:none;padding:0 2mm;box-shadow:none}h2,.part-title{break-after:avoid}}
 `;
 
 const LABELS = {
@@ -106,7 +121,6 @@ function L(key, lang) {
   return en;
 }
 
-/** T(): a plain string, or a bilingual pair rendered as two lines. */
 /** Inline markup on already-escaped text: **bold**, ==highlight==, ++key term++. */
 function markup(escaped) {
   return escaped
@@ -117,69 +131,141 @@ function markup(escaped) {
 
 const TONE_LABEL = { info: ["Note", "ملاحظة"], tip: ["Tip", "نصيحة"], warn: ["Watch out", "انتبه"], danger: ["Danger", "خطر"] };
 
-function T(value, tag = "span") {
+/** T(): a plain string, or a bilingual pair rendered cleanly. */
+function T(value, tag = "span", side = null) {
   if (value === null || value === undefined || value === "") return "";
   if (typeof value === "string") return `<${tag} dir="auto">${markup(esc(value))}</${tag}>`;
+  if (side === "en") return `<${tag} class="en" dir="ltr">${markup(esc(value.en || value.ar || ""))}</${tag}>`;
+  if (side === "ar") return `<${tag} class="ar" dir="rtl">${markup(esc(value.ar || value.en || ""))}</${tag}>`;
   if (value.en === value.ar) return `<${tag} dir="auto">${markup(esc(value.en))}</${tag}>`;
   return `<${tag} class="en" dir="ltr">${markup(esc(value.en))}</${tag}><${tag} class="ar" dir="rtl">${markup(esc(value.ar))}</${tag}>`;
 }
 
-function sectionHtml(s, ctx) {
+function sectionHtml(s, ctx, side = null) {
   const { template, images } = ctx;
+  const effLang = side || ctx.lang;
   switch (s.type) {
     case "heading":
-      return `<h2>${T(s.text)}</h2>`;
+      return `<h2>${T(s.text, "span", side)}</h2>`;
     case "points":
-      return `<ul class="pts">${s.items.map((i) => `<li>${T(i)}</li>`).join("")}</ul>`;
+      return `<ul class="pts">${s.items.map((i) => `<li>${T(i, "span", side)}</li>`).join("")}</ul>`;
     case "definition":
-      return `<dl class="def"><dt>${T(s.term)}</dt><dd>${T(s.meaning)}${s.example ? `<em>${esc(L("example", ctx.lang))}: ${T(s.example)}</em>` : ""}</dd></dl>`;
+      return `<dl class="def"><dt>${T(s.term, "span", side)}</dt><dd>${T(s.meaning, "span", side)}${s.example ? `<em>${esc(L("example", effLang))}: ${T(s.example, "span", side)}</em>` : ""}</dd></dl>`;
     case "formula":
-      return `<div class="formula">${s.label ? `<span class="flabel">${T(s.label)}</span>` : ""}<code dir="ltr">${esc(typeof s.expression === "string" ? s.expression : s.expression.en)}</code>${s.when ? `<small>${T(s.when)}</small>` : ""}</div>`;
+      return `<div class="formula">${s.label ? `<span class="flabel">${T(s.label, "span", side)}</span>` : ""}<code dir="ltr">${esc(typeof s.expression === "string" ? s.expression : s.expression.en || s.expression.ar)}</code>${s.when ? `<small>${T(s.when, "span", side)}</small>` : ""}</div>`;
     case "table":
-      return `<figure class="tbl">${s.caption ? `<figcaption>${T(s.caption)}</figcaption>` : ""}<table><thead><tr>${s.headers.map((h) => `<th>${T(h)}</th>`).join("")}</tr></thead><tbody>${s.rows.map((r) => `<tr>${r.map((c) => `<td>${T(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></figure>`;
+      return `<figure class="tbl">${s.caption ? `<figcaption>${T(s.caption, "span", side)}</figcaption>` : ""}<table><thead><tr>${s.headers.map((h) => `<th>${T(h, "span", side)}</th>`).join("")}</tr></thead><tbody>${s.rows.map((r) => `<tr>${r.map((c) => `<td>${T(c, "span", side)}</td>`).join("")}</tr>`).join("")}</tbody></table></figure>`;
     case "steps":
-      return `<ol class="steps">${s.items.map((i) => `<li>${T(i)}</li>`).join("")}</ol>`;
+      return `<ol class="steps">${s.items.map((i) => `<li>${T(i, "span", side)}</li>`).join("")}</ol>`;
     case "qa":
-      if (template === "cornell") return `<div class="qa"><div class="q">${T(s.question)}</div><div class="a">${T(s.answer)}</div></div>`;
-      return `<div class="qa"><div class="q">${T(s.question)}</div><div class="a">${T(s.answer)}</div></div>`;
+      return `<div class="qa"><div class="q">${T(s.question, "span", side)}</div><div class="a">${T(s.answer, "span", side)}</div></div>`;
     case "trap":
-      return `<aside class="trap"><b>⚠ ${esc(L("trap", ctx.lang))}</b> ${T(s.text)}</aside>`;
+      return `<aside class="trap"><b>⚠ ${esc(L("trap", effLang))}</b> ${T(s.text, "span", side)}</aside>`;
     case "callout": {
       const [en, ar] = TONE_LABEL[s.tone] || TONE_LABEL.info;
-      const label = ctx.lang === "ar" ? ar : ctx.lang === "bilingual" ? `${en} · ${ar}` : en;
-      return `<aside class="callout tone-${esc(s.tone)}"><b>${esc(label)}</b> ${T(s.text)}</aside>`;
+      const label = effLang === "ar" ? ar : effLang === "bilingual" ? `${en} · ${ar}` : en;
+      return `<aside class="callout tone-${esc(s.tone)}"><b>${esc(label)}</b> ${T(s.text, "span", side)}</aside>`;
     }
     case "diagram":
-      return `<figure class="diagram">${s.svg}${s.caption ? `<figcaption>${T(s.caption)}</figcaption>` : ""}</figure>`;
+      return `<figure class="diagram">${s.svg}${s.caption ? `<figcaption>${T(s.caption, "span", side)}</figcaption>` : ""}</figure>`;
     case "figure": {
       const img = images[s.index];
       if (!img) return "";
-      return `<figure class="fig"><img src="data:${esc(img.mime)};base64,${img.b64}" alt="${esc(s.caption ? (typeof s.caption === "string" ? s.caption : s.caption.en) : "figure")}">${s.caption ? `<figcaption>${T(s.caption)}</figcaption>` : ""}</figure>`;
+      return `<figure class="fig"><img src="data:${esc(img.mime)};base64,${img.b64}" alt="${esc(s.caption ? (typeof s.caption === "string" ? s.caption : s.caption.en) : "figure")}">${s.caption ? `<figcaption>${T(s.caption, "span", side)}</figcaption>` : ""}</figure>`;
     }
     default:
       return "";
   }
 }
 
-/** Groups runs of study cards into a grid, so the "qa" template reads like a card deck. */
-function bodyHtml(sections, ctx) {
+function renderRun(sections, ctx, side = null) {
   const out = [];
   let run = [];
   const flush = () => {
     if (!run.length) return;
-    if (ctx.template === "qa") out.push(`<div class="grid">${run.map((s) => sectionHtml(s, ctx)).join("")}</div>`);
-    else out.push(run.map((s) => sectionHtml(s, ctx)).join(""));
+    if (ctx.template === "qa") out.push(`<div class="grid">${run.map((s) => sectionHtml(s, ctx, side)).join("")}</div>`);
+    else out.push(run.map((s) => sectionHtml(s, ctx, side)).join(""));
     run = [];
   };
   for (const s of sections) {
     if (s.type === "qa") run.push(s);
     else {
       flush();
-      out.push(sectionHtml(s, ctx));
+      out.push(sectionHtml(s, ctx, side));
     }
   }
   flush();
   return out.join("\n");
+}
+
+/**
+ * In bilingual mode, groups the lecture into sequential Parts (each starting at a "heading")
+ * and renders for every Part:
+ *   1. Dark Part Banner (Part N: ...)
+ *   2. English (Exam Focus): block (LTR)
+ *   3. العربي (الفهم والتفصيل): block (RTL)
+ * matching the exact layout of Burn and fluids.pdf.
+ */
+function bilingualPartsHtml(sections, ctx) {
+  if (!sections?.length) return "";
+  const parts = [];
+  let current = { heading: null, items: [] };
+  for (const s of sections) {
+    if (s.type === "heading") {
+      if (current.heading || current.items.length) parts.push(current);
+      current = { heading: s, items: [] };
+    } else {
+      current.items.push(s);
+    }
+  }
+  if (current.heading || current.items.length) parts.push(current);
+
+  return parts.map((p, idx) => {
+    const partNum = idx + 1;
+    let headHtml = "";
+    if (p.heading) {
+      const rawEn = typeof p.heading.text === "string" ? p.heading.text : p.heading.text?.en || "";
+      const hasPartPrefix = /^part\s*\d+/i.test(rawEn.trim());
+      const prefix = hasPartPrefix ? "" : `Part ${partNum}: `;
+      const hVal = typeof p.heading.text === "string"
+        ? `${prefix}${p.heading.text}`
+        : { en: `${prefix}${p.heading.text.en || ""}`, ar: p.heading.text.ar || "" };
+      headHtml = `<h2 class="part-title">${T(hVal, "span")}</h2>`;
+    } else if (parts.length > 1) {
+      headHtml = `<h2 class="part-title"><span>Part ${partNum}</span></h2>`;
+    }
+
+    const mediaItems = p.items.filter((x) => x.type === "figure" || x.type === "diagram");
+    const contentItems = p.items.filter((x) => x.type !== "figure" && x.type !== "diagram");
+
+    const enBody = renderRun(contentItems, ctx, "en");
+    const arBody = renderRun(contentItems, ctx, "ar");
+    const mediaBody = mediaItems.length ? renderRun(mediaItems, ctx, null) : "";
+
+    if (!contentItems.length) {
+      return `<section class="part-block">${headHtml}${mediaBody}</section>`;
+    }
+
+    return `<section class="part-block">
+${headHtml}
+<div class="lang-wrap-en" dir="ltr">
+<div class="lang-badge">English (Exam Focus):</div>
+${enBody}
+</div>
+<div class="lang-wrap-ar" dir="rtl">
+<div class="lang-badge">العربي (الفهم والتفصيل):</div>
+${arBody}
+</div>
+${mediaBody}
+</section>`;
+  }).join("\n");
+}
+
+function bodyHtml(sections, ctx) {
+  if (ctx.lang === "bilingual") {
+    return bilingualPartsHtml(sections, ctx);
+  }
+  return renderRun(sections, ctx, null);
 }
 
 function shell({ lang, title, subtitle, template, body, keywords, dateLabel }) {

@@ -19,24 +19,39 @@ export class ConfigError extends Error {
 }
 
 export const GEMINI_DEFAULT_MODELS = [
-  "gemini-3.5-flash",
+  "gemini-4.1-flash",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
   "gemini-3-flash-preview",
+  "gemini-3.5-flash",
   "gemini-3.8-flash",
   "gemini-3.5-flash-lite",
   "gemini-3.1-flash-lite",
 ];
 
 export const GROQ_DEFAULT_MODELS = [
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
   "qwen/qwen3.8-27b",
   "openai/gpt-oss-120b",
   "openai/gpt-oss-20b",
 ];
 
 export const OPENROUTER_DEFAULT_MODELS = [
+  "deepseek/deepseek-chat:free",
+  "deepseek/deepseek-r1:free",
+  "google/gemma-3-27b-it:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
   "nvidia/nemotron-3.5-lightning:free",
   "inclusionai/ling-3.0-flash-sante:free",
   "google/gemma-4-31b-it:free",
   "google/gemma-4-26b-a4b-it:free",
+];
+
+export const DEEPSEEK_DEFAULT_MODELS = [
+  "deepseek-chat",
+  "deepseek-flash",
+  "deepseek-reasoner",
 ];
 
 function parseKeyList(raw) {
@@ -60,9 +75,9 @@ function parseModelList(raw, defaults) {
   return list.length ? list : defaults;
 }
 
-// Strictly enforce: ONLY Gemini 3+ models (reject any 1.x, 2.x, 2.5)
+// Keep modern Gemini 2.0 / 2.5 / 3+ models while rejecting deprecated 1.x models
 function sanitizeGeminiModels(models) {
-  const filtered = models.filter((m) => !/gemini-[12](?:\.|\b|-)/i.test(m));
+  const filtered = models.filter((m) => !/gemini-1(?:\.|\b|-)/i.test(m));
   return filtered.length ? filtered : GEMINI_DEFAULT_MODELS;
 }
 
@@ -91,11 +106,19 @@ export function loadConfig(env = process.env) {
         .filter((n) => Number.isInteger(n) && n > 0)
     ),
     freeDailyTasks: positive("FREE_DAILY_TASKS", 10),
+    freeDailyTokens: positive("FREE_DAILY_TOKENS", 50000),
+    proDailyTokens: positive("PRO_DAILY_TOKENS", 1000000),
     maxFileMb: positive("MAX_FILE_MB", 20),
     maxTextChars: positive("MAX_TEXT_CHARS", 250000),
     dataDir: env.DATA_DIR === undefined ? "./data" : env.DATA_DIR,
     premiumEmoji: parsePremiumMap(env.PREMIUM_EMOJI_JSON || ""),
     premiumEmojiSet: String(env.PREMIUM_EMOJI_SET || "").trim(),
+    deepseek: {
+      keys: parseKeyList(env.DEEPSEEK_API_KEY),
+      get key() { return this.keys[0] || ""; },
+      models: parseModelList(env.DEEPSEEK_MODELS || env.DEEPSEEK_MODEL, DEEPSEEK_DEFAULT_MODELS),
+      get model() { return this.models[0] || "deepseek-chat"; },
+    },
     gemini: {
       fast: splitModels(env.GEMINI_MODEL_FAST),
       quality: splitModels(env.GEMINI_MODEL_QUALITY),
@@ -114,7 +137,7 @@ export function loadConfig(env = process.env) {
       keys: parseKeyList(env.OPENROUTER_API_KEY),
       get key() { return this.keys[0] || ""; },
       models: parseModelList(env.OPENROUTER_MODELS || env.OPENROUTER_MODEL, OPENROUTER_DEFAULT_MODELS),
-      get model() { return this.models[0] || "nvidia/nemotron-3.5-lightning:free"; },
+      get model() { return this.models[0] || "deepseek/deepseek-chat:free"; },
     },
     tokenharbor: {
       keys: parseKeyList(env.TOKENHARBOR_API_KEY),
@@ -154,8 +177,8 @@ export function loadConfig(env = process.env) {
     referralBonusFiles: positive("REFERRAL_BONUS_FILES", 1),
   };
 
-  if (!cfg.gemini.key && !cfg.groq.key && !cfg.openrouter.key) {
-    throw new ConfigError("Set at least one AI key: GEMINI_API_KEY, GROQ_API_KEY or OPENROUTER_API_KEY.");
+  if (!cfg.deepseek?.key && !cfg.gemini.key && !cfg.groq.key && !cfg.openrouter.key) {
+    throw new ConfigError("Set at least one AI key: DEEPSEEK_API_KEY, GEMINI_API_KEY, GROQ_API_KEY or OPENROUTER_API_KEY.");
   }
 
   if (mode === "webhook") {

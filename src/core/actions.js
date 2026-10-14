@@ -5,6 +5,7 @@ export const ACTIONS = Object.freeze([
   "menu", "sum", "quiz", "cards", "key", "explain", "ask", "topic",
   "lang", "new", "qa", "qn", "credits", "stats", "help", "noop", "pl", "buy", "rv", "rvs", "tpl", "docl", "cash", "img", "qc", "fmt",
   "sub", "inv", "plans", "deck", "admin", "rem", "txid", "remind", "len", "adm_cok", "adm_cno", "qretry",
+  "qcustom", "qtimer", "qpoll", "qbatch", "pg", "pod", "bcast",
 ]);
 
 const LIMIT = 64;

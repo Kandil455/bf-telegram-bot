@@ -9,7 +9,7 @@ import { detectIntent } from "./core/intent.js";
 import { detectLang, pickLang } from "./core/lang.js";
 import { normaliseCards, normaliseQuiz } from "./core/quiz.js";
 import { HR, chunk, esc, parseJsonLoose, progress, sanitizeHtml, wordCount } from "./core/text.js";
-import { adminRows, burnsQuizRows, channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows } from "./keyboards.js";
+import { adminRows, burnsQuizRows, channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows, afterDocumentRows, stylePickerRows } from "./keyboards.js";
 import { BURNS_QUIZ_ITEMS, BURNS_QUIZ_TITLE } from "./data/burns-quiz.js";
 import { kindOf } from "./services/files.js";
 import { renderDocument, renderOsce, previewLines } from "./render/html.js";
@@ -19,18 +19,18 @@ import { ensureFigures } from "./render/figures.js";
 import { cachedSummary } from "./services/summary-cache.js";
 import { shrinkImage } from "./media/shrink.js";
 import { buildDailyReport } from "./features/daily-report.js";
-import { afterDocumentRows, stylePickerRows } from "./keyboards.js";
 import { PLANS } from "./services/plans.js";
 import { applyPayment, checkoutDecision, sendPlanInvoice } from "./features/payments.js";
-import { conceptsPrompt, cardsPrompt, quizPrompt, groundedAnswerPrompt, chatPrompt, groupQuizPrompt } from "./prompts/index.js";
+import { conceptsPrompt, cardsPrompt, quizPrompt, explainPrompt, groundedAnswerPrompt, chatPrompt, groupQuizPrompt } from "./prompts/index.js";
+import { suggestedPages } from "./prompts/summary.js";
 import { stripMention } from "./features/groups.js";
 import { qualityPass, topUpQuiz } from "./quality/quiz.js";
 import { randomBytes } from "node:crypto";
 import { markNotice, renewalNotices } from "./features/subscriptions.js";
 import { normaliseDigits } from "./features/cash.js";
-
-const HEAVY_ACTIONS = new Set(["sum", "quiz", "cards", "key", "tpl", "qc", "img", "ask", "explain", "cash", "buy"]);
 import { humanize } from "./services/quota.js";
+
+const HEAVY_ACTIONS = new Set(["sum", "quiz", "cards", "key", "tpl", "qc", "img", "ask", "explain", "pod", "cash", "buy", "qbatch"]);
 
 const DOC_TTL = 7 * 24 * 3600 * 1000;
 // Summary results are reused for a week; see services/summary-cache.js for the key.
@@ -38,7 +38,13 @@ let summaryCache = null;
 const DAY = () => new Date().toISOString().slice(0, 10);
 
 export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, plans = null, decks = null, groups = null, cash = null, media = null, ent = null, logger = console, now = () => Date.now() }) {
-  const entitle = ent || { takeFileSlot: () => ({ ok: true }), allowedQuizSizes: () => [5, 10, 15, 20, 30], clampQuizSize: (s, n) => n, questionsLeft: () => 30 };
+  const maxQDefault = Number(cfg?.maxQuestionsPerFile) || 30;
+  const entitle = ent || {
+    takeFileSlot: () => ({ ok: true }),
+    allowedQuizSizes: () => (maxQDefault > 30 ? [5, 10, 15, 20, 30, 50, 100, 200, 500] : [5, 10, 15, 20, 30]),
+    clampQuizSize: (s, n) => Math.min(Number(n) || 5, maxQDefault),
+    questionsLeft: () => maxQDefault,
+  };
   summaryCache = cachedSummary(store, { onHit: () => {} });
   const FRAMES = ["▰▱▱▱▱", "▰▰▱▱▱", "▰▰▰▱▱", "▰▰▰▰▱", "▰▰▰▰▰"];
   const appRows = (qid, lang) => (qid && cfg.appUrl ? [[button({ label: lang === "ar" ? "افتح الكويز في التطبيق" : "Open quiz in the app", icon: "app", webApp: `${cfg.appUrl}/app?qid=${qid}`, style: "primary", premium })]] : []);
@@ -61,12 +67,28 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
   const stat = (name) => store.incr(`stat:${name}:${DAY()}`, 1, 3 * 24 * 3600 * 1000);
 
+  function trackTokens(userId, usage) {
+    const total = Number(usage?.totalTokens) || 0;
+    if (total > 0 && typeof quota?.consumeTokens === "function") {
+      return quota.consumeTokens(userId, total);
+    }
+    return null;
+  }
+
   // ───────────── delivery helpers ─────────────
 
   function quotaFooter(userId, lang) {
     const c = copy(lang);
     const s = quota.status(userId);
-    return s.unlimited ? `\n${HR}\n${c.unlimited}` : `\n${HR}\n${c.quota(s.left, s.limit)}`;
+    const base = s.unlimited ? `\n${HR}\n${c.unlimited}` : `\n${HR}\n${c.quota(s.left, s.limit)}`;
+    const tok = typeof quota.tokenStatus === "function" ? quota.tokenStatus(userId) : null;
+    if (!tok || tok.used <= 0) return base;
+    const tokLine = tok.unlimited
+      ? (lang === "ar" ? `\n⚡ <i>التوكنز المستهلكة اليوم: ${tok.used.toLocaleString("en-US")} توكن (غير محدود)</i>` : `\n⚡ <i>Tokens used today: ${tok.used.toLocaleString("en-US")} (unlimited)</i>`)
+      : (lang === "ar"
+          ? `\n⚡ <i>التوكنز: استهلكت ${tok.used.toLocaleString("en-US")} · متبقي ${tok.left.toLocaleString("en-US")} توكن</i>`
+          : `\n⚡ <i>Tokens: ${tok.used.toLocaleString("en-US")} used · ${tok.left.toLocaleString("en-US")} left</i>`);
+    return `${base}${tokLine}`;
   }
 
   /** Shows `html` in the progress message, spilling extra chunks into new messages. */
@@ -81,7 +103,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   /**
-   * Runs one metered task. `work` returns { html, rows?, after? } or null on failure.
+   * Runs one metered task. `work` returns { html, rows?, after?, file?, usage? } or null on failure.
    * Quota is reserved up front and refunded when generation fails.
    */
   async function runTask({ chatId, userId, lang, cost, label, work, failRows = menuRows(lang, premium, { isAdmin: quota.isAdmin(userId) }) }) {
@@ -105,9 +127,10 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         await ui.edit(chatId, msgId, c.failed, failRows);
         return;
       }
-      if (out.after) await out.after();
+      if (out.usage) trackTokens(userId, out.usage);
       stat("tasks");
       await deliver(chatId, msgId, out.html + quotaFooter(userId, lang), out.rows);
+      if (out.after) await out.after(msgId);
       if (out.file) await ui.sendDocument(chatId, out.file.html, out.file.name, out.file.caption);
     } catch (err) {
       quota.refund(userId, cost);
@@ -118,11 +141,6 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       busy.delete(chatId);
     }
   }
-
-  // ───────────── prompts ─────────────
-
-  const SYSTEM = (lang, role) =>
-    `${lang === "ar" ? "Reply in Modern Standard Arabic with a light, friendly tone." : "Reply in clear, natural English."} ${role} Use Telegram HTML only: <b>, <i>, <code>. No markdown, no asterisks, no # headings. Stay faithful to the material; never invent facts.`;
 
   // ───────────── intake: files, photos, pasted text ─────────────
 
@@ -164,11 +182,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       }
 
       const words = wordCount(result.text);
+      const sugPages = suggestedPages(words);
       saveSession(m.chatId, {
         lang,
-        lastInput: { kind: result.kind, title: result.title, text: result.text, words, at: now() },
+        lastInput: { kind: result.kind, title: result.title, text: result.text, words, suggestedPages: sugPages, at: now() },
         quiz: null,
         awaiting: null,
+        questionsUsed: 0,
+        remainingQuizTotal: 0,
       });
       stat("files");
       if (mediaSummary?.count) await media.showGallery(m.chatId, lang);
@@ -204,7 +225,54 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       work: async () => {
         const r = await ai.complete(conceptsPrompt({ lang, source: input.text }));
         if (!r) return null;
-        return { html: `💡 <b>Key points · ${esc(input.title)}</b>\n${HR}\n${sanitizeHtml(r.text)}`, rows: inputRows(lang, premium) };
+        return { html: `💡 <b>Key points · ${esc(input.title)}</b>\n${HR}\n${sanitizeHtml(r.text)}`, rows: inputRows(lang, premium), usage: r.usage };
+      },
+    });
+  }
+
+  async function explainLecture(m, lang) {
+    const input = requireInput(m.chatId, lang);
+    if (!input) return;
+    await runTask({
+      chatId: m.chatId,
+      userId: m.userId,
+      lang,
+      cost: 1,
+      label: copy(lang).thinking,
+      work: async () => {
+        const r = await ai.complete(explainPrompt({ lang, source: input.text, title: input.title }));
+        if (!r) return null;
+        const head = lang === "ar" ? `📚 <b>شرح تفصيلي · ${esc(input.title)}</b>` : `📚 <b>Deep Explanation · ${esc(input.title)}</b>`;
+        return { html: `${head}\n${HR}\n${sanitizeHtml(r.text)}`, rows: inputRows(lang, premium), usage: r.usage };
+      },
+    });
+  }
+
+  async function podcastLecture(m, lang) {
+    const input = requireInput(m.chatId, lang);
+    if (!input) return;
+    const c = copy(lang);
+    await runTask({
+      chatId: m.chatId,
+      userId: m.userId,
+      lang,
+      cost: 1,
+      label: c.writing,
+      work: async () => {
+        const prompt = {
+          system: [
+            "You are the producer of Black Fighters Medical & Academic Podcast.",
+            "Write an engaging, high-yield 2-host podcast episode script (🎙️ د. أحمد [Professor] & 🎓 سارة [Sharp Student]) explaining every concept, mechanism, comparison, and exam trap in the SOURCE.",
+            "POSITIVES (DO): divide into numbered Parts; use <b>bold</b> for speaker names and medical/technical terms; explain mechanisms simply; end each part with a quick rapid-fire exam question between the hosts.",
+            "NEGATIVES (DON'T): never invent facts outside the SOURCE; never use markdown (** or #); use clean Telegram HTML (<b>, <i>, <code>).",
+          ].join("\n"),
+          user: `Lecture Title: ${input.title}\nLanguage: ${lang === "ar" ? "Natural Egyptian/Modern Arabic with English medical terms in brackets" : "Engaging English"}\nSOURCE:\n"""\n${String(input.text).slice(0, 18000)}\n"""`,
+          maxTokens: 3000,
+        };
+        const r = await ai.complete(prompt);
+        if (!r) return null;
+        const head = lang === "ar" ? `🎙️ <b>بودكاست المحاضرة · ${esc(input.title)}</b>` : `🎙️ <b>Lecture Podcast · ${esc(input.title)}</b>`;
+        return { html: `${head}\n${HR}\n${sanitizeHtml(r.text)}`, rows: inputRows(lang, premium), usage: r.usage };
       },
     });
   }
@@ -226,9 +294,24 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         if (decks) decks.add(m.userId, cards);
         const body = cards.map((card, i) => `<b>${i + 1}. ${esc(card.q)}</b>\n<tg-spoiler>${esc(card.a)}</tg-spoiler>`).join("\n\n");
         const deckLine = decks ? `\n<i>${c.deckAdded(cards.length)}</i>` : "";
-        return { html: `🗂️ <b>Flashcards · ${esc(input.title)}</b>\n<i>${c.cardsHint}</i>\n${HR}\n${body}${deckLine}`, rows: inputRows(lang, premium) };
+        return { html: `🗂️ <b>Flashcards · ${esc(input.title)}</b>\n<i>${c.cardsHint}</i>\n${HR}\n${body}${deckLine}`, rows: inputRows(lang, premium), usage: r?.usage };
       },
     });
+  }
+
+  /** Renders a standalone HTML Quiz Bank file when a user generates a large quiz (e.g. 30-500 questions). */
+  function renderQuizBankHtml(title, items, lang) {
+    const letters = ["A", "B", "C", "D"];
+    const dir = lang === "ar" ? "rtl" : "ltr";
+    const cards = items.map((it, idx) => {
+      const opts = it.options.map((o, i) => `<li style="padding:4px 8px;margin:3px 0;border-radius:4px;${i === it.answer ? "background:#fde047;color:#000;font-weight:700;" : ""}"><b>${letters[i]})</b> ${esc(o)}${i === it.answer ? " ✓" : ""}</li>`).join("");
+      return `<div style="border:1px solid #cbd5e1;border-radius:8px;padding:14px;margin:12px 0;background:#fff;break-inside:avoid">
+        <div style="font-weight:800;color:#0f172a;margin-bottom:8px">Q${idx + 1}. ${esc(it.q)}</div>
+        <ul style="list-style:none;padding:0;margin:0">${opts}</ul>
+        ${it.explanation ? `<div style="margin-top:8px;font-size:13.5px;color:#334155;background:#f8fafc;padding:6px 10px;border-radius:4px">💡 <b>Explanation:</b> ${esc(it.explanation)}</div>` : ""}
+      </div>`;
+    }).join("\n");
+    return `<!doctype html><html lang="${lang === "ar" ? "ar" : "en"}" dir="${dir}"><head><meta charset="utf-8"><title>${esc(title)} - Quiz Bank (${items.length} Qs)</title></head><body style="font-family:Inter,system-ui,sans-serif;background:#f1f5f9;color:#0f172a;padding:24px"><main style="max-width:860px;margin:0 auto;background:#fff;padding:36px;border-radius:10px;border:1px solid #cbd5e1"><h1>🧠 ${esc(title)} · Quiz Bank (${items.length} Questions)</h1><hr>${cards}</main></body></html>`;
   }
 
   async function startQuiz(m, lang, count, topic = null) {
@@ -236,8 +319,13 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const input = topic ? null : requireInput(m.chatId, lang);
     if (!topic && !input) return;
     const s = session(m.chatId);
-    const size = topic ? count : entitle.clampQuizSize(s, count);
-    if (!size) return ui.send(m.chatId, c.budgetDone, menuRows(lang, premium));
+    const requestedTotal = topic ? Math.min(500, Math.max(1, Number(count) || 5)) : entitle.clampQuizSize(s, count);
+    if (!requestedTotal) return ui.send(m.chatId, c.budgetDone, menuRows(lang, premium));
+
+    // Batch in chunks of at most 50 questions per interactive round so 50..500 Qs run at lightning speed
+    const batchSize = Math.min(50, requestedTotal);
+    const remainingAfterThis = Math.max(0, requestedTotal - batchSize);
+
     await runTask({
       chatId: m.chatId,
       userId: m.userId,
@@ -245,20 +333,94 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       cost: 1,
       label: c.thinking,
       work: async () => {
-        const r = await ai.complete(quizPrompt({ lang, source: input?.text || "", count: size, topic }));
-        let raw = normaliseQuiz(parseJsonLoose(r?.text), size);
-        if (!raw.length) return null;
-        raw = await topUpQuiz({ ai, items: raw, count: size, source: input?.text || topic, lang, topic });
-        const { items } = await qualityPass({ items: raw, source: input?.text || topic, lang, ai, verify: cfg.quizVerify !== false });
+        const subBatchMax = 25;
+        let collected = [];
+        let totalUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+        const srcText = input?.text || "";
+        const rounds = Math.ceil(batchSize / subBatchMax);
+
+        for (let rIdx = 0; rIdx < rounds; rIdx++) {
+          const needNow = Math.min(subBatchMax, batchSize - collected.length);
+          if (needNow <= 0) break;
+          // Language contract: If the source lecture is in English, generate the quiz in English!
+          const sourceLang = (srcText && detectLang(srcText)) || (topic && detectLang(topic)) || "en";
+          const promptLang = sourceLang === "ar" ? "ar" : "en";
+
+          // Slice different windows of long source text for multi-batch variety
+          const sliceStart = rounds > 1 && srcText.length > 6000 ? Math.floor((rIdx / rounds) * Math.max(0, srcText.length - 6000)) : 0;
+          const sliceText = srcText ? srcText.slice(sliceStart, sliceStart + 14000) : "";
+          const avoidList = collected.map((x) => x.q);
+          const r = await ai.complete(quizPrompt({ lang: promptLang, source: sliceText, count: needNow, topic, avoid: avoidList }));
+          if (r?.usage) {
+            totalUsage.promptTokens += r.usage.promptTokens || 0;
+            totalUsage.completionTokens += r.usage.completionTokens || 0;
+            totalUsage.totalTokens += r.usage.totalTokens || 0;
+          }
+          let partItems = normaliseQuiz(parseJsonLoose(r?.text), needNow);
+          if (partItems.length) {
+            partItems = await topUpQuiz({ ai, items: partItems, count: needNow, source: sliceText || topic, lang: promptLang, topic });
+            collected.push(...partItems);
+          }
+        }
+
+        if (!collected.length) return null;
+        const sourceLang = (srcText && detectLang(srcText)) || (topic && detectLang(topic)) || "en";
+        const promptLang = sourceLang === "ar" ? "ar" : "en";
+        const { items } = await qualityPass({ items: collected.slice(0, batchSize), source: input?.text || topic, lang: promptLang, ai, verify: cfg.quizVerify !== false && batchSize <= 15 });
         if (!items.length) return null;
-        const quiz = { items, index: 0, score: 0, answered: -1, title: topic || input.title, wrongItems: [] };
+
+        const timerSec = Number(s.quizTimer || 0);
+        if (timerSec > 0 && groups) {
+          await groups.start(m.chatId, items, timerSec);
+          const badge = lang === "ar"
+            ? `⏱️ <b>بدأ كويز باستفتاءات تيليجرام بمؤقت (${timerSec} ثانية لكل سؤال)!</b>\n${HR}\nإجمالي: <b>${items.length} سؤال</b>.\nانطلق بالحل في استفتاء تيليجرام بالأسفل بمؤقت تيليجرام 👇`
+            : `⏱️ <b>Telegram Quiz Polls started (${timerSec}s timer)!</b>\n${HR}\nTotal: <b>${items.length} questions</b>.\nAnswer the question in the Telegram poll below 👇`;
+          return {
+            html: badge,
+            rows: null,
+            file: bankFile,
+            usage: totalUsage,
+            after: () => {
+              saveSession(m.chatId, {
+                awaiting: null,
+                questionsUsed: Number(session(m.chatId).questionsUsed || 0) + items.length,
+                remainingQuizTotal: remainingAfterThis,
+                lastQuizTopic: topic,
+                lastQuizTitle: topic || input?.title || "Quiz",
+              });
+            },
+          };
+        }
+
+        const quiz = { items, index: 0, score: 0, answered: -1, title: topic || input.title, wrongItems: [], timerSec: 0 };
         const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
+        const batchBadge = remainingAfterThis > 0
+          ? (lang === "ar" ? `\n📦 <b>دفعة 1 (${items.length} سؤال)</b> من إجمالي <b>${requestedTotal}</b> سؤال (باقي ${remainingAfterThis} سؤال في الدفعات التالية)` : `\n📦 <b>Batch 1 (${items.length} Qs)</b> of <b>${requestedTotal}</b> total (${remainingAfterThis} left in next batches)`)
+          : "";
+        const bankFile = items.length >= 25
+          ? {
+              html: renderQuizBankHtml(quiz.title, items, lang),
+              name: `${slug(quiz.title)}-quiz-${items.length}q.html`,
+              caption: lang === "ar" ? `📎 بنك الأسئلة (${items.length} سؤال بالإجابات والتفسير) جاهز للتحميل والمراجعة` : `📎 Quiz Bank (${items.length} Qs with answers & explanations)`,
+            }
+          : null;
+
         return {
-          html: `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q, options: items[0].options })}`,
+          html: `${c.quizIntro(items.length)}${batchBadge}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q })}`,
           rows: [...quizRows(0, items[0].options, premium), ...appRows(qid, lang)],
-          after: () => {
+          file: bankFile,
+          usage: totalUsage,
+          after: (taskMsgId) => {
             if (qid) store.set(`appquiz:${qid}`, { userId: m.userId, items, at: now() }, 2 * 3600 * 1000);
-            saveSession(m.chatId, { quiz, awaiting: null, questionsUsed: Number(session(m.chatId).questionsUsed || 0) + items.length, lastQuizTitle: quiz.title });
+            saveSession(m.chatId, {
+              quiz,
+              quizMsgId: taskMsgId,
+              awaiting: null,
+              questionsUsed: Number(session(m.chatId).questionsUsed || 0) + items.length,
+              lastQuizTitle: quiz.title,
+              remainingQuizTotal: remainingAfterThis,
+              lastQuizTopic: topic,
+            });
           },
         };
       },
@@ -267,7 +429,56 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
 
   // ───────────── quiz state machine ─────────────
 
+  const activeQuizTimers = new Map();
+
+  function clearActiveTimer(chatId) {
+    const handle = activeQuizTimers.get(chatId);
+    if (handle) {
+      clearTimeout(handle);
+      activeQuizTimers.delete(chatId);
+    }
+  }
+
+  function armQuestionTimer(chatId, qIndex, sec) {
+    clearActiveTimer(chatId);
+    if (!sec || sec <= 0) return;
+    const handle = setTimeout(async () => {
+      activeQuizTimers.delete(chatId);
+      await timeoutQuestion(chatId, qIndex);
+    }, sec * 1000);
+    activeQuizTimers.set(chatId, handle);
+  }
+
+  async function timeoutQuestion(chatId, qIndex) {
+    const s = session(chatId);
+    const quiz = s.quiz;
+    if (!quiz || quiz.index !== qIndex || quiz.answered === qIndex) return;
+
+    const lang = pickLang(s, "");
+    const c = copy(lang);
+    const item = quiz.items[qIndex];
+    quiz.answered = qIndex;
+    quiz.streak = 0;
+    quiz.wrongItems = quiz.wrongItems || [];
+    if (!quiz.wrongItems.some((w) => w.q === item.q)) {
+      quiz.wrongItems.push(item);
+    }
+    saveSession(chatId, { quiz });
+
+    const stem = `🧠 <b>${lang === "ar" ? `سؤال ${qIndex + 1} من ${quiz.items.length}` : `Question ${qIndex + 1} of ${quiz.items.length}`}</b>\n${HR}\n<b>${esc(item.q)}</b>`;
+    const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
+    const timeOutMsg = lang === "ar"
+      ? `⏰ <b>انتهى الوقت المخصص للسؤال (${quiz.timerSec} ثانية)!</b>\n✅ <b>الإجابة الصحيحة:</b> <b>(${letters[item.answer] || ""})</b> <b>${esc(item.options[item.answer])}</b>${item.explanation ? `\n\n💡 <i>${esc(item.explanation)}</i>` : ""}`
+      : `⏰ <b>Time's up (${quiz.timerSec}s)!</b>\n✅ <b>Correct answer:</b> <b>(${letters[item.answer] || ""})</b> <b>${esc(item.options[item.answer])}</b>${item.explanation ? `\n\n💡 <i>${esc(item.explanation)}</i>` : ""}`;
+    const isLast = qIndex === quiz.items.length - 1;
+    const msgId = s.quizMsgId;
+    if (msgId) {
+      await ui.edit(chatId, msgId, `${stem}\n${HR}\n${timeOutMsg}`, nextRows(lang, premium, qIndex, isLast)).catch(() => {});
+    }
+  }
+
   async function answerQuiz(m, qIndex, choice) {
+    clearActiveTimer(m.chatId);
     const lang = pickLang(session(m.chatId), "");
     const c = copy(lang);
     const s = session(m.chatId);
@@ -287,38 +498,42 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     }
     saveSession(m.chatId, { quiz });
 
-    const question = c.quizQuestion({ index: qIndex + 1, total: quiz.items.length, q: item.q, options: item.options });
+    const stem = `🧠 <b>${lang === "ar" ? `سؤال ${qIndex + 1} من ${quiz.items.length}` : `Question ${qIndex + 1} of ${quiz.items.length}`}</b>\n${HR}\n<b>${esc(item.q)}</b>`;
+    const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
     const verdict = correct
       ? c.right(item.explanation)
       : (lang === "ar"
-          ? `❌ <b>إجابتك:</b> ${esc(item.options[choice] || "")}\n✅ <b>الإجابة الصحيحة:</b> <b>${esc(item.options[item.answer])}</b>${item.explanation ? `\n\n💡 <i>${esc(item.explanation)}</i>` : ""}`
-          : c.wrong(item.options[item.answer], item.explanation));
+          ? `❌ <b>إجابة غير صحيحة.</b>\n• إجابتك: <b>(${letters[choice] || ""})</b> ${esc(item.options[choice] || "")}\n• الصحيح: <b>(${letters[item.answer] || ""})</b> <b>${esc(item.options[item.answer])}</b>${item.explanation ? `\n\n💡 <i>${esc(item.explanation)}</i>` : ""}`
+          : `❌ <b>Not quite.</b>\n• Your answer: <b>(${letters[choice] || ""})</b> ${esc(item.options[choice] || "")}\n• Correct: <b>(${letters[item.answer] || ""})</b> <b>${esc(item.options[item.answer])}</b>${item.explanation ? `\n\n💡 <i>${esc(item.explanation)}</i>` : ""}`);
     const isLast = qIndex === quiz.items.length - 1;
-    await ui.edit(m.chatId, m.messageId, `${question}\n${HR}\n${verdict}`, nextRows(lang, premium, qIndex, isLast));
+    await ui.edit(m.chatId, m.messageId, `${stem}\n${HR}\n${verdict}`, nextRows(lang, premium, qIndex, isLast));
     if (correct && quiz.streak >= 3 && quiz.streak % 3 === 0) await ui.sendWithEffect(m.chatId, c.streak(quiz.streak), null, EFFECT.fire);
     return { ok: true };
   }
 
   async function nextQuestion(m, qIndex) {
+    clearActiveTimer(m.chatId);
     const s = session(m.chatId);
     const quiz = s.quiz;
     const lang = pickLang(s, "");
     const c = copy(lang);
     if (!quiz || quiz.index !== qIndex || quiz.answered !== qIndex) return { stale: true };
 
-    await ui.clearKeyboard(m.chatId, m.messageId);
+    ui.clearKeyboard(m.chatId, m.messageId).catch(() => {});
     if (qIndex + 1 < quiz.items.length) {
       quiz.index = qIndex + 1;
-      saveSession(m.chatId, { quiz });
       const item = quiz.items[quiz.index];
       const html = c.quizQuestion({ index: quiz.index + 1, total: quiz.items.length, q: item.q, options: item.options });
-      await ui.send(m.chatId, `${html}\n${HR}\n${progress(quiz.index, quiz.items.length)}`, quizRows(quiz.index, item.options, premium));
+      const sentMsgId = await ui.send(m.chatId, `${html}\n${HR}\n${progress(quiz.index, quiz.items.length)}`, quizRows(quiz.index, item.options, premium));
+      saveSession(m.chatId, { quiz, quizMsgId: sentMsgId });
       return { ok: true };
     }
 
     const wrongItems = quiz.wrongItems || [];
+    const remaining = Number(s.remainingQuizTotal || 0);
     saveSession(m.chatId, {
       quiz: null,
+      quizMsgId: null,
       retryQuizItems: wrongItems.length ? wrongItems : null,
       lastQuizTitle: quiz.title,
     });
@@ -326,7 +541,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     await ui.sendWithEffect(
       m.chatId,
       c.quizDone(quiz.score, quiz.items.length),
-      finishRows(lang, premium, wrongItems.length),
+      finishRows(lang, premium, wrongItems.length, remaining),
       quiz.score === quiz.items.length ? EFFECT.confetti : EFFECT.fire
     );
     return { ok: true };
@@ -348,6 +563,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         : chatPrompt({ lang, question });
       const r = await ai.complete(prompt);
       if (!r) return ui.edit(m.chatId, msgId, c.failed, menuRows(lang, premium));
+      if (r.usage) trackTokens(m.userId, r.usage);
       await deliver(m.chatId, msgId, r.text, input?.text ? inputRows(lang, premium) : menuRows(lang, premium, { isAdmin: quota.isAdmin(m.userId) }));
     } catch (err) {
       logger.error("[bot] ask failed:", err?.message || err);
@@ -364,10 +580,19 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
 
   function showStyles(m, lang) {
     const s0 = session(m.chatId);
-    const input = session(m.chatId).lastInput;
+    const input = s0.lastInput;
     if (!input?.text) return ui.send(m.chatId, copy(lang).noInput, menuRows(lang, premium));
-    const docLang = session(m.chatId).docLang || "en";
-    return ui.send(m.chatId, copy(lang).styles, stylePickerRows(lang, premium, docLang, s0.outputFormat || "html", s0.detail || "standard"));
+    const docLang = s0.docLang || "en";
+    const sug = input.suggestedPages || suggestedPages(input.words || wordCount(input.text));
+    const chosenPages = s0.targetPages || null;
+    const pageInfo = lang === "ar"
+      ? `\n\n📄 <b>عدد الصفحات المقترح للمحاضرة:</b> <b>${sug} صفحات</b>${chosenPages ? ` · المختار حالياً: <b>${chosenPages} صفحات</b>` : ""}`
+      : `\n\n📄 <b>Suggested length:</b> <b>${sug} page(s)</b>${chosenPages ? ` · Selected: <b>${chosenPages} page(s)</b>` : ""}`;
+    return ui.send(
+      m.chatId,
+      `${copy(lang).styles}${pageInfo}`,
+      stylePickerRows(lang, premium, docLang, s0.outputFormat || "html", s0.detail || "standard", chosenPages, sug)
+    );
   }
 
   async function runStyle(m, lang, id) {
@@ -380,6 +605,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const docLang = s.docLang || "en";
     const approved = media ? media.approvedForSummary(m.chatId) : [];
     const images = [...approved, ...(s.images || [])];
+    const pages = s.targetPages || null;
 
     await runTask({
       chatId: m.chatId,
@@ -388,17 +614,15 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       cost: tpl.cost,
       label: c.writing,
       work: async () => {
-        // Images are shrunk for the AI on a cache miss (see media/shrink.js). Same source,
-        // images, template and language reuse the generated document without calling the AI.
         const cached = await summaryCache(
-          { text: input.text, template: id, lang: docLang, detail: s.detail || "standard", images },
+          { text: input.text, template: id, lang: docLang, detail: pages ? `p${pages}` : (s.detail || "standard"), images },
           async () => {
             const sent = await Promise.all(images.map(async (i) => {
               if (!i.b64) return i;
               const small = await shrinkImage({ buffer: Buffer.from(i.b64, "base64"), mime: i.mime });
               return { ...i, mime: small.mime, b64: small.buffer.toString("base64") };
             }));
-            return generateDocument({ ai, template: id, lang: docLang, title: input.title, text: input.text, images: sent, detail: s.detail || "standard" });
+            return generateDocument({ ai, template: id, lang: docLang, title: input.title, text: input.text, images: sent, detail: s.detail || "standard", pages });
           }
         );
         const gen = cached;
@@ -419,6 +643,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
           html: `📋 <b>${esc(head)}</b> · ${esc(tpl.label[lang] || tpl.label.en)}\n${HR}\n${lines.map((l) => `• ${esc(l)}`).join("\n")}\n\n${c.docReady}${built.note ? `\n\n${built.note}` : ""}`,
           rows: afterDocumentRows(lang, premium),
           file: { html: built.html, name: built.name, caption: built.caption },
+          usage: cached?.cached ? null : gen.usage,
         };
       },
     });
@@ -466,7 +691,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         rows.push([button({ label: `${c.btn.cash} · ${p.egp} EGP`, icon: "credits", action: act("cash", p.id), premium })]);
       }
     }
-    if (cash?.enabled) rows.push([button({ label: lang === "ar" ? "🧾 ابعت رقم العملية" : "🧾 Send transaction ID", icon: "file", action: act("txid"), premium })]);
+    if (cash?.enabled) rows.push([button({ label: lang === "ar" ? "🧾 ابعت رقم العملية (فودافون كاش / فوري)" : "🧾 Send transaction ID", icon: "file", action: act("txid"), premium })]);
     rows.push([button({ label: c.btn.menu, icon: "home", action: act("menu"), premium })]);
     return ui.send(m.chatId, `${c.plansTitle}\n${HR}\n${lines}`, rows);
   }
@@ -535,15 +760,15 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const r = cash.claim(m.userId, raw);
     switch (r.status) {
       case "ok":
-        notifyAdmins(`💸 <b>تم استلام دفع فودافون كاش وتفعيله تلقائياً!</b>\n${HR}\n👤 ${esc(m.firstName || "طالب")} (${m.userId})\n🧾 رقم العملية: <code>${cleanId}</code>\n📦 باقة: ${PLANS[r.grant.plan].name.en}`);
+        notifyAdmins(`💸 <b>تم استلام دفع فودافون كاش / فوري وتفعيله تلقائياً!</b>\n${HR}\n👤 ${esc(m.firstName || "طالب")} (${m.userId})\n🧾 رقم العملية: <code>${cleanId}</code>\n📦 باقة: ${PLANS[r.grant.plan].name.en}`);
         return ui.send(m.chatId, c.cashOk(PLANS[r.grant.plan].name[lang] || PLANS[r.grant.plan].name.en, new Date(r.grant.until).toISOString().slice(0, 10)), menuRows(lang, premium, { isAdmin: quota.isAdmin(m.userId) }));
       case "pending": {
         const pendingKey = `cash:pending:${cleanId}`;
         if (!store.get(pendingKey)) {
           store.set(pendingKey, { userId: m.userId, firstName: m.firstName, txId: cleanId, at: now() }, 7 * 24 * 3600 * 1000);
           const adminAlert = lang === "ar"
-            ? `🔔 <b>طلب تفعيل فودافون كاش للمراجعة!</b>\n${HR}\n👤 <b>الطالب:</b> ${esc(m.firstName || "طالب")} (<code>${m.userId}</code>)\n🧾 <b>رقم العملية:</b> <code>${cleanId}</code>\n\n<i>لو التحويل وصلك، اضغط اعتماد لتفعيل الباقة فوراً:</i>`
-            : `🔔 <b>New Vodafone Cash payment to review!</b>\n${HR}\n👤 <b>Student:</b> ${esc(m.firstName || "Student")} (<code>${m.userId}</code>)\n🧾 <b>TxID:</b> <code>${cleanId}</code>\n\n<i>Click approve if received:</i>`;
+            ? `🔔 <b>طلب تفعيل فودافون كاش / فوري للمراجعة!</b>\n${HR}\n👤 <b>الطالب:</b> ${esc(m.firstName || "طالب")} (<code>${m.userId}</code>)\n🧾 <b>رقم العملية:</b> <code>${cleanId}</code>\n\n<i>لو التحويل وصلك، اضغط اعتماد لتفعيل الباقة فوراً:</i>`
+            : `🔔 <b>New Vodafone Cash / Fawry payment to review!</b>\n${HR}\n👤 <b>Student:</b> ${esc(m.firstName || "Student")} (<code>${m.userId}</code>)\n🧾 <b>TxID:</b> <code>${cleanId}</code>\n\n<i>Click approve if received:</i>`;
           const rows = [
             [button({ label: "✅ اعتماد وتفعيل الباقة", icon: "credits", action: act("adm_cok", String(m.userId), cleanId), style: "primary", premium })],
             [button({ label: "❌ رفض", icon: "back", action: act("adm_cno", String(m.userId), cleanId), style: "danger", premium })],
@@ -648,7 +873,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     return ui.send(m.chatId, r ? sanitizeHtml(r.text) : c.failed);
   }
 
-  // ───────────── images, quiz sizes and output formats ─────────────
+  // ───────────── images, quiz sizes, timers and output formats ─────────────
 
   /** A spinner in the progress message while `work` runs. Stops cleanly when it finishes. */
   async function withSpinner(chatId, msgId, label, work) {
@@ -678,14 +903,67 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     return { html: o.content, name: o.name, caption: c.docCaption(o.name), note: o.note ? c.formatNote(format, o.note) : null };
   }
 
-  function sizeRows(lang, userId, source, session) {
-    const sizes = entitle.allowedQuizSizes(session, userId);
+  function sizeRows(lang, userId, source, sessionObj) {
+    const sizes = entitle.allowedQuizSizes(sessionObj, userId);
     const row = sizes.map((n) => button({ label: String(n), icon: "quiz", action: act("qc", String(n), source), style: "primary", premium }));
     if (!row.length) return null;
     const rows = [];
     for (let i = 0; i < row.length; i += 3) rows.push(row.slice(i, i + 3));
+    const ar = lang === "ar";
+    const hasTimer = Number(sessionObj?.quizTimer || 0) > 0;
+    // Note: Keep non-size button labels free of digits so test/flow.test.js regex matching on size buttons stays exact!
+    rows.push([
+      button({ label: ar ? "✏️ اكتب عدد الأسئلة" : "✏️ Custom question count", icon: "quiz", action: act("qcustom", source), style: "success", premium }),
+      button({ label: ar ? (hasTimer ? "⏱️ مؤقت السؤال (مفعّل)" : "⏱️ تشغيل بمؤقت") : (hasTimer ? "⏱️ Question Timer (On)" : "⏱️ Set Timer"), icon: "clock", action: act("qtimer", "menu", source), style: hasTimer ? "primary" : null, premium }),
+    ]);
     rows.push([button({ label: copy(lang).btn.back, icon: "back", action: act("menu"), premium })]);
     return rows;
+  }
+
+  function showTimerPicker(m, lang, source = "text") {
+    const ar = lang === "ar";
+    const cur = Number(session(m.chatId).quizTimer || 0);
+    const row1 = [
+      button({
+        label: ar ? "🎯 بدون مؤقت" : "🎯 No timer",
+        icon: "done",
+        action: act("qtimer", "0", source),
+        style: cur === 0 ? "success" : null,
+        premium,
+      }),
+      button({
+        label: ar ? "⏱️ 30 ثانية" : "⏱️ 30s Timer",
+        icon: "clock",
+        action: act("qtimer", "30", source),
+        style: cur === 30 ? "primary" : null,
+        premium,
+      }),
+    ];
+    const row2 = [
+      button({
+        label: ar ? "⏱️ 45 ثانية" : "⏱️ 45s Timer",
+        icon: "clock",
+        action: act("qtimer", "45", source),
+        style: cur === 45 ? "primary" : null,
+        premium,
+      }),
+      button({
+        label: ar ? "⏱️ 60 ثانية" : "⏱️ 60s Timer",
+        icon: "clock",
+        action: act("qtimer", "60", source),
+        style: cur === 60 ? "primary" : null,
+        premium,
+      }),
+    ];
+    const row3 = [
+      button({ label: ar ? "✏️ وقت مخصص بالثواني" : "✏️ Custom seconds", icon: "clock", action: act("qtimer", "custom", source), premium }),
+      button({ label: copy(lang).btn.back, icon: "back", action: act("qc", "pick", source), premium }),
+    ];
+    const rows = [row1, row2, row3];
+    const text = ar
+      ? `⏱️ <b>اختر نظام المؤقت للاختبار</b>\n${HR}\nالمؤقت الحالي: <b>${cur ? `${cur} ثانية لكل سؤال` : "🎯 بدون مؤقت (حل براحتك)"}</b>.\nاختر الوضع المفضل لبدء الاختبار:`
+      : `⏱️ <b>Quiz Question Timer</b>\n${HR}\nCurrent timer: <b>${cur ? `${cur}s per question` : "🎯 Untimed (No timer)"}</b>.\nChoose your preferred timer mode:`;
+    return ui.send(m.chatId, text, rows);
   }
 
   async function quizCount(m, lang, a0, a1) {
@@ -697,10 +975,16 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       if (source === "images" && !(media && media.hasApproved(m.chatId))) return ui.send(m.chatId, c.noApproved, menuRows(lang, premium));
       const rows = sizeRows(lang, m.userId, source, s);
       if (!rows) return ui.send(m.chatId, c.budgetDone, menuRows(lang, premium));
-      return ui.send(m.chatId, c.quizPick(source, entitle.questionsLeft(s)), rows);
+      const timerSec = Number(s.quizTimer || 0);
+      const timerNote = timerSec > 0
+        ? (lang === "ar" ? `\n\n⏱️ <b>المؤقت المفعّل:</b> <b>${timerSec} ثانية</b> لكل سؤال.` : `\n\n⏱️ <b>Active timer:</b> <b>${timerSec}s</b> per question.`)
+        : (lang === "ar" ? `\n\n🎯 <b>وضع الاختبار:</b> <b>بدون مؤقت</b> (حل براحتك). تقدر تضغط "⏱️ تشغيل بمؤقت" لتفعيله!` : `\n\n🎯 <b>Mode:</b> <b>No timer</b>. Tap "⏱️ Set Timer" to activate!`);
+      return ui.send(m.chatId, `${c.quizPick(source, entitle.questionsLeft(s))}${timerNote}`, rows);
     }
     const n = Number(a0);
-    if (!entitle.allowedQuizSizes(s, m.userId).includes(n) && n !== 0) return ui.send(m.chatId, c.budgetDone, menuRows(lang, premium));
+    if (!entitle.allowedQuizSizes(s, m.userId).includes(n) && n !== 0 && (Number(cfg?.maxQuestionsPerFile) || 30) <= 30) {
+      return ui.send(m.chatId, c.budgetDone, menuRows(lang, premium));
+    }
     if (source === "images") return runImageQuiz(m, lang, n);
     return startQuiz(m, lang, n);
   }
@@ -782,7 +1066,6 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     for (const id of cfg.adminIds || []) ui.send(id, html).catch(() => {});
   }
 
-  /** Heads-up before a plan ends and a notice once it has ended. Each period is announced once. */
   /** One report per day to every admin, with the day's counters and AI health. */
   async function sendDailyReport({ aiToday = null, day = null } = {}) {
     const targetDay = day || new Date(now() - 24 * 3600 * 1000).toISOString().slice(0, 10);
@@ -911,6 +1194,43 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
 
     if (!s.lang) saveSession(m.chatId, { detectedLang: detectLang(text) || s.detectedLang || "en" });
 
+    // Custom interactive awaits for user & in-bot admin controls
+    if (s.awaiting === "pages") {
+      const n = Math.min(25, Math.max(1, parseInt(normaliseDigits(text), 10) || 4));
+      saveSession(m.chatId, { awaiting: null, targetPages: n });
+      return showStyles(m, lang);
+    }
+    if (s.awaiting === "quiz_count") {
+      const maxAllowed = Number(cfg?.maxQuestionsPerFile) || 500;
+      const n = Math.min(maxAllowed, Math.max(1, parseInt(normaliseDigits(text), 10) || 10));
+      const src = s.quizCountSource || "text";
+      saveSession(m.chatId, { awaiting: null });
+      if (src === "images") return runImageQuiz(m, lang, n);
+      return startQuiz(m, lang, n);
+    }
+    if (s.awaiting === "quiz_timer") {
+      const sec = Math.min(600, Math.max(0, parseInt(normaliseDigits(text), 10) || 0));
+      const src = s.quizCountSource || "text";
+      saveSession(m.chatId, { awaiting: null, quizTimer: sec });
+      return quizCount(m, lang, "pick", src);
+    }
+    if (s.awaiting === "admin_broadcast" && quota.isAdmin(m.userId)) {
+      saveSession(m.chatId, { awaiting: null });
+      return runAdminBroadcast(m, lang, text);
+    }
+    if (s.awaiting === "admin_grant" && quota.isAdmin(m.userId)) {
+      saveSession(m.chatId, { awaiting: null });
+      return runAdminGrantText(m, lang, text);
+    }
+    if (s.awaiting === "admin_ban" && quota.isAdmin(m.userId)) {
+      saveSession(m.chatId, { awaiting: null });
+      return runAdminBanText(m, lang, text);
+    }
+    if (s.awaiting === "admin_reset" && quota.isAdmin(m.userId)) {
+      saveSession(m.chatId, { awaiting: null });
+      return runAdminResetText(m, lang, text);
+    }
+
     if (s.awaiting === "topic") {
       saveSession(m.chatId, { awaiting: null });
       return startQuiz(m, lang, 5, text.slice(0, 120));
@@ -931,10 +1251,13 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
 
     if (text.length > 400 && (!s.lastInput || detectIntent(text) === "chat")) {
       const words = wordCount(text);
+      const sugPages = suggestedPages(words);
       saveSession(m.chatId, {
         lang,
-        lastInput: { kind: "text", title: "Pasted text", text: text.slice(0, cfg.maxTextChars), words, at: now() },
+        lastInput: { kind: "text", title: "Pasted text", text: text.slice(0, cfg.maxTextChars), words, suggestedPages: sugPages, at: now() },
         quiz: null,
+        questionsUsed: 0,
+        remainingQuizTotal: 0,
       });
       return ui.send(m.chatId, c.textReady({ words }), inputRows(lang, premium));
     }
@@ -955,7 +1278,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "cards":
         return flashcards(m, lang);
       case "explain":
-        return ask(m, lang, `${text}`);
+        return hasInput ? explainLecture(m, lang) : ask(m, lang, `${text}`);
       case "stats":
         return showMyStats(m, lang);
       case "credits":
@@ -971,60 +1294,187 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const c = copy(lang);
     const s = quota.status(m.userId);
     const body = s.unlimited ? c.unlimited : c.quota(s.left, s.limit);
-    return ui.send(m.chatId, `🪙 <b>${lang === "ar" ? "مهامك النهارده" : "Today's tasks"}</b>\n${HR}\n${body}`, menuRows(lang, premium));
+    const tok = typeof quota.tokenStatus === "function" ? quota.tokenStatus(m.userId) : null;
+    const tokBlock = tok
+      ? (lang === "ar"
+          ? `\n\n⚡ <b>حساب التوكنز (AI Tokens):</b>\n• المستهلك اليوم: <b>${tok.used.toLocaleString("en-US")}</b> توكن\n• المتبقي اليوم: <b>${tok.unlimited ? "غير محدود 👑" : tok.left.toLocaleString("en-US")}</b> توكن\n• محفظة التوكنز الإضافية: <b>${(tok.wallet || 0).toLocaleString("en-US")}</b> توكن\n• إجمالي استهلاكك الكلي: <b>${(tok.totalUsed || 0).toLocaleString("en-US")}</b> توكن`
+          : `\n\n⚡ <b>AI Token Balance:</b>\n• Used today: <b>${tok.used.toLocaleString("en-US")}</b> tokens\n• Remaining today: <b>${tok.unlimited ? "Unlimited 👑" : tok.left.toLocaleString("en-US")}</b> tokens\n• Bonus Wallet: <b>${(tok.wallet || 0).toLocaleString("en-US")}</b> tokens\n• Total lifetime tokens: <b>${(tok.totalUsed || 0).toLocaleString("en-US")}</b> tokens`)
+      : "";
+    return ui.send(m.chatId, `🪙 <b>${lang === "ar" ? "مهامك وتوكناتك النهارده" : "Today's tasks & tokens"}</b>\n${HR}\n${body}${tokBlock}`, menuRows(lang, premium));
   }
 
   function showMyStats(m, lang) {
     const c = copy(lang);
     if (!quota.isAdmin(m.userId)) return showQuota(m, lang);
+    const d = DAY();
     const s = {
-      activeToday: store.get(`stat:users:${DAY()}`) || 0,
-      tasksToday: store.get(`stat:tasks:${DAY()}`) || 0,
-      filesToday: store.get(`stat:files:${DAY()}`) || 0,
-      quizzesToday: store.get(`stat:quizzes:${DAY()}`) || 0,
+      activeToday: store.get(`stat:users:${d}`) || 0,
+      tasksToday: store.get(`stat:tasks:${d}`) || 0,
+      filesToday: store.get(`stat:files:${d}`) || 0,
+      quizzesToday: store.get(`stat:quizzes:${d}`) || 0,
     };
-    return ui.send(m.chatId, c.stats(s), menuRows(lang, premium, { isAdmin: true }));
+    const tokensToday = Number(store.get(`stat:tokens:${d}`) || 0);
+    const tokLine = lang === "ar" ? `\n⚡ توكنز مستهلكة اليوم: <b>${tokensToday.toLocaleString("en-US")}</b>` : `\n⚡ Tokens used today: <b>${tokensToday.toLocaleString("en-US")}</b>`;
+    return ui.send(m.chatId, `${c.stats(s)}${tokLine}`, adminRows(lang, premium));
   }
 
-  // ───────────── admin panel inside the bot (admins only) ─────────────
+  // ───────────── Full In-Bot Admin Control Panel (admins only) ─────────────
 
-  /**
-   * /admin: sends the web dashboard link to admins only. The token is never sent in chat;
-   * the admin types it into the page. Non-admins get the normal menu, as if the command did not exist.
-   */
   function showAdminLink(m, lang) {
     if (!quota.isAdmin(m.userId)) return ui.send(m.chatId, copy(lang).menu, menuRows(lang, premium));
     const base = (cfg.adminPublicUrl || "").replace(/\/+$/, "");
-    const body = base
-      ? `🔗 <b>${lang === "ar" ? "لوحة الويب" : "Web dashboard"}</b>\n${HR}\n${esc(base)}/admin\n\n<i>${lang === "ar" ? "ادخل بالتوكن بتاعك في الصفحة. التوكن ما بيتبعتش في الشات." : "Open it and enter your token on the page. The token is never sent in chat."}</i>`
-      : `⚠️ ${lang === "ar" ? "الرابط مش متظبط. حط ADMIN_PUBLIC_URL في .env" : "No link set. Add ADMIN_PUBLIC_URL to .env"}`;
-    return ui.send(m.chatId, body, adminRows(lang, premium));
+    const d = DAY();
+    const totalUsers = store.keys("user:").length;
+    const tokensToday = Number(store.get(`stat:tokens:${d}`) || 0);
+    const header = lang === "ar"
+      ? `🛠 <b>لوحة تحكم الأدمن الكاملة داخل البوت (Admin panel)</b>\n${HR}\n👥 إجمالي المستخدمين: <b>${totalUsers}</b> · نشطين اليوم: <b>${store.get(`stat:users:${d}`) || 0}</b>\n⚙️ مهام اليوم: <b>${store.get(`stat:tasks:${d}`) || 0}</b> · 📄 ملفات: <b>${store.get(`stat:files:${d}`) || 0}</b>\n⚡ استهلاك التوكنز اليوم: <b>${tokensToday.toLocaleString("en-US")}</b> توكن\n\n<i>تحكم في كل شيء مباشرة من الأزرار بالأسفل بدون الحاجة للمتصفح:</i>`
+      : `🛠 <b>In-Bot Admin panel</b>\n${HR}\n👥 Total users: <b>${totalUsers}</b> · Active today: <b>${store.get(`stat:users:${d}`) || 0}</b>\n⚙️ Tasks: <b>${store.get(`stat:tasks:${d}`) || 0}</b> · 📄 Files: <b>${store.get(`stat:files:${d}`) || 0}</b>\n⚡ Tokens today: <b>${tokensToday.toLocaleString("en-US")}</b>`;
+    const webLine = base ? `\n\n🔗 Web dashboard: ${esc(base)}/admin` : "";
+    return ui.send(m.chatId, `${header}${webLine}`, adminRows(lang, premium));
   }
 
-  /** Admin screen: a summary card, and buttons to open payments, users or AI health. */
   function showAdmin(m, lang) {
     if (!quota.isAdmin(m.userId)) return showQuota(m, lang);
     const d = DAY();
+    const totalUsers = store.keys("user:").length;
+    const tokensToday = Number(store.get(`stat:tokens:${d}`) || 0);
     const lines = lang === "ar"
-      ? [`👥 نشطين النهارده: <b>${store.get(`stat:users:${d}`) || 0}</b>`, `⚙️ مهام: <b>${store.get(`stat:tasks:${d}`) || 0}</b>`, `📄 ملفات: <b>${store.get(`stat:files:${d}`) || 0}</b>`]
-      : [`👥 Active today: <b>${store.get(`stat:users:${d}`) || 0}</b>`, `⚙️ Tasks: <b>${store.get(`stat:tasks:${d}`) || 0}</b>`, `📄 Files: <b>${store.get(`stat:files:${d}`) || 0}</b>`];
-    return ui.send(m.chatId, `🛠 <b>${lang === "ar" ? "لوحة الأدمن" : "Admin panel"}</b>\n${HR}\n${lines.join("\n")}\n\n<i>${lang === "ar" ? "الإدارة الكاملة من لوحة الويب /admin" : "Full management is on the web dashboard /admin"}</i>`, adminRows(lang, premium));
+      ? [
+          `👥 إجمالي المشتركين: <b>${totalUsers}</b> · نشطين النهارده: <b>${store.get(`stat:users:${d}`) || 0}</b>`,
+          `⚙️ مهام اليوم: <b>${store.get(`stat:tasks:${d}`) || 0}</b> · 📄 ملفات: <b>${store.get(`stat:files:${d}`) || 0}</b>`,
+          `🧠 كويزات اليوم: <b>${store.get(`stat:quizzes:${d}`) || 0}</b>`,
+          `⚡ التوكنز المستهلكة اليوم: <b>${tokensToday.toLocaleString("en-US")}</b> توكن`,
+        ]
+      : [
+          `👥 Total users: <b>${totalUsers}</b> · Active today: <b>${store.get(`stat:users:${d}`) || 0}</b>`,
+          `⚙️ Tasks: <b>${store.get(`stat:tasks:${d}`) || 0}</b> · 📄 Files: <b>${store.get(`stat:files:${d}`) || 0}</b>`,
+          `🧠 Quizzes: <b>${store.get(`stat:quizzes:${d}`) || 0}</b>`,
+          `⚡ Tokens today: <b>${tokensToday.toLocaleString("en-US")}</b>`,
+        ];
+    return ui.send(m.chatId, `🛠 <b>${lang === "ar" ? "لوحة الأدمن (تحكم كامل من البوت)" : "Admin panel"}</b>\n${HR}\n${lines.join("\n")}`, adminRows(lang, premium));
   }
 
-  /** Recent Stars payments, from the store, newest first. */
+  function showAdminUsers(m, lang) {
+    if (!quota.isAdmin(m.userId)) return showQuota(m, lang);
+    const keys = store.keys("user:");
+    const list = keys
+      .map((k) => {
+        const uid = k.slice(5);
+        const u = store.get(k) || {};
+        const plan = plans ? plans.active(uid) : "free";
+        const banned = Boolean(store.get(`banned:${uid}`));
+        const tokUsed = Number(store.get(`tok_total:${uid}`) || 0);
+        return { uid, firstName: u.firstName || "User", phone: u.phone || "", lastSeen: u.lastSeen || 0, plan, banned, tokUsed };
+      })
+      .sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))
+      .slice(0, 20);
+
+    const body = list.length
+      ? list.map((u, i) => `${i + 1}. <b>${esc(u.firstName)}</b> (<code>${esc(u.uid)}</code>) · ${u.plan === "pro" ? "⭐ PRO" : "Free"}${u.banned ? " 🚫" : ""} · ⚡ ${u.tokUsed.toLocaleString("en-US")} tok${u.phone ? ` · ${esc(u.phone)}` : ""}`).join("\n")
+      : (lang === "ar" ? "مفيش مستخدمين مسجلين لسه." : "No registered users yet.");
+
+    const text = lang === "ar"
+      ? `👥 <b>المستخدمين (${keys.length} مستخدم)</b>\n${HR}\n${body}\n\n💡 <i>اضغط على أزرار التحكم بالأسفل لتفعيل Pro أو شحن توكنز أو حظر/تصفير أي مستخدم بالـ ID:</i>`
+      : `👥 <b>Users (${keys.length} total)</b>\n${HR}\n${body}`;
+    return ui.send(m.chatId, text, adminRows(lang, premium));
+  }
+
+  async function runAdminBroadcast(m, lang, messageText) {
+    const keys = store.keys("user:");
+    const userIds = keys.map((k) => Number(k.slice(5))).filter((id) => Number.isInteger(id) && id > 0);
+    let sent = 0;
+    let failed = 0;
+    for (const uid of userIds) {
+      try {
+        await ui.send(uid, `📢 <b>${lang === "ar" ? "إشعار من إدارة Black Fighters" : "Announcement from Black Fighters"}</b>\n${HR}\n${sanitizeHtml(messageText)}`);
+        sent++;
+      } catch {
+        failed++;
+      }
+    }
+    return ui.send(
+      m.chatId,
+      lang === "ar"
+        ? `✅ <b>تم إرسال الإذاعة (Broadcast) بنجاح!</b>\n${HR}\n📨 وصلت لـ: <b>${sent}</b> مشترك\n⚠️ فشل: <b>${failed}</b>`
+        : `✅ <b>Broadcast complete!</b>\n${HR}\n📨 Sent: <b>${sent}</b> · Failed: <b>${failed}</b>`,
+      adminRows(lang, premium)
+    );
+  }
+
+  async function runAdminGrantText(m, lang, text) {
+    const parts = text.trim().split(/\s+/);
+    const targetId = parts[0]?.replace(/\D/g, "");
+    const days = parseInt(parts[1], 10) || 30;
+    const bonusTokens = parseInt(parts[2], 10) || 500_000;
+    if (!targetId) {
+      return ui.send(m.chatId, lang === "ar" ? "⚠️ اكتب الـ ID بشكل صحيح." : "⚠️ Invalid user ID.", adminRows(lang, premium));
+    }
+    const grant = plans ? plans.grant(targetId, "pro", days) : { plan: "pro", until: now() + days * 86400000 };
+    if (typeof quota.addTokens === "function" && bonusTokens > 0) {
+      quota.addTokens(targetId, bonusTokens);
+    }
+    const untilDate = new Date(grant.until).toISOString().slice(0, 10);
+    await ui.send(
+      m.chatId,
+      `✅ <b>تم تفعيل باقة Pro وشحن التوكنز بنجاح!</b>\n${HR}\n👤 المستخدم: <code>${targetId}</code>\n📅 ساري حتى: <b>${untilDate}</b> (${days} يوم)\n⚡ توكنز مضافة للمحفظة: <b>+${bonusTokens.toLocaleString("en-US")}</b>`,
+      adminRows(lang, premium)
+    );
+    ui.send(targetId, `🎉 <b>تم تفعيل باقة Pro لحسابك لمدة ${days} يوم + شحن ${bonusTokens.toLocaleString("en-US")} توكن!</b>\nساري حتى: <b>${untilDate}</b>`).catch(() => {});
+  }
+
+  async function runAdminBanText(m, lang, text) {
+    const targetId = text.trim().replace(/\D/g, "");
+    if (!targetId) return ui.send(m.chatId, "⚠️ Invalid ID", adminRows(lang, premium));
+    const key = `banned:${targetId}`;
+    const currentlyBanned = Boolean(store.get(key));
+    if (currentlyBanned) {
+      store.del(key);
+      return ui.send(m.chatId, `✅ <b>تم فك الحظر عن المستخدم</b> <code>${targetId}</code>`, adminRows(lang, premium));
+    } else {
+      store.set(key, 1);
+      return ui.send(m.chatId, `🚫 <b>تم حظر المستخدم</b> <code>${targetId}</code>`, adminRows(lang, premium));
+    }
+  }
+
+  async function runAdminResetText(m, lang, text) {
+    const targetId = text.trim().replace(/\D/g, "");
+    if (!targetId) return ui.send(m.chatId, "⚠️ Invalid ID", adminRows(lang, premium));
+    const d = DAY();
+    store.del(`q:${targetId}:${d}`);
+    store.del(`files:${targetId}:${d}`);
+    store.del(`tok:${targetId}:${d}`);
+    return ui.send(m.chatId, `🔄 <b>تم تصفير استهلاك اليوم (مهام + ملفات + توكنز) للمستخدم</b> <code>${targetId}</code>`, adminRows(lang, premium));
+  }
+
+  /** Recent Stars & pending Cash/Fawry payments, from the store, newest first. */
   function showAdminPayments(m, lang) {
     if (!quota.isAdmin(m.userId)) return showQuota(m, lang);
-    // Same source as the web dashboard: every Stars charge stored under "stars:".
+    const pendingCash = store
+      .keys("cash:pending:")
+      .map((k) => store.get(k))
+      .filter(Boolean);
     const list = store
       .keys("stars:")
       .map((k) => ({ chargeId: k.slice(6), ...(store.get(k) || {}) }))
       .filter((p) => p.userId)
       .sort((a, b) => (b.at || 0) - (a.at || 0))
       .slice(0, 10);
+    const pendingLines = pendingCash.length
+      ? pendingCash.map((p) => `⏳ <b>فودافون كاش / فوري معلق:</b> الطالب <code>${esc(String(p.userId))}</code> · رقم العملية: <code>${esc(String(p.txId))}</code>`).join("\n")
+      : "";
     const body = list.length
       ? list.map((p) => `• ${esc(String(p.userId))} · ${esc(String(p.stars))} ⭐ · ${esc(new Date(p.at).toISOString().slice(0, 10))}`).join("\n")
-      : (lang === "ar" ? "مفيش مدفوعات لسه." : "No payments yet.");
-    return ui.send(m.chatId, `💳 <b>${lang === "ar" ? "آخر المدفوعات" : "Recent payments"}</b>\n${HR}\n${body}`, adminRows(lang, premium));
+      : (lang === "ar" ? "مفيش مدفوعات نجوم لسه." : "No payments yet.");
+    const fullBody = [pendingLines, body].filter(Boolean).join(`\n${HR}\n`);
+    const rows = [];
+    for (const p of pendingCash.slice(0, 3)) {
+      rows.push([
+        button({ label: `✅ اعتماد ${p.txId}`, icon: "credits", action: act("adm_cok", String(p.userId), String(p.txId)), style: "success", premium }),
+        button({ label: `❌ رفض ${p.txId}`, icon: "back", action: act("adm_cno", String(p.userId), String(p.txId)), style: "danger", premium }),
+      ]);
+    }
+    rows.push(...adminRows(lang, premium));
+    return ui.send(m.chatId, `💳 <b>${lang === "ar" ? "المدفوعات وطلبات التفعيل" : "Recent payments"}</b>\n${HR}\n${fullBody}`, rows);
   }
 
   /** Health of each AI provider: paused or not, and recent failures with their cause. */
@@ -1036,7 +1486,9 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       ? names.map((n) => `${state[n].paused ? "⏸" : "✅"} <b>${esc(n)}</b> · ${state[n].paused ? (lang === "ar" ? "متوقف مؤقتاً" : "paused") : (lang === "ar" ? "شغال" : "working")}`).join("\n")
       : (lang === "ar" ? "مفيش طلبات AI لسه." : "No AI requests yet.");
     const recent = (ai?.diagnose?.() || []).map((r) => `• ${esc(r.where)}: ${esc(r.message)}`).join("\n");
-    return ui.send(m.chatId, `🧠 <b>${lang === "ar" ? "حالة الـAI" : "AI health"}</b>\n${HR}\n${rows}${recent ? `\n\n${HR}\n${recent}` : ""}`, adminRows(lang, premium));
+    const tokToday = Number(store.get(`stat:tokens:${DAY()}`) || 0);
+    const tokLine = `\n\n⚡ <b>Tokens today:</b> ${tokToday.toLocaleString("en-US")}`;
+    return ui.send(m.chatId, `🧠 <b>${lang === "ar" ? "حالة الـAI والتوكنز" : "AI health"}</b>\n${HR}\n${rows}${tokLine}${recent ? `\n\n${HR}\n${recent}` : ""}`, adminRows(lang, premium));
   }
 
   /** Burns & Fluid Resuscitation 30-Question Quiz (Admins only) */
@@ -1146,7 +1598,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "/help":
         return ui.send(m.chatId, c.help, menuRows(lang, premium, { isAdmin: admin }));
       case "/new":
-        saveSession(m.chatId, { lastInput: null, quiz: null, awaiting: null, images: [] });
+        saveSession(m.chatId, { lastInput: null, quiz: null, awaiting: null, images: [], targetPages: null, remainingQuizTotal: 0 });
         return ui.send(m.chatId, c.cleared, menuRows(lang, premium, { isAdmin: admin }));
       case "/lang": {
         const next = arg?.toLowerCase() === "ar" ? "ar" : "en";
@@ -1200,21 +1652,12 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         return ui.send(m.chatId, c.menu, menuRows(lang, premium, { isAdmin: admin }));
       case "/grant": {
         if (!admin) return ui.send(m.chatId, c.menu, menuRows(lang, premium));
-        const parts = m.text.trim().split(/\s+/).slice(1);
-        const targetId = parts[0];
-        const days = parseInt(parts[1], 10) || 30;
-        const planId = (parts[2] || "pro").toLowerCase();
-        if (!targetId || !/^\d+$/.test(targetId)) {
-          return ui.send(m.chatId, `⚠️ <b>طريقة استخدام أمر التفعيل:</b>\n<code>/grant &lt;user_id&gt; [days] [plan]</code>\nمثال: <code>/grant 12345678 30 pro</code>`);
+        const rest = m.text.trim().split(/\s+/).slice(1).join(" ");
+        if (!rest) {
+          saveSession(m.chatId, { awaiting: "admin_grant" });
+          return ui.send(m.chatId, `🎁 <b>ابعت الـ User ID وعدد الأيام والتوكنز الإضافية:</b>\nمثال: <code>12345678 30 500000</code>`);
         }
-        const planObj = PLANS[planId] || PLANS.pro;
-        const grant = plans.grant(targetId, planObj.id, days);
-        const untilDate = new Date(grant.until).toISOString().slice(0, 10);
-        await ui.send(m.chatId, `✅ <b>تم تفعيل الخطة بنجاح!</b>\n${HR}\n👤 المستخدم: <code>${targetId}</code>\n📦 الخطة: <b>${planObj.name.ar || planObj.name.en}</b>\n📅 ساري حتى: <b>${untilDate}</b> (${days} يوم)`);
-        const targetLang = pickLang(session(targetId), "");
-        const targetC = copy(targetLang);
-        ui.send(targetId, targetC.cashOk(planObj.name[targetLang] || planObj.name.en, untilDate), menuRows(targetLang, premium, { isAdmin: quota.isAdmin(targetId) })).catch(() => {});
-        return;
+        return runAdminGrantText(m, lang, rest);
       }
       default:
         return ui.send(m.chatId, c.menu, menuRows(lang, premium, { isAdmin: admin }));
@@ -1249,9 +1692,63 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         await ui.ack(m.callbackId);
         return showStyles(m, lang);
       }
+      case "pg": {
+        await ui.ack(m.callbackId);
+        if (a0 === "custom") {
+          saveSession(m.chatId, { awaiting: "pages" });
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? "📄 <b>اكتب عدد الصفحات اللي عاوزه للتلخيص (من 1 إلى 25 صفحة):</b>"
+              : "📄 <b>Type the number of pages you want for the summary (1 to 25):</b>",
+            [[button({ label: c.btn.back, icon: "back", action: act("sum", "basic"), premium })]]
+          );
+        }
+        const n = Math.min(25, Math.max(1, parseInt(a0, 10) || 4));
+        saveSession(m.chatId, { targetPages: n });
+        return showStyles(m, lang);
+      }
       case "quiz":
         await ui.ack(m.callbackId);
-        return startQuiz(m, lang, Math.min(10, Math.max(3, parseInt(a0, 10) || 5)));
+        return startQuiz(m, lang, Math.min(500, Math.max(3, parseInt(a0, 10) || 5)));
+      case "qcustom": {
+        await ui.ack(m.callbackId);
+        const src = a0 === "images" ? "images" : "text";
+        saveSession(m.chatId, { awaiting: "quiz_count", quizCountSource: src });
+        return ui.send(
+          m.chatId,
+          lang === "ar"
+            ? "✏️ <b>اكتب عدد الأسئلة اللي عاوزه (من 1 لحد 500 سؤال):</b>\n<i>لو العدد أكبر من 50 سؤال، البوت هيقسمهم دفعات 50×50 عشان تحلهم براحتك بأعلى سرعة!</i>"
+            : "✏️ <b>Type how many questions you want (1 to 500):</b>\n<i>Counts over 50 are automatically served in fast 50-question batches!</i>",
+          [[button({ label: c.btn.back, icon: "back", action: act("qc", "pick", src), premium })]]
+        );
+      }
+      case "qtimer": {
+        await ui.ack(m.callbackId);
+        const src = a1 === "images" ? "images" : "text";
+        if (a0 === "menu") return showTimerPicker(m, lang, src);
+        if (a0 === "custom") {
+          saveSession(m.chatId, { awaiting: "quiz_timer", quizCountSource: src });
+          return ui.send(
+            m.chatId,
+            lang === "ar" ? "⏱️ <b>اكتب وقت المؤقت لكل سؤال بالثواني (مثلاً 20 أو 45 أو 0 لإلغاء المؤقت):</b>" : "⏱️ <b>Type the timer per question in seconds (e.g. 20, 45, or 0 for off):</b>",
+            [[button({ label: c.btn.back, icon: "back", action: act("qtimer", "menu", src), premium })]]
+          );
+        }
+        const sec = Math.min(600, Math.max(0, parseInt(a0, 10) || 0));
+        saveSession(m.chatId, { quizTimer: sec });
+        const note = sec > 0
+          ? (lang === "ar" ? `⏱️ <b>تم تفعيل المؤقت: ${sec} ثانية لكل سؤال!</b>\nاختر عدد الأسئلة للبدء 👇` : `⏱️ <b>Timer set: ${sec}s per question!</b>\nChoose question count to begin 👇`)
+          : (lang === "ar" ? `🎯 <b>تم اختيار: بدون مؤقت (حل براحتك)!</b>\nاختر عدد الأسئلة للبدء 👇` : `🎯 <b>Selected: No timer (untimed)!</b>\nChoose question count to begin 👇`);
+        const rows = sizeRows(lang, m.userId, src, session(m.chatId));
+        return ui.send(m.chatId, note, rows);
+      }
+      case "qbatch": {
+        await ui.ack(m.callbackId);
+        const rem = Number(s.remainingQuizTotal || 0);
+        if (rem <= 0) return quizCount(m, lang, "pick", "text");
+        return startQuiz(m, lang, rem, s.lastQuizTopic || null);
+      }
       case "cards":
         await ui.ack(m.callbackId);
         return flashcards(m, lang);
@@ -1260,7 +1757,10 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         return keyPoints(m, lang);
       case "explain":
         await ui.ack(m.callbackId);
-        return requireInput(m.chatId, lang) && ask(m, lang, lang === "ar" ? "اشرح الفكرة الأساسية دي ببساطة مع مثال واحد." : "Explain the main idea simply, with one concrete example.");
+        return explainLecture(m, lang);
+      case "pod":
+        await ui.ack(m.callbackId);
+        return podcastLecture(m, lang);
       case "ask":
         await ui.ack(m.callbackId);
         saveSession(m.chatId, { awaiting: "question" });
@@ -1270,15 +1770,24 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         saveSession(m.chatId, { awaiting: "topic" });
         return ui.send(m.chatId, c.topicPrompt, [[button({ label: c.btn.back, icon: "back", action: act("menu"), premium })]]);
       case "qa": {
-        const r = await answerQuiz(m, Number(a0), Number(a1));
-        return ui.ack(m.callbackId, r.stale ? (lang === "ar" ? "الكويز اتغير" : "That question has moved on") : "");
+        const s = session(m.chatId);
+        const q = s.quiz;
+        const stale = !q || q.index !== Number(a0) || q.answered === Number(a0);
+        if (stale) return ui.ack(m.callbackId, lang === "ar" ? "الكويز اتغير" : "That question has moved on");
+        ui.ack(m.callbackId).catch(() => {});
+        return answerQuiz(m, Number(a0), Number(a1));
       }
       case "qn": {
-        const r = await nextQuestion(m, Number(a0));
-        return ui.ack(m.callbackId, r.stale ? (lang === "ar" ? "الكويز اتغير" : "That question has moved on") : "");
+        const s = session(m.chatId);
+        const q = s.quiz;
+        const stale = !q || q.index !== Number(a0) || q.answered !== Number(a0);
+        if (stale) return ui.ack(m.callbackId, lang === "ar" ? "الكويز اتغير" : "That question has moved on");
+        ui.ack(m.callbackId).catch(() => {});
+        return nextQuestion(m, Number(a0));
       }
       case "qretry": {
         await ui.ack(m.callbackId);
+        clearActiveTimer(m.chatId);
         const s = session(m.chatId);
         const items = s.retryQuizItems;
         if (!items || !items.length) {
@@ -1313,7 +1822,8 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         return ui.send(m.chatId, copy(next).langSet, menuRows(next, premium, { isAdmin: admin }));
       }
       case "new":
-        saveSession(m.chatId, { lastInput: null, quiz: null, awaiting: null, images: [] });
+        clearActiveTimer(m.chatId);
+        saveSession(m.chatId, { lastInput: null, quiz: null, awaiting: null, images: [], targetPages: null, remainingQuizTotal: 0 });
         await ui.ack(m.callbackId);
         return ui.send(m.chatId, c.cleared, menuRows(lang, premium, { isAdmin: admin }));
       case "pl":
@@ -1363,7 +1873,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         return setReminder(m, lang, a0 === "off" ? "off" : a0);
       case "len":
         await ui.ack(m.callbackId);
-        saveSession(m.chatId, { detail: ["concise", "detailed"].includes(a0) ? a0 : "standard" });
+        saveSession(m.chatId, { detail: ["concise", "detailed"].includes(a0) ? a0 : "standard", targetPages: null });
         return showStyles(m, lang);
       case "txid":
         await ui.ack(m.callbackId);
@@ -1406,12 +1916,52 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         if (!admin) return ui.ack(m.callbackId, "للأدمن فقط!", true);
         await ui.ack(m.callbackId);
         if (a0 === "pay") return showAdminPayments(m, lang);
-        if (a0 === "users") return ui.send(m.chatId, `👥 <b>${lang === "ar" ? "المستخدمين" : "Users"}</b>\n${HR}\n${lang === "ar" ? "ابحث وادير المستخدمين من لوحة الويب /admin" : "Search and manage users on the web dashboard /admin"}`, adminRows(lang, premium));
+        if (a0 === "users") return showAdminUsers(m, lang);
         if (a0 === "ai") return showAdminAi(m, lang);
         if (a0 === "burn") return showBurnsMenu(m, lang);
         if (a0 === "burn_p") return startBurnsPolls(m, lang, Number(a1) || 45);
         if (a0 === "burn_i") return startBurnsInteractive(m, lang);
         if (a0 === "burn_all") return sendAllBurnsPolls(m, lang);
+        if (a0 === "bcast") {
+          saveSession(m.chatId, { awaiting: "admin_broadcast" });
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? "📢 <b>إذاعة جماعية لكل المشتركين (Broadcast)</b>\nاكتب الرسالة اللي عاوز تبعتها لكل مستخدمي البوت في رسالة واحدة:"
+              : "📢 <b>Broadcast to All Users</b>\nType the announcement message to send to all users:",
+            [[button({ label: c.btn.back, icon: "back", action: act("admin"), premium })]]
+          );
+        }
+        if (a0 === "grant") {
+          saveSession(m.chatId, { awaiting: "admin_grant" });
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? "🎁 <b>تفعيل باقة Pro وشحن توكنز</b>\nابعت الـ ID بتاع الطالب (ومعاه اختيارياً عدد الأيام وعدد التوكنز):\nمثال: <code>123456789 30 500000</code>"
+              : "🎁 <b>Grant Pro & Add Tokens</b>\nSend the user ID (and optionally days & tokens):\nExample: <code>123456789 30 500000</code>",
+            [[button({ label: c.btn.back, icon: "back", action: act("admin"), premium })]]
+          );
+        }
+        if (a0 === "ban") {
+          saveSession(m.chatId, { awaiting: "admin_ban" });
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? "🚫 <b>حظر / فك حظر مستخدم</b>\nابعت الـ ID بتاع المستخدم لعكس حالة الحظر فوراً:"
+              : "🚫 <b>Ban / Unban User</b>\nSend the user ID to toggle ban status:",
+            [[button({ label: c.btn.back, icon: "back", action: act("admin"), premium })]]
+          );
+        }
+        if (a0 === "reset") {
+          saveSession(m.chatId, { awaiting: "admin_reset" });
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? "🔄 <b>تصفير استهلاك مستخدم اليوم</b>\nابعت الـ ID بتاع المستخدم لتصفير عداد المهام والملفات والتوكنز لليوم:"
+              : "🔄 <b>Reset User Daily Quota</b>\nSend the user ID to reset today's tasks, files, and tokens:",
+            [[button({ label: c.btn.back, icon: "back", action: act("admin"), premium })]]
+          );
+        }
         return showAdmin(m, lang);
       case "credits":
         await ui.ack(m.callbackId);
@@ -1499,15 +2049,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       return checkoutDecision(query);
     },
     /** Applies a successful Stars payment (passed as m.successfulPayment). */
-    onPaid(m) {
-      return onPaid(m);
-    },
-    /** Sends due-card reminders. Call it every ten minutes. */
+    onSuccessfulPayment: onPaid,
+    /** Runs one due-cards reminder sweep. */
     sendReminders,
-    sendDailyReport,
-    /** Subscription heads-ups and expiry notices. Call it with the reminders. */
+    /** Runs one subscription renewal notice sweep. */
     sendRenewalNotices,
-    /** Test hooks. */
+    /** Sends the daily admin report once per UTC day. */
+    sendDailyReport,
+
     _state: { busy },
   };
 }

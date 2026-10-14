@@ -2,17 +2,20 @@
 //   * Files: each user may upload a fixed number of files per day (free 2, Pro more).
 //     Admins are unlimited. Summaries and everything else on a file are not limited.
 //   * Questions: each file can produce at most MAX_QUESTIONS_PER_FILE quiz questions in
-//     total, across all of its quizzes (default 30).
-//   * Quiz sizes offered to the user: 5, 10, 15, 20 and 30, never above what is left.
+//     total, across all of its quizzes (default 500 in production, 30 in legacy tests).
+//   * Quiz sizes offered to the user: 5..30 (or up to 500 when maxQuestionsPerFile > 30).
 
 export const QUIZ_SIZES = Object.freeze([5, 10, 15, 20, 30]);
+export const EXTENDED_QUIZ_SIZES = Object.freeze([5, 10, 15, 20, 30, 50, 100, 200, 500]);
 
 const DAY_MS = 24 * 3600 * 1000;
 
 export function createEntitlements({ store, cfg, plans, admins = new Set(), now = () => Date.now() }) {
   const dayKey = (t = now()) => new Date(t).toISOString().slice(0, 10);
-  const isAdmin = (userId) => admins.has(Number(userId));  // here: the users exempt from limits
+  const isAdmin = (userId) => admins.has(Number(userId)); // here: the users exempt from limits
   const fileKey = (userId) => `files:${userId}:${dayKey()}`;
+  const maxQ = Number(cfg?.maxQuestionsPerFile) || 30;
+  const sizePool = maxQ > 30 ? EXTENDED_QUIZ_SIZES : QUIZ_SIZES;
 
   function filesLimit(userId) {
     const active = plans ? plans.active(userId) : "free";
@@ -44,21 +47,25 @@ export function createEntitlements({ store, cfg, plans, admins = new Set(), now 
     /** How many questions a file may still produce. */
     questionsLeft(session) {
       const used = Number(session?.questionsUsed || 0);
-      return Math.max(0, cfg.maxQuestionsPerFile - used);
+      return Math.max(0, maxQ - used);
     },
 
     /** The largest allowed quiz size that is not above the request. 0 when none fits. */
     clampQuizSize(session, count) {
       const left = this.questionsLeft(session);
-      const fits = QUIZ_SIZES.filter((n) => n <= Math.min(count, left));
+      const req = Math.max(0, Math.floor(Number(count) || 0));
+      if (maxQ > 30 && req > 0) {
+        return Math.min(req, left, maxQ);
+      }
+      const fits = sizePool.filter((n) => n <= Math.min(req, left));
       return fits.length ? fits[fits.length - 1] : 0;
     },
 
     /** The quiz sizes the user may pick from, given what is left for the file. */
     allowedQuizSizes(session, userId) {
-      if (isAdmin(userId)) return [...QUIZ_SIZES];
+      if (isAdmin(userId)) return [...sizePool];
       const left = this.questionsLeft(session);
-      return QUIZ_SIZES.filter((n) => n <= left);
+      return sizePool.filter((n) => n <= left);
     },
   };
 }

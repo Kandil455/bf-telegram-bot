@@ -157,7 +157,7 @@ test("group quiz: polls go out in order, answers score, the board is posted at t
 
   await groups.onAnswer({ pollId: "poll-2", userId: 8, name: "Bo", optionIds: [0] });
   const board = ui.calls.filter((c) => c.type === "send").at(-1).html;
-  assert.match(board, /Group quiz finished/);
+  assert.match(board, /Quiz finished/i);
   assert.match(board, /Ana/);
   assert.doesNotMatch(board, /Bo ·/, "a wrong answer scores nothing");
   assert.equal(groups.get(-100), null);

@@ -240,7 +240,7 @@ test("quiz: question, correct answer edits the card, next moves on", async () =>
   await router.onCallback(cb(act("quiz", "2")));
   const question = lastOf(ui, "edit");
   assert.match(question.html, /Question 1 of 2/);
-  assert.equal(question.rows.length, 4);
+  assert.equal(question.rows.flat().length, 4);
   // Options are shuffled, so the right choice is whatever position the stored answer sits in.
   const right = store.get("s:1").quiz.items[0].answer;
   await router.onCallback(cb(act("qa", "0", String(right)), { messageId: question.messageId }));

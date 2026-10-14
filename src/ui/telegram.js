@@ -7,7 +7,7 @@
 
 import { render, isButtonError } from "../core/buttons.js";
 import { stripTags } from "../core/text.js";
-import { applyPremiumGlyphs } from "../core/icons.js";
+import { applyPremiumGlyphs, DEFAULT_PREMIUM_EMOJI_MAP } from "../core/icons.js";
 
 const shouldFallback = (err) => isButtonError(err?.description) || /parse|entities/i.test(err?.description || "");
 
@@ -23,7 +23,8 @@ async function withRetry(fn) {
 }
 
 export function createUi(api, { logger = console, premium = {}, inputFile = null } = {}) {
-  const decorate = (html) => applyPremiumGlyphs(html, premium);
+  const bodyPremium = { ...DEFAULT_PREMIUM_EMOJI_MAP, ...premium };
+  const decorate = (html) => applyPremiumGlyphs(html, bodyPremium);
   /** Runs `attempt(variant)` through the fallback ladder and returns its result. */
   async function ladder(html, rows, attempt) {
     const rich = decorate(html);
@@ -52,11 +53,11 @@ export function createUi(api, { logger = console, premium = {}, inputFile = null
   // One live button message per chat. When a newer message carries buttons, the older one is
   // removed, so the chat does not fill with stale menus. Plain text messages are never removed.
   const liveButtons = new Map();
-  async function retire(chatId, keepId) {
+  function retire(chatId, keepId) {
     if (!keepId) return;
     const prev = liveButtons.get(chatId);
     liveButtons.set(chatId, keepId);
-    if (prev && prev !== keepId) await api.deleteMessage(chatId, prev).catch(() => {});
+    if (prev && prev !== keepId) api.deleteMessage(chatId, prev).catch(() => {});
   }
 
   return {

@@ -1,32 +1,51 @@
 // Summary prompts. One master contract for every template, one layout brief per template,
-// and a separate OSCE contract. Written to produce dense, exam-ready output with no filler.
+// and a separate OSCE contract. Written with explicit POSITIVES (DO) and NEGATIVES (DON'T)
+// to produce dense, exam-ready output with mandatory comparison tables and zero filler.
 
 export const TEMPLATE_IDS = ["cornell", "cram", "table", "flow", "qa", "osce"];
 
-/** Limits that keep output short enough to be fast and cheap. */
-export const LIMITS = Object.freeze({ maxSourceChars: 14000, chunkChars: 12000, maxOutputTokens: { concise: 1800, standard: 2800, detailed: 4000 } });
+/** Limits that keep output fast while handling arbitrarily long lectures via chunk map-reduce. */
+export const LIMITS = Object.freeze({
+  maxSourceChars: 14000,
+  chunkChars: 12000,
+  maxOutputTokens: { concise: 2200, standard: 3400, detailed: 4800 },
+});
+
+/** Suggests an ideal summary page count based on source word count (~350 words per study page). */
+export function suggestedPages(words = 0) {
+  const w = Math.max(0, Number(words) || 0);
+  if (!w) return 2;
+  return Math.max(1, Math.min(20, Math.ceil(w / 350)));
+}
 
 const LANGUAGE = {
-  en: "Write every string in clear, precise English.",
-  ar: "Write every string in Modern Standard Arabic. Keep established English technical terms in Latin script in brackets on first use, for example: المرونة السعرية (Price elasticity).",
+  en: "Write every string in clear, precise English (Exam Focus). Use **bold** on key terms and ==highlight== on high-yield exam targets.",
+  ar: "Write every string in clear, natural Arabic (الفهم والتفصيل). Keep established English technical terms in Latin script in brackets on first use, e.g. المرونة السعرية (Price elasticity). Use **bold** and ==highlight== on key Arabic terms too.",
   bilingual:
-    'Every text value T must be an object {"en": "...", "ar": "..."} with the same meaning in both languages. The Arabic must read naturally, not as a word-by-word copy. Keep formulas and numbers identical in both.',
+    'Every text value T must be an object {"en": "...", "ar": "..."} with the same meaning in both languages. "en" is the concise English (Exam Focus) and "ar" is the rich, natural Arabic explanation (العربي - الفهم والتفصيل), not a robotic word-by-word copy. Keep formulas and numbers identical in both, and apply **bold** and ==highlight== in BOTH "en" and "ar".',
 };
 
 const CONTRACT = `You write exam-grade study material from the SOURCE only.
 
-Hard rules:
-1. Use only facts that appear in the SOURCE. If something is missing, leave it out. Never invent names, numbers, dates, examples or citations.
-2. Keep every formula, unit, number, name and technical term exactly as written in the SOURCE.
-3. Be dense, not long. No introductions, no conclusions, no filler such as "this section explains". Each point is one idea, at most 22 words.
-4. Define each term once, at its first use. Never repeat a point in another section.
-5. Cover every topic the SOURCE teaches, in the SOURCE's order. Prefer what an exam asks over trivia.
-6. Add a "trap" block wherever students commonly confuse two ideas or lose marks.
-6b. Emphasis, written inside the text values: **key definition** for definitions and named concepts; ==the one term the exam will ask for== (at most one per section); ++formula or symbol++ for formulas and symbols. Never put markup outside text values.
-6c. Use "callout" for a note that is not an exam trap: tone "tip" for a memory aid, "warn" for a limitation or a common misreading, "danger" for a clinical or safety-critical point, "info" otherwise.
-6d. Add a "diagram" only when a process, a structure or a relationship is clearer as a picture than as text. The svg must be self-contained: viewBox "0 0 640 360", at most 25 elements, short labels, no scripts, no external links, no images.
-7. If the SOURCE has slide or page markers, cite them after the point as "p.N" or "slide N". Otherwise cite nothing.
-8. Return ONLY one JSON object. No markdown, no code fences, no commentary before or after it.`;
+Hard rules — POSITIVES (DO):
+1. Ground 100% of facts in the SOURCE. Keep every formula, dose, unit, number, threshold, name and technical term verbatim.
+2. Divide the lecture into sequential logical Parts using "heading" blocks (e.g. "Part 1: ...", "Part 2: ...") covering every topic in the SOURCE's order.
+3. ALWAYS include structured "table" blocks (2 to 6 columns) whenever the SOURCE compares, classifies, grades, stages, or lists multiple items/drugs/fluids/criteria — even in non-table templates.
+4. Apply rich inline emphasis inside BOTH English and Arabic text values:
+   - **key term or concept** for every core term, title lead-in, and mechanism step.
+   - ==high-yield exam target== for critical exam facts, cutoff numbers, hallmarks, or first-line choices.
+   - ++formula, dose or symbol++ for equations, dosages, and normal ranges.
+5. Add a "trap" block wherever students commonly confuse two ideas, and a "callout" block (tone: "tip" | "warn" | "danger" | "info") for clinical/safety red flags or memory aids.
+6. Add a self-contained SVG "diagram" (viewBox "0 0 640 360", <= 25 elements, no scripts/external links) when a pathway or algorithm is clearer visually.
+7. If the SOURCE has slide or page markers, cite them as "p.N" or "slide N".
+
+Hard rules — NEGATIVES (DON'T):
+1. NEVER invent facts, numbers, dates, examples, or citations not present in the SOURCE.
+2. NEVER write fluff introductions, meta-commentary ("this section explains..."), or generic conclusions.
+3. NEVER write long unbroken walls of prose; keep each bullet point crisp (at most 22 words per point).
+4. NEVER skip comparison tables when the lecture contrasts two or more classifications, degrees, or treatments.
+5. NEVER omit **bold** or ==highlight== markup in Arabic text when writing in Arabic or bilingual mode.
+6. Return ONLY one JSON object. No markdown wrappers, no code fences, no commentary before or after it.`;
 
 const SCHEMA = `JSON shape (sections in order):
 {
@@ -50,13 +69,12 @@ const SCHEMA = `JSON shape (sections in order):
 T is a plain string in the target language, or {"en": "...", "ar": "..."} in bilingual mode. "example", "when" and "subtitle" may be empty strings. Use "figure" only for the images listed in the request.`;
 
 const BRIEF = {
-  cornell: `Layout: Cornell notes. Each topic starts with a "heading". Notes are short cue phrases in "points" (under 12 words each). Each topic ends with 2 to 4 "qa" blocks where the question is the cue and the answer is one to two sentences.`,
-  cram: `Layout: one-page cram sheet for the night before the exam. Prioritise definitions, formulas and traps. Use "definition", "formula" and "trap" blocks heavily. No paragraphs at all.`,
+  cornell: `Layout: Cornell notes. Each Part starts with a "heading". Notes are short cue phrases in "points" (under 14 words each), plus a "table" whenever items are compared. Each topic ends with 2 to 4 "qa" blocks where the question is the cue and the answer is one to two sentences.`,
+  cram: `Layout: high-yield exam cram sheet divided into numbered Parts ("Part 1: ...", "Part 2: ..."). Prioritise structured "points", "definition", "formula", comparison "table", "callout" (danger/warn) and "trap" blocks. Zero prose paragraphs.`,
   table: `Layout: comparison tables. Whenever the SOURCE compares, classifies or lists properties, use a "table" block with 2 to 6 columns and a caption. Use "points" only for what cannot be tabulated.`,
-  flow: `Layout: process and timeline. Use "steps" for every procedure, in order, each step starts with a verb. Use "heading" to mark each phase. Add a "trap" after any step students often skip or reverse.`,
-  qa: `Layout: study cards. Produce 12 to 20 "qa" blocks covering the key ideas. Phrase each question the way an exam would ask it. Answers are one to three sentences.`,
+  flow: `Layout: process and timeline. Use "steps" for every procedure, in order, each step starts with a verb. Use "heading" to mark each phase. Add a "table" for parameter thresholds and a "trap" after any step students often skip or reverse.`,
+  qa: `Layout: study cards. Produce 12 to 20 "qa" blocks covering the key ideas. Phrase each question the way an exam would ask it. Answers are one to three sentences with **bold** and ==highlight== on the core giveaway.`,
 };
-
 
 /**
  * One small, valid example per template. The model copies the shape, not the content, so a
@@ -131,17 +149,16 @@ export function templateExample(template) {
 }
 
 /**
- * Positive and negative style rules, shown to the model with every request. The model
- * copies what the examples show, so the rules say what to do and what never to do.
+ * Positive and negative style rules, shown to the model with every request.
  */
-export const STYLE_RULES = `Style:
-DO: a "heading" per topic; "definition" for terms; "formula" for equations; "table" for comparisons; **bold** for key definitions; ==highlight== for the one term the exam asks; short "points" (under 14 words each); "trap" or "callout" for mistakes and memory aids.
-DON'T: write paragraphs; repeat a point; use markdown symbols (#, -, *) outside **bold** and ==highlight==.`;
+export const STYLE_RULES = `Style (Positives & Negatives):
+DO: a numbered "heading" per Part ("Part 1: ..."); "definition" for terms; "formula" for equations; a "table" for any comparison; **bold** and ==highlight== in BOTH English & Arabic; short "points" (<18 words); "trap" and "callout" for mistakes.
+DON'T: write paragraphs; repeat a point; skip tables; use markdown symbols (#, -, *) outside **bold**, ==highlight==, ++key++.`;
 
 const DETAIL = {
   concise: "Aim for 6 to 10 sections in total.",
   standard: "Aim for 10 to 16 sections in total.",
-  detailed: "Aim for 16 to 26 sections in total, with more examples and traps.",
+  detailed: "Aim for 16 to 26 sections in total, with tables, examples and traps.",
 };
 
 function figureBrief(images) {
@@ -151,14 +168,22 @@ function figureBrief(images) {
 }
 
 /** Builds the system + user prompts for a full document in one call. */
-export function buildDocumentPrompt({ template = "cram", lang = "en", title = "", text = "", images = [], detail = "standard" }) {
+export function buildDocumentPrompt({ template = "cram", lang = "en", title = "", text = "", images = [], detail = "standard", pages = null }) {
   const system = [CONTRACT, LANGUAGE[lang] || LANGUAGE.en, SCHEMA].join("\n\n");
   const words = String(text).split(/\s+/).filter(Boolean).length;
-  const targetSections = Math.min(40, Math.max(6, Math.round(words / 110)));
-  const targetWords = Math.min(6000, Math.max(400, Math.round(words * (detail === "detailed" ? 0.4 : detail === "concise" ? 0.15 : 0.25))));
+  const requestedPages = Number(pages) > 0 ? Math.min(25, Math.max(1, Number(pages))) : null;
+  const targetSections = requestedPages
+    ? Math.min(48, Math.max(4, requestedPages * 4))
+    : Math.min(40, Math.max(6, Math.round(words / 110)));
+  const targetWords = requestedPages
+    ? Math.min(7000, Math.max(300, requestedPages * 320))
+    : Math.min(6000, Math.max(400, Math.round(words * (detail === "detailed" ? 0.4 : detail === "concise" ? 0.15 : 0.25))));
+  const pageRule = requestedPages
+    ? `Target length: ${requestedPages} page(s) (~${targetSections} sections, ~${targetWords} words). Organize into numbered Parts ("Part 1: ...", "Part 2: ...").`
+    : `Size: about ${targetSections} sections and at least ${targetWords} words in total, because the source has ${words} words. Cover every topic in it; a short answer for a long source is a failed answer.`;
   const user = [
     `Template: ${template}. Goal: ${STYLE_GOAL[template] || STYLE_GOAL.cram}.`,
-    `Size: about ${targetSections} sections and at least ${targetWords} words in total, because the source has ${words} words. Cover every topic in it; a short answer for a long source is a failed answer.`,
+    pageRule,
     BRIEF[template] || BRIEF.cram,
     STYLE_RULES,
     `Shape to copy (the content is only an illustration, never reuse it):\n${templateExample(template)}`,
@@ -168,7 +193,10 @@ export function buildDocumentPrompt({ template = "cram", lang = "en", title = ""
     `SOURCE:\n"""\n${String(text).slice(0, LIMITS.maxSourceChars)}\n"""`,
     "Before you answer, check: every fact comes from the SOURCE; the blocks match the template; the JSON is valid. Then return only the JSON object.",
   ].join("\n\n");
-  return { system, user, maxTokens: LIMITS.maxOutputTokens[detail] || LIMITS.maxOutputTokens.standard };
+  const tokenCap = requestedPages
+    ? Math.min(8000, Math.max(2200, requestedPages * 900))
+    : LIMITS.maxOutputTokens[detail] || LIMITS.maxOutputTokens.standard;
+  return { system, user, maxTokens: tokenCap };
 }
 
 /** Map step for long sources: sections only, for one chunk. */
@@ -177,11 +205,13 @@ export function buildChunkPrompt({ template, lang, part, total, text, images = [
   const user = [
     `Template: ${template}. This is part ${part} of ${total} of one lecture.`,
     BRIEF[template] || BRIEF.cram,
+    STYLE_RULES,
+    `Start this part's topics with numbered "heading" blocks (e.g. "Part ${part}: ...") and include a "table" block for any comparisons in this part.`,
     "Return a JSON object with only the \"sections\" key, covering this part only.",
     figureBrief(images),
     `SOURCE PART:\n"""\n${text}\n"""`,
   ].join("\n\n");
-  return { system, user, maxTokens: 2000 };
+  return { system, user, maxTokens: 2600 };
 }
 
 /** Reduce step: merges chunk sections, removes duplicates, keeps the order. */
@@ -190,7 +220,7 @@ export function buildMergePrompt({ template, lang, title, sectionsJson }) {
   const user = [
     `Template: ${template}. You are merging section lists produced from consecutive parts of one lecture.`,
     BRIEF[template] || BRIEF.cram,
-    "Remove duplicate points and repeated definitions. Keep the original order. Do not add new facts.",
+    "Remove duplicate points and repeated definitions. Keep the original order and all comparison tables. Do not add new facts.",
     `Source title: ${title}`,
     `SECTIONS TO MERGE (JSON):\n${sectionsJson}`,
     "Return the full JSON object with title, subtitle, sections and keywords.",

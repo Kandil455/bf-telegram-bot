@@ -120,6 +120,7 @@ test("interactive quiz: options are rendered in full in text and mistakes can be
   // Verify full options are in the HTML text
   assert.match(startMsg.html, /<b>A\)<\/b>/);
   assert.match(startMsg.html, /<b>B\)<\/b>/);
+  assert.match(startMsg.html, /سؤال 1 من 30/);
 
   // Pick a wrong answer for Q0
   const sess = store.get(`s:${ADMIN}`);
@@ -154,3 +155,29 @@ test("interactive quiz: options are rendered in full in text and mistakes can be
   assert.equal(retrySess.quiz.items.length, 1);
   assert.equal(retrySess.quiz.items[0].q, sess.quiz.items[0].q);
 });
+
+test("interactive quiz: option buttons are clean letter keys and timer choices update session", async () => {
+  const { router, calls, store } = setup();
+  store.set(`s:${ADMIN}`, { lang: "ar" });
+
+  // Start burns interactive
+  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 1, callbackId: "cb1", data: act("admin", "burn_i") });
+  const startMsg = calls[calls.length - 1];
+  // Buttons should be concise letter labels [A], [B], [C], [D]
+  const labels = startMsg.rows.flat().map((b) => b.text);
+  assert.ok(labels.includes("A"));
+  assert.ok(labels.includes("B"));
+  assert.ok(labels.includes("C"));
+  assert.ok(labels.includes("D"));
+
+  // Check timer setting via qtimer
+  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 2, callbackId: "cb2", data: act("qtimer", "45", "text") });
+  const afterTimerSess = store.get(`s:${ADMIN}`);
+  assert.equal(afterTimerSess.quizTimer, 45);
+
+  // Turn off timer
+  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 3, callbackId: "cb3", data: act("qtimer", "0", "text") });
+  const afterOffSess = store.get(`s:${ADMIN}`);
+  assert.equal(afterOffSess.quizTimer, 0);
+});
+

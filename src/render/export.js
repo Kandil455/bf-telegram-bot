@@ -154,7 +154,12 @@ export async function renderPdf(html, { chromePath = null } = {}) {
   } catch {
     throw Object.assign(new Error("puppeteer-core is not installed"), { code: "NO_PUPPETEER" });
   }
-  const browser = await puppeteer.launch({ executablePath: chromePath, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+  let browser;
+  try {
+    browser = await puppeteer.launch({ executablePath: chromePath, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+  } catch {
+    throw Object.assign(new Error("Chrome not usable"), { code: "NO_CHROME" });
+  }
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "load", timeout: 30_000 });

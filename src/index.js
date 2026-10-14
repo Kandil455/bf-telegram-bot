@@ -82,10 +82,23 @@ async function main() {
   process.once("SIGTERM", () => shutdown("SIGTERM"));
 
   if (cfg.mode === "polling") {
-    await bot.api.deleteWebhook({ drop_pending_updates: true });
     server.listen(cfg.port, () => log.info(`http on :${cfg.port} (admin: ${cfg.adminToken ? "on" : "off"})`));
+    await bot.api.deleteWebhook({ drop_pending_updates: true });
     log.info(`@${cfg.botUsername} polling`);
-    await bot.start({ allowed_updates: UPDATES, onStart: (me) => log.info(`@${me.username} is live (polling)`) });
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await bot.start({ allowed_updates: UPDATES, onStart: (me) => log.info(`@${me.username} is live (polling)`) });
+        break;
+      } catch (err) {
+        const msg = String(err?.description || err?.message || err);
+        if (/409|Conflict/i.test(msg) && attempt <= 10) {
+          log.warn(`polling 409 conflict (attempt ${attempt}/10), retrying in 3s...`);
+          await new Promise((r) => setTimeout(r, 3000));
+          continue;
+        }
+        throw err;
+      }
+    }
     return;
   }
 
