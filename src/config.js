@@ -82,10 +82,12 @@ function sanitizeGeminiModels(models) {
 }
 
 export function loadConfig(env = process.env) {
-  const need = (key) => {
-    const v = String(env[key] || "").trim();
-    if (!v) throw new ConfigError(`${key} is required. See .env.example.`);
-    return v;
+  const need = (...keys) => {
+    for (const key of keys) {
+      const v = String(env[key] || "").trim();
+      if (v) return v;
+    }
+    throw new ConfigError(`${keys[0]} is required. See .env.example.`);
   };
   const positive = (key, fallback) => {
     const n = Number(env[key]);
@@ -97,10 +99,10 @@ export function loadConfig(env = process.env) {
 
   const cfg = {
     mode,
-    botToken: need("TELEGRAM_BOT_TOKEN"),
+    botToken: need("TELEGRAM_BOT_TOKEN", "BOT_TOKEN"),
     port: positive("PORT", 8080),
     adminIds: new Set(
-      String(env.ADMIN_TELEGRAM_IDS || "")
+      String(env.ADMIN_TELEGRAM_IDS || env.ADMIN_IDS || "")
         .split(",")
         .map((s) => Number(s.trim()))
         .filter((n) => Number.isInteger(n) && n > 0)

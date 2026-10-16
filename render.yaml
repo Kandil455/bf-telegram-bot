@@ -12,13 +12,13 @@ services:
         value: production
       - key: BOT_MODE
         value: polling
-      - key: BOT_TOKEN
+      - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: DEEPSEEK_API_KEY
         sync: false
-      - key: ADMIN_IDS
+      - key: ADMIN_TELEGRAM_IDS
         sync: false
       - key: ADMIN_TOKEN
         generateValue: true
