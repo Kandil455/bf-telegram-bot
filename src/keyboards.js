@@ -23,14 +23,16 @@ export function inputRows(lang, premium) {
 export function menuRows(lang, premium, { isAdmin = false } = {}) {
   const c = copy(lang).btn;
   const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
-  const podLabel = lang === "ar" ? "بودكاست المحاضرة" : "Lecture Podcast";
+  const ar = lang === "ar";
+  const podLabel = ar ? "بودكاست المحاضرة" : "Lecture Podcast";
   // Main menu, grouped: core study tools first, then Q&A, account, admin, and language.
   const rows = [
     [b(c.summary, "summary", act("sum", "basic"), "primary"), b(c.quiz, "quiz", act("qc", "pick", "text"), "success")],
-    [b(c.explain, "explain", act("explain"), "primary"), b(podLabel, "spark", act("pod"))],
-    [b(c.ask, "ask", act("ask"), "primary"), b(c.topic, "topic", act("topic"))],
+    [b(ar ? "🦴 كويزات العظام (501 س)" : "🦴 Ortho Quizzes (501 Qs)", "quiz", act("ortho", "menu"), "primary"), b(c.explain, "explain", act("explain"))],
+    [b(podLabel, "spark", act("pod")), b(c.ask, "ask", act("ask"))],
+    [b(c.topic, "topic", act("topic")), b(c.deck, "cards", act("deck"))],
     [b(c.plans, "credits", act("plans"), "success"), b(c.invite || "دعوة أصدقاء", "spark", act("inv"))],
-    [b(c.help, "spark", act("help")), b(c.deck, "cards", act("deck"))],
+    [b(c.help, "spark", act("help"))],
   ];
   if (isAdmin) rows.push([b(c.adminPanel, "stats", act("admin"), "primary")]);
   rows.push([b(c.langAr, "lang", act("lang", "ar")), b(c.langEn, "lang", act("lang", "en"))]);
@@ -47,8 +49,62 @@ export function adminRows(lang, premium) {
     [b(ar ? "تفعيل Pro / شحن توكنز" : "Grant Pro / Add Tokens", "credits", act("admin", "grant"), "success"), b(ar ? "حظر / فك حظر" : "Ban / Unban User", "back", act("admin", "ban"), "danger")],
     [b(ar ? "تصفير استهلاك مستخدم" : "Reset User Quota", "clock", act("admin", "reset")), b(c.adminUsers, "topic", act("admin", "users"))],
     [b(c.stats, "stats", act("stats"), "primary"), b(c.adminPayments, "credits", act("admin", "pay"))],
-    [b(c.adminAi, "spark", act("admin", "ai")), b(ar ? "كويز الحروق (30 س)" : "Burns Quiz (30 Qs)", "quiz", act("admin", "burn"))],
-    [b(c.menu, "home", act("menu"))],
+    [b(ar ? "🦴 كويزات العظام (501 س)" : "🦴 Ortho Quizzes (501 Qs)", "quiz", act("ortho", "menu"), "primary"), b(ar ? "كويز الحروق (30 س)" : "Burns Quiz (30 Qs)", "quiz", act("admin", "burn"))],
+    [b(c.adminAi, "spark", act("admin", "ai")), b(c.menu, "home", act("menu"))],
+  ];
+}
+
+export function orthoMenuRows(lang, premium) {
+  const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
+  const ar = lang === "ar";
+  return [
+    [
+      b(ar ? "🦴 كويز 1 (1 - 50)" : "🦴 Quiz 1 (1 - 50)", "quiz", act("ortho", "p", "1"), "primary"),
+      b(ar ? "🦴 كويز 2 (51 - 100)" : "🦴 Quiz 2 (51 - 100)", "quiz", act("ortho", "p", "2"), "primary"),
+    ],
+    [
+      b(ar ? "🦴 كويز 3 (101 - 150)" : "🦴 Quiz 3 (101 - 150)", "quiz", act("ortho", "p", "3")),
+      b(ar ? "🦴 كويز 4 (151 - 200)" : "🦴 Quiz 4 (151 - 200)", "quiz", act("ortho", "p", "4")),
+    ],
+    [
+      b(ar ? "🦴 كويز 5 (201 - 250)" : "🦴 Quiz 5 (201 - 250)", "quiz", act("ortho", "p", "5")),
+      b(ar ? "🦴 كويز 6 (251 - 300)" : "🦴 Quiz 6 (251 - 300)", "quiz", act("ortho", "p", "6")),
+    ],
+    [
+      b(ar ? "🦴 كويز 7 (301 - 350)" : "🦴 Quiz 7 (301 - 350)", "quiz", act("ortho", "p", "7")),
+      b(ar ? "🦴 كويز 8 (351 - 400)" : "🦴 Quiz 8 (351 - 400)", "quiz", act("ortho", "p", "8")),
+    ],
+    [
+      b(ar ? "🦴 كويز 9 (401 - 450)" : "🦴 Quiz 9 (401 - 450)", "quiz", act("ortho", "p", "9")),
+      b(ar ? "🦴 كويز 10 (451 - 501)" : "🦴 Quiz 10 (451 - 501)", "quiz", act("ortho", "p", "10")),
+    ],
+    [
+      b(ar ? "📥 تحميل بنك الأسئلة كامل HTML (501 سؤال)" : "📥 Download Full Bank HTML (501 Qs)", "file", act("ortho", "dl_all"), "success"),
+    ],
+    [b(ar ? "⬅️ القائمة الرئيسية" : "⬅️ Main Menu", "home", act("menu"))],
+  ];
+}
+
+export function orthoQuizLaunchRows(partId, lang, premium) {
+  const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
+  const ar = lang === "ar";
+  const pid = String(partId || 1);
+  return [
+    [
+      b(ar ? "⏱️ استفتاءات تيليجرام بمؤقت (30 ثانية)" : "⏱️ Telegram Polls (30s Timer)", "clock", act("ortho", "start_p", pid, "30"), "primary"),
+    ],
+    [
+      b(ar ? "⏱️ مؤقت 45 ثانية" : "⏱️ 45s Timer", "clock", act("ortho", "start_p", pid, "45")),
+      b(ar ? "⏱️ مؤقت 60 ثانية" : "⏱️ 60s Timer", "clock", act("ortho", "start_p", pid, "60")),
+    ],
+    [
+      b(ar ? "🎯 كويز تفاعلي بأزرار البوت (بدون مؤقت)" : "🎯 In-Bot Interactive Quiz (Untimed)", "quiz", act("ortho", "start_i", pid), "success"),
+    ],
+    [
+      b(ar ? "📤 إرسال الـ 50 سؤال كاملة للشات" : "📤 Send All 50 Polls to Chat", "upload", act("ortho", "send_all", pid)),
+      b(ar ? "📥 تحميل ملف الكويز HTML" : "📥 Download Quiz HTML", "file", act("ortho", "dl", pid)),
+    ],
+    [b(ar ? "⬅️ رجوع لكويزات العظام" : "⬅️ Back to Ortho Quizzes", "back", act("ortho", "menu"))],
   ];
 }
 

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: bf-telegram-bot
+    env: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BOT_MODE
+        value: polling
+      - key: BOT_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: ADMIN_IDS
+        sync: false
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: DATA_DIR
+        value: /data

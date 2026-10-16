@@ -9,8 +9,9 @@ import { detectIntent } from "./core/intent.js";
 import { detectLang, pickLang } from "./core/lang.js";
 import { normaliseCards, normaliseQuiz } from "./core/quiz.js";
 import { HR, chunk, esc, parseJsonLoose, progress, sanitizeHtml, wordCount } from "./core/text.js";
-import { adminRows, burnsQuizRows, channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows, afterDocumentRows, stylePickerRows } from "./keyboards.js";
+import { adminRows, burnsQuizRows, channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows, afterDocumentRows, stylePickerRows, orthoMenuRows, orthoQuizLaunchRows } from "./keyboards.js";
 import { BURNS_QUIZ_ITEMS, BURNS_QUIZ_TITLE } from "./data/burns-quiz.js";
+import { ORTHO_QUIZ_TITLE, ORTHO_QUIZ_PARTS, ORTHO_QUIZ_ITEMS, getOrthoQuizPart } from "./data/ortho-quiz.js";
 import { kindOf } from "./services/files.js";
 import { renderDocument, renderOsce, previewLines } from "./render/html.js";
 import { generateDocument } from "./render/pipeline.js";
@@ -1557,6 +1558,129 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     return ui.send(m.chatId, lang === "ar" ? `✅ تم إرسال كل أسئلة الحروق والمحاليل (${sent} سؤال) بنجاح!` : `✅ Successfully sent all ${sent} Burns Quiz questions!`);
   }
 
+  /** Orthopaedics 501 MCQs Quiz Bank (10 Quizzes of 50 questions each) */
+  function showOrthoMenu(m, lang) {
+    const ar = lang === "ar";
+    const title = ar ? "🦴 <b>بنك كويزات العظام (Orthopaedics 501 MCQs)</b>" : "🦴 <b>Orthopaedics 501 MCQs Quiz Bank</b>";
+    const desc = ar
+      ? `${title}\n${HR}\nبنك أسئلة طب وجراحة العظام الشامل (501 سؤال) مقسم إلى 10 كويزات (كل كويز 50 سؤال بالإجابات النموذجية والتفسير):\n\n` +
+        `• <b>كويز 1:</b> أسئلة (1 - 50)\n` +
+        `• <b>كويز 2:</b> أسئلة (51 - 100)\n` +
+        `• <b>كويز 3:</b> أسئلة (101 - 150)\n` +
+        `• <b>كويز 4:</b> أسئلة (151 - 200)\n` +
+        `• <b>كويز 5:</b> أسئلة (201 - 250)\n` +
+        `• <b>كويز 6:</b> أسئلة (251 - 300)\n` +
+        `• <b>كويز 7:</b> أسئلة (301 - 350)\n` +
+        `• <b>كويز 8:</b> أسئلة (351 - 400)\n` +
+        `• <b>كويز 9:</b> أسئلة (401 - 450)\n` +
+        `• <b>كويز 10:</b> أسئلة (451 - 501)\n\n` +
+        `<i>اختر الكويز المطلوب للبدء فوراً 👇</i>`
+      : `${title}\n${HR}\nComprehensive 501-question Orthopaedics MCQ Bank divided into 10 quizzes of 50 questions each with answers & explanations:\n\n` +
+        `• <b>Quiz 1:</b> Questions (1 - 50)\n` +
+        `• <b>Quiz 2:</b> Questions (51 - 100)\n` +
+        `• <b>Quiz 3:</b> Questions (101 - 150)\n` +
+        `• <b>Quiz 4:</b> Questions (151 - 200)\n` +
+        `• <b>Quiz 5:</b> Questions (201 - 250)\n` +
+        `• <b>Quiz 6:</b> Questions (251 - 300)\n` +
+        `• <b>Quiz 7:</b> Questions (301 - 350)\n` +
+        `• <b>Quiz 8:</b> Questions (351 - 400)\n` +
+        `• <b>Quiz 9:</b> Questions (401 - 450)\n` +
+        `• <b>Quiz 10:</b> Questions (451 - 501)\n\n` +
+        `<i>Choose a quiz below to start 👇</i>`;
+    return ui.send(m.chatId, desc, orthoMenuRows(lang, premium));
+  }
+
+  function showOrthoPartLaunch(m, lang, partId) {
+    const pid = Math.min(10, Math.max(1, parseInt(partId, 10) || 1));
+    const part = ORTHO_QUIZ_PARTS[pid - 1];
+    const items = getOrthoQuizPart(pid);
+    const ar = lang === "ar";
+    const title = ar
+      ? `🦴 <b>كويز العظام رقم ${pid} (${part.range})</b>`
+      : `🦴 <b>Orthopaedics Quiz ${pid} (${part.range})</b>`;
+    const desc = ar
+      ? `${title}\n${HR}\nعدد الأسئلة: <b>${items.length} سؤال</b> بالإجابات النموذجية.\n\n` +
+        `اختر طريقة الحل المفضلة:\n` +
+        `• <b>استفتاءات تيليجرام بمؤقت:</b> بمؤقت تيليجرام الرسمي وسرعة فائقة.\n` +
+        `• <b>كويز تفاعلي بأزرار البوت:</b> حل براحتك بأزرار البوت بدون مؤقت.\n` +
+        `• <b>إرسال كامل الأسئلة للشات:</b> بيبعت الـ ${items.length} استفتاء للشات للمذاكرة الجماعية.\n` +
+        `• <b>تحميل ملف HTML:</b> ملف ويب تفاعلي للمذاكرة بدون نت.`
+      : `${title}\n${HR}\nTotal questions: <b>${items.length} MCQs</b> with answers.\n\n` +
+        `Select your preferred mode:\n` +
+        `• <b>Telegram Polls:</b> Native poll countdown timer.\n` +
+        `• <b>Interactive Buttons:</b> Untimed in-bot questions.\n` +
+        `• <b>Send All Polls:</b> Drops all ${items.length} polls into chat.\n` +
+        `• <b>Download HTML:</b> Standalone offline study file.`;
+    return ui.send(m.chatId, desc, orthoQuizLaunchRows(pid, lang, premium));
+  }
+
+  async function startOrthoPolls(m, lang, partId, openPeriod = 30) {
+    const pid = Math.min(10, Math.max(1, parseInt(partId, 10) || 1));
+    const part = ORTHO_QUIZ_PARTS[pid - 1];
+    const items = getOrthoQuizPart(pid);
+    if (!groups) return ui.send(m.chatId, lang === "ar" ? "⚠️ ميزة الاستفتاءات غير متوفرة." : "⚠️ Poll feature unavailable.");
+    const sec = Math.max(5, Math.min(600, Number(openPeriod) || 30));
+    await groups.start(m.chatId, items, sec);
+    const msg = lang === "ar"
+      ? `🦴 <b>تم إطلاق كويز العظام ${pid} (${part.range} - ${items.length} سؤال)!</b>\n${HR}\n⏱️ المؤقت: <b>${sec} ثانية</b> لكل سؤال.\nانطلق بالحل في استفتاء تيليجرام بالأسفل بمؤقت تيليجرام 👇`
+      : `🦴 <b>Orthopaedics Quiz ${pid} (${part.range} - ${items.length} Qs) launched!</b>\n${HR}\n⏱️ Timer: <b>${sec}s</b> per question.\nAnswer the question in the Telegram poll below 👇`;
+    return ui.send(m.chatId, msg);
+  }
+
+  async function startOrthoInteractive(m, lang, partId) {
+    const pid = Math.min(10, Math.max(1, parseInt(partId, 10) || 1));
+    const part = ORTHO_QUIZ_PARTS[pid - 1];
+    const items = getOrthoQuizPart(pid).map((item) => ({ ...item }));
+    const quizTitle = `Ortho Quiz ${pid} (${part.range})`;
+    const quiz = { items, index: 0, score: 0, answered: -1, title: quizTitle, wrongItems: [] };
+    const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
+    if (qid) store.set(`appquiz:${qid}`, { userId: m.userId, items, at: now() }, 2 * 3600 * 1000);
+    saveSession(m.chatId, { quiz, awaiting: null, lastQuizTitle: quizTitle });
+    const c = copy(lang);
+    const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q, options: items[0].options })}`;
+    return ui.send(m.chatId, html, [...quizRows(0, items[0].options, premium), ...appRows(qid, lang)]);
+  }
+
+  async function sendAllOrthoPolls(m, lang, partId) {
+    const pid = Math.min(10, Math.max(1, parseInt(partId, 10) || 1));
+    const part = ORTHO_QUIZ_PARTS[pid - 1];
+    const items = getOrthoQuizPart(pid);
+    await ui.send(m.chatId, lang === "ar" ? `⏳ جاري إرسال جميع أسئلة كويز العظام ${pid} (${items.length} سؤال) كاستفتاءات تيليجرام...` : `⏳ Sending all ${items.length} Ortho Quiz ${pid} questions as polls...`);
+    let sent = 0;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      await ui.sendPoll(m.chatId, {
+        question: `Q${item.id}. ${item.q}`.slice(0, 300),
+        options: item.options.map((o) => o.slice(0, 100)),
+        correct: item.answer,
+        explanation: (item.explanation || "").slice(0, 195),
+        openPeriod: 0,
+      });
+      sent += 1;
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    return ui.send(m.chatId, lang === "ar" ? `✅ تم إرسال كل أسئلة كويز العظام ${pid} (${sent} سؤال) بنجاح!` : `✅ Successfully sent all ${sent} Ortho Quiz ${pid} questions!`);
+  }
+
+  async function downloadOrthoPartHtml(m, lang, partId) {
+    const pid = Math.min(10, Math.max(1, parseInt(partId, 10) || 1));
+    const part = ORTHO_QUIZ_PARTS[pid - 1];
+    const items = getOrthoQuizPart(pid);
+    const title = `Orthopaedics Quiz ${pid} (${part.range})`;
+    const fileHtml = renderQuizBankHtml(title, items, lang);
+    const fileName = `ortho-quiz-${pid}-50q.html`;
+    const caption = lang === "ar" ? `📎 بنك أسئلة كويز العظام ${pid} (${items.length} سؤال بالإجابات النموذجية)` : `📎 Ortho Quiz ${pid} Bank (${items.length} Qs with answers)`;
+    await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
+  }
+
+  async function downloadAllOrthoHtml(m, lang) {
+    const title = "Orthopaedics 501 MCQs Complete Bank";
+    const fileHtml = renderQuizBankHtml(title, ORTHO_QUIZ_ITEMS, lang);
+    const fileName = "orthopaedics-501-mcqs-complete.html";
+    const caption = lang === "ar" ? "📎 بنك أسئلة جراحة العظام الشامل كاملاً (501 سؤال بالإجابات النموذجية)" : "📎 Complete Orthopaedics 501 MCQs Bank (Full 501 Qs with answers)";
+    await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
+  }
+
   async function command(m) {
     const [raw, arg] = m.text.trim().split(/\s+/, 2);
     const cmd = raw.toLowerCase().replace(/@\w+$/, "");
@@ -1640,6 +1764,13 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         return showMyStats(m, lang);
       case "/admin":
         return showAdminLink(m, lang);
+      case "/ortho":
+      case "/orthopaedics": {
+        if (arg && /^\d+$/.test(arg.trim())) {
+          return showOrthoPartLaunch(m, lang, parseInt(arg.trim(), 10));
+        }
+        return showOrthoMenu(m, lang);
+      }
       case "/burns":
       case "/burnquiz":
         if (!admin) return ui.send(m.chatId, c.menu, menuRows(lang, premium));
@@ -1674,7 +1805,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const lang = pickLang(s, "");
     const c = copy(lang);
     const admin = quota.isAdmin(m.userId);
-    const [a0, a1] = parsed.args;
+    const [a0, a1, a2] = parsed.args;
 
     switch (parsed.name) {
       case "menu":
@@ -1912,6 +2043,17 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "deck":
         await ui.ack(m.callbackId);
         return showDeck(m, lang);
+      case "ortho": {
+        await ui.ack(m.callbackId);
+        if (a0 === "menu") return showOrthoMenu(m, lang);
+        if (a0 === "p") return showOrthoPartLaunch(m, lang, a1);
+        if (a0 === "start_p") return startOrthoPolls(m, lang, a1, Number(a2) || 30);
+        if (a0 === "start_i") return startOrthoInteractive(m, lang, a1);
+        if (a0 === "send_all") return sendAllOrthoPolls(m, lang, a1);
+        if (a0 === "dl") return downloadOrthoPartHtml(m, lang, a1);
+        if (a0 === "dl_all") return downloadAllOrthoHtml(m, lang);
+        return showOrthoMenu(m, lang);
+      }
       case "admin":
         if (!admin) return ui.ack(m.callbackId, "للأدمن فقط!", true);
         await ui.ack(m.callbackId);

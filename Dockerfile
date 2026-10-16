@@ -6,6 +6,7 @@ ENV NODE_ENV=production BOT_MODE=polling DATA_DIR=/data PORT=8080 \
     PDFIMAGES_BIN=pdfimages CHROME_PATH=/usr/bin/chromium-browser
 COPY package*.json ./
 RUN npm install --omit=dev --no-audit --no-fund
+COPY index.js ./
 COPY src ./src
 COPY assets ./assets
 RUN mkdir -p /data && chown node:node /data
