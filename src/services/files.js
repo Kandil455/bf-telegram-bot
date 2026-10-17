@@ -15,6 +15,7 @@ export async function downloadTelegramFile({ fetchImpl = globalThis.fetch, token
 
 const TEXT_EXT = /\.(txt|md|markdown|csv|json|html?)$/i;
 const IMAGE_EXT = /\.(jpe?g|png|webp)$/i;
+const AUDIO_EXT = /\.(ogg|oga|mp3|m4a|wav|aac|flac|opus|webm)$/i;
 
 export function kindOf(name = "", mime = "") {
   if (/\.pdf$/i.test(name) || mime === "application/pdf") return "pdf";
@@ -22,6 +23,7 @@ export function kindOf(name = "", mime = "") {
   if (/\.pptx$/i.test(name) || mime.includes("presentationml")) return "pptx";
   if (TEXT_EXT.test(name) || mime.startsWith("text/")) return "text";
   if (IMAGE_EXT.test(name) || mime.startsWith("image/")) return "image";
+  if (AUDIO_EXT.test(name) || mime.startsWith("audio/") || mime === "video/ogg") return "audio";
   return null;
 }
 
@@ -69,7 +71,7 @@ async function pptxText(buffer) {
 
 /**
  * Returns { kind, title, text }. `text` is empty when nothing readable was found.
- * `ai` is used only for images (vision).
+ * `ai` is used only for images (vision) and audio/voice notes (transcription).
  */
 export async function extractText({ buffer, name, mime }, ai) {
   const kind = kindOf(name, mime);
@@ -86,6 +88,29 @@ export async function extractText({ buffer, name, mime }, ai) {
     });
     const j = parseJsonLoose(reply?.text);
     return { kind, title: String(j?.title || baseTitle).slice(0, 80), text: String(j?.text || "") };
+  }
+
+  if (kind === "audio") {
+    if (!ai) return { kind, title: baseTitle, text: "", note: "no AI provider available to transcribe audio" };
+    const audioMime = mime && mime.startsWith("audio/")
+      ? mime
+      : /\.m4a$/i.test(name)
+        ? "audio/mp4"
+        : /\.mp3$/i.test(name)
+          ? "audio/mpeg"
+          : /\.wav$/i.test(name)
+            ? "audio/wav"
+            : "audio/ogg";
+    const reply = await ai.complete({
+      system: "You transcribe medical and academic voice notes and lecture recordings into clean, complete study text. Preserve every spoken medical/technical term, drug name, dosage, number, classification, and explanation verbatim. Never invent facts not spoken in the audio.",
+      user: 'Transcribe this audio recording completely and accurately. Return JSON only: {"title": "a short descriptive title", "text": "the complete transcription and structured lecture notes in the language spoken"}',
+      images: [{ mime: audioMime, b64: buffer.toString("base64") }],
+      json: true,
+      maxTokens: 3200,
+    });
+    const j = parseJsonLoose(reply?.text);
+    const extracted = String(j?.text || reply?.text || "").trim();
+    return { kind, title: String(j?.title || baseTitle).slice(0, 80), text: extracted };
   }
 
   let text = "";

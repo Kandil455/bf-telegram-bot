@@ -5,21 +5,22 @@ import { HR, esc } from "./text.js";
 
 const EN = {
   welcome: (name) =>
-    `✨ <b>Hi${name ? " " + esc(name) : ""}, I'm Black Fighters.</b>\n${HR}\nSend me a <b>lecture</b> (PDF, slides, Word, text) or a <b>photo of your notes</b>. I'll read it, then summarize it, quiz you, build flashcards, or answer your questions from it.\n\n<i>Or just ask me anything.</i>`,
-  menu: `🏠 <b>Main menu</b>\n${HR}\nSend a file or a photo, or ask me anything.`,
+    `✨ <b>Hi${name ? " " + esc(name) : ""}, I'm Black Fighters.</b>\n${HR}\nSend me a <b>lecture</b> (PDF, slides, Word, text), a <b>voice note / audio recording</b>, or a <b>photo of your notes</b>. I'll read or transcribe it, then summarize it, quiz you, build flashcards, or answer your questions from it.\n\n<i>Or just ask me anything.</i>`,
+  menu: `🏠 <b>Main menu</b>\n${HR}\nSend a file, voice note, or photo, or ask me anything.`,
   fileReady: ({ title, words }) =>
     `📄 <b>${esc(title)}</b>\n${HR}\n${words ? `Read <b>${words.toLocaleString("en-US")}</b> words. ` : ""}What should I do with it?`,
   textReady: ({ words }) => `📝 <b>Text received</b>\n${HR}\n${words} words. What should I do with it?`,
   reading: "📖 Reading your file…",
   extracting: "🔍 Extracting text…",
+  transcribing: "🎙️ Transcribing audio…",
   thinking: "🧠 Thinking…",
   writing: "✍️ Writing…",
   askPrompt: `💬 <b>Ask away</b>\n${HR}\nType your question. I'll answer from the file you sent, or from general knowledge if you haven't sent one.`,
   topicPrompt: `🎯 <b>Quiz on a topic</b>\n${HR}\nType a topic, for example <i>supply and demand</i>.`,
-  noInput: `📎 <b>Nothing to work on yet</b>\n${HR}\nSend a file, a photo, or paste some text first.`,
+  noInput: `📎 <b>Nothing to work on yet</b>\n${HR}\nSend a file, a voice note, a photo, or paste some text first.`,
   tooBig: (mb) => `⚠️ That file is over <b>${mb} MB</b>. Telegram bots can download up to ${mb} MB. Try a smaller file.`,
-  unsupported: "⚠️ That file type isn't supported yet. Send a PDF, Word (.docx), PowerPoint (.pptx), text, or an image.",
-  unreadable: "⚠️ I couldn't read any text there. Try a PDF with selectable text, or a clearer photo.",
+  unsupported: "⚠️ That file type isn't supported yet. Send a PDF, Word (.docx), PowerPoint (.pptx), voice/audio recording, text, or an image.",
+  unreadable: "⚠️ I couldn't read any text there. Try a PDF with selectable text, a clearer photo, or a clearer audio recording.",
   failed: "⚠️ The AI is busy right now. Please try again in a moment.",
   quotaReached: (limit, resetIn) =>
     `⛔ <b>Daily limit reached</b>\n${HR}\nYou've used all <b>${limit}</b> tasks for today. Come back in <b>${resetIn}</b>. Questions and chat stay free.`,
@@ -156,21 +157,22 @@ const EN = {
 
 const AR = {
   welcome: (name) =>
-    `✨ <b>أهلاً${name ? " " + esc(name) : ""}، أنا Black Fighters.</b>\n${HR}\nابعتلي <b>محاضرة</b> (PDF أو سلايدات أو Word أو نص) أو <b>صورة لملاحظاتك</b>. هقراها، وألخّصها، وأعملك كويز وفلاش كاردز، وأجاوب على أسئلتك منها.\n\n<i>أو اسألني أي حاجة.</i>`,
-  menu: `🏠 <b>القائمة الرئيسية</b>\n${HR}\nابعت ملف أو صورة، أو اسألني أي حاجة.`,
+    `✨ <b>أهلاً${name ? " " + esc(name) : ""}، أنا Black Fighters.</b>\n${HR}\nابعتلي <b>محاضرة</b> (PDF أو سلايدات أو Word أو نص)، أو <b>ريكورد صوتي / تسجيل محاضرة</b>، أو <b>صورة لملاحظاتك</b>. هقراها أو أفرّغها، وألخّصها، وأعملك كويز ومحطات OSCE وفلاش كاردز، وأجاوب على أسئلتك منها.\n\n<i>أو اسألني أي حاجة.</i>`,
+  menu: `🏠 <b>القائمة الرئيسية</b>\n${HR}\nابعت ملف أو ريكورد صوتي أو صورة، أو اسألني أي حاجة.`,
   fileReady: ({ title, words }) =>
     `📄 <b>${esc(title)}</b>\n${HR}\n${words ? `قريت <b>${words.toLocaleString("ar-EG")}</b> كلمة. ` : ""}تحب أعمل إيه فيه؟`,
   textReady: ({ words }) => `📝 <b>النص اتستلم</b>\n${HR}\n${words} كلمة. تحب أعمل إيه فيه؟`,
   reading: "📖 بقرا الملف…",
   extracting: "🔍 بستخرج النص…",
+  transcribing: "🎙️ بفرّغ التسجيل الصوتي…",
   thinking: "🧠 بفكّر…",
   writing: "✍️ بكتب…",
   askPrompt: `💬 <b>اسأل براحتك</b>\n${HR}\nاكتب سؤالك. هجاوب من الملف اللي بعته، ولو مفيش ملف هجاوب من المعرفة العامة.`,
   topicPrompt: `🎯 <b>كويز على موضوع</b>\n${HR}\nاكتب الموضوع، مثلاً <i>العرض والطلب</i>.`,
-  noInput: `📎 <b>مفيش حاجة أشتغل عليها</b>\n${HR}\nابعت ملف أو صورة، أو الصق نص الأول.`,
+  noInput: `📎 <b>مفيش حاجة أشتغل عليها</b>\n${HR}\nابعت ملف أو ريكورد صوتي أو صورة، أو الصق نص الأول.`,
   tooBig: (mb) => `⚠️ الملف ده أكبر من <b>${mb} ميجا</b>. البوتات بتقدر تنزل لحد ${mb} ميجا. جرّب ملف أصغر.`,
-  unsupported: "⚠️ نوع الملف ده مش مدعوم لسه. ابعت PDF أو Word (.docx) أو PowerPoint (.pptx) أو نص أو صورة.",
-  unreadable: "⚠️ معرفتش أقرا أي نص هنا. جرّب PDF فيه نص قابل للتحديد، أو صورة أوضح.",
+  unsupported: "⚠️ نوع الملف ده مش مدعوم لسه. ابعت PDF أو Word (.docx) أو PowerPoint (.pptx) أو تسجيل صوتي أو نص أو صورة.",
+  unreadable: "⚠️ معرفتش أقرا أي نص هنا. جرّب PDF فيه نص قابل للتحديد، أو صورة أوضح، أو تسجيل صوتي أوضح.",
   failed: "⚠️ الذكاء الاصطناعي مشغول دلوقتي. جرّب تاني بعد شوية.",
   quotaReached: (limit, resetIn) =>
     `⛔ <b>وصلت للحد اليومي</b>\n${HR}\nخلّصت كل المهام الـ <b>${limit}</b> لليوم ده. ارجع بعد <b>${resetIn}</b>. الأسئلة والشات مجانيين.`,

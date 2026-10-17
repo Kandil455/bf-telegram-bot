@@ -143,13 +143,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     }
   }
 
-  // ───────────── intake: files, photos, pasted text ─────────────
+  // ───────────── intake: files, photos, voice/audio, pasted text ─────────────
 
   async function intake(m, lang) {
     const c = copy(lang);
-    const file = m.document || m.photo;
-    const name = m.document?.file_name || (m.photo ? "photo.jpg" : "file");
-    const mime = m.document?.mime_type || (m.photo ? "image/jpeg" : "");
+    const file = m.document || m.photo || m.voice || m.audio;
+    const isVoiceOrAudio = Boolean(m.voice || m.audio);
+    const name = m.document?.file_name || m.audio?.file_name || (m.voice ? "voice-note.ogg" : m.audio ? "audio.mp3" : m.photo ? "photo.jpg" : "file");
+    const mime = m.document?.mime_type || m.voice?.mime_type || m.audio?.mime_type || (m.photo ? "image/jpeg" : "");
     const size = file.file_size || 0;
 
     if (size > maxBytes) return ui.send(m.chatId, c.tooBig(cfg.maxFileMb));
@@ -161,7 +162,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     busy.add(m.chatId);
     let msgId;
     try {
-      msgId = await ui.send(m.chatId, c.reading);
+      msgId = await ui.send(m.chatId, isVoiceOrAudio && c.transcribing ? c.transcribing : c.reading);
       const cacheKey = `doc:${file.file_unique_id}`;
       let result = store.get(cacheKey);
       let mediaSummary = null;
@@ -171,7 +172,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         const filePath = await getFilePath(file.file_id);
         const got = await files.download({ token: cfg.botToken, filePath, maxBytes });
         if (got.tooBig) return ui.edit(m.chatId, msgId, c.tooBig(cfg.maxFileMb));
-        await ui.edit(m.chatId, msgId, c.extracting);
+        await ui.edit(m.chatId, msgId, isVoiceOrAudio && c.transcribing ? c.transcribing : c.extracting);
         result = await files.extract({ buffer: got.buffer, name, mime }, ai);
         if (media && MEDIA_KINDS.includes(result.kind)) {
           mediaSummary = await media.onFile({ chatId: m.chatId, lang, kind: result.kind, buffer: got.buffer, name, reviewProgress: () => {} });
@@ -2144,11 +2145,11 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         }
       }
       if (m.successfulPayment) return onPaid(m);
-      if ((m.document || m.photo || m.text) && throttled(m.userId)) return ui.send(m.chatId, copy(pickLang(session(m.chatId), m.text || "")).slowDown);
+      if ((m.document || m.photo || m.voice || m.audio || m.text) && throttled(m.userId)) return ui.send(m.chatId, copy(pickLang(session(m.chatId), m.text || "")).slowDown);
       if (m.photo && m.caption && session(m.chatId).lastInput) {
         return attachFigure(m, pickLang(session(m.chatId), m.caption));
       }
-      if (m.document || m.photo) {
+      if (m.document || m.photo || m.voice || m.audio) {
         const s = session(m.chatId);
         const lang = pickLang(s, m.caption || "");
         return intake(m, lang);

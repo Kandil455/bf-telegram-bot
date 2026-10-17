@@ -9,17 +9,22 @@ export function createStore({ dataDir = null, flushMs = 1000 } = {}) {
   let data = new Map();
   let dirty = false;
   let timer = null;
-  const file = dataDir ? join(dataDir, "store.json") : null;
+  let file = dataDir ? join(dataDir, "store.json") : null;
 
   if (file) {
-    mkdirSync(dataDir, { recursive: true });
-    if (existsSync(file)) {
-      try {
-        const raw = JSON.parse(readFileSync(file, "utf8"));
-        data = new Map(Object.entries(raw));
-      } catch {
-        data = new Map();
+    try {
+      mkdirSync(dataDir, { recursive: true });
+      if (existsSync(file)) {
+        try {
+          const raw = JSON.parse(readFileSync(file, "utf8"));
+          data = new Map(Object.entries(raw));
+        } catch {
+          data = new Map();
+        }
       }
+    } catch {
+      // Fallback to in-memory store if dataDir is not writable (e.g. read-only container root)
+      file = null;
     }
   }
 
@@ -40,9 +45,13 @@ export function createStore({ dataDir = null, flushMs = 1000 } = {}) {
     if (!file || !dirty) return;
     sweep();
     dirty = false;
-    const tmp = `${file}.tmp`;
-    writeFileSync(tmp, JSON.stringify(Object.fromEntries(data)));
-    renameSync(tmp, file);
+    try {
+      const tmp = `${file}.tmp`;
+      writeFileSync(tmp, JSON.stringify(Object.fromEntries(data)));
+      renameSync(tmp, file);
+    } catch {
+      // Ignore write failures on restricted filesystems
+    }
   }
 
   function schedule() {

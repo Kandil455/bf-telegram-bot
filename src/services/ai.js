@@ -1,4 +1,4 @@
-// AI provider chain: DeepSeek / TokenHarbor / Gemini (vision + JSON) -> Groq (fast text) -> OpenRouter.
+// AI provider chain: DeepSeek / TokenHarbor / Gemini (vision + audio + JSON) -> Groq (fast text) -> OpenRouter.
 // Supports multi-key rotation, multi-model fallback per provider, and exact token usage accounting.
 
 // Circuit breaker: after BREAKER_THRESHOLD consecutive provider failures, that provider is
@@ -109,11 +109,11 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
   }
 
   const providers = [];
-  if (getKeys("deepseek").length) providers.push({ name: "deepseek", vision: false, run: runOpenAiStyle("deepseek") });
-  if (getKeys("tokenharbor").length) providers.push({ name: "tokenharbor", vision: true, run: runOpenAiStyle("tokenharbor") });
-  if (getKeys("gemini").length) providers.push({ name: "gemini", vision: true, run: runGemini });
-  if (getKeys("groq").length) providers.push({ name: "groq", vision: false, run: runOpenAiStyle("groq") });
-  if (getKeys("openrouter").length) providers.push({ name: "openrouter", vision: true, run: runOpenAiStyle("openrouter") });
+  if (getKeys("deepseek").length) providers.push({ name: "deepseek", vision: false, audio: false, run: runOpenAiStyle("deepseek") });
+  if (getKeys("tokenharbor").length) providers.push({ name: "tokenharbor", vision: true, audio: false, run: runOpenAiStyle("tokenharbor") });
+  if (getKeys("gemini").length) providers.push({ name: "gemini", vision: true, audio: true, run: runGemini });
+  if (getKeys("groq").length) providers.push({ name: "groq", vision: false, audio: false, run: runOpenAiStyle("groq") });
+  if (getKeys("openrouter").length) providers.push({ name: "openrouter", vision: true, audio: false, run: runOpenAiStyle("openrouter") });
 
   async function runGemini({ system, user, images = [], json = false, maxTokens = 900, temperature, signal, tier = "quality" }) {
     const keys = getKeys("gemini");
@@ -322,11 +322,13 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
 
   /**
    * Returns { text, provider, usage } or null when every provider failed.
-   * `images` ([{ mime, b64 }]) restricts the chain to vision-capable providers.
+   * `images` ([{ mime, b64 }]) restricts the chain to vision/audio-capable providers.
    */
   async function complete({ system, user, images = [], json = false, maxTokens = 900, temperature = 0.4, timeoutMs = 120000, tier = "quality" }) {
+    const hasAudio = images.some((img) => String(img?.mime || "").startsWith("audio/"));
     for (const p of providers) {
       if (images.length && !p.vision) continue;
+      if (hasAudio && !p.audio) continue;
       if (isOpen(p.name)) {
         logger.info(`[ai-req] provider=${p.name} outcome=skipped-breaker-open`);
         continue;

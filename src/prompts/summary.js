@@ -25,22 +25,22 @@ const LANGUAGE = {
     'Every text value T must be an object {"en": "...", "ar": "..."} with the same meaning in both languages. "en" is the concise English (Exam Focus) and "ar" is the rich, natural Arabic explanation (العربي - الفهم والتفصيل), not a robotic word-by-word copy. Keep formulas and numbers identical in both, and apply **bold** and ==highlight== in BOTH "en" and "ar".',
 };
 
-const CONTRACT = `You write exam-grade study material from the SOURCE only.
+const CONTRACT = `You write exam-grade medical and academic study material from the SOURCE only.
 
 Hard rules — POSITIVES (DO):
-1. Ground 100% of facts in the SOURCE. Keep every formula, dose, unit, number, threshold, name and technical term verbatim.
+1. Ground 100% of facts in the SOURCE. Keep every formula, drug dose, unit (e.g. mg/kg, mL/kg/%TBSA, mEq/L), lab cutoff, classification/grading score (e.g. Salter-Harris, Gustilo-Anderson, Rule of Nines, GCS), triad/sign name, gold-standard investigation, and 1st-line vs 2nd-line treatment verbatim.
 2. Divide the lecture into sequential logical Parts using "heading" blocks (e.g. "Part 1: ...", "Part 2: ...") covering every topic in the SOURCE's order.
-3. ALWAYS include structured "table" blocks (2 to 6 columns) whenever the SOURCE compares, classifies, grades, stages, or lists multiple items/drugs/fluids/criteria — even in non-table templates.
+3. ALWAYS include structured "table" blocks (2 to 6 columns) whenever the SOURCE compares, classifies, grades, stages, differentiates diseases, or lists multiple items/drugs/fluids/criteria — even in non-table templates.
 4. Apply rich inline emphasis inside BOTH English and Arabic text values:
-   - **key term or concept** for every core term, title lead-in, and mechanism step.
-   - ==high-yield exam target== for critical exam facts, cutoff numbers, hallmarks, or first-line choices.
-   - ++formula, dose or symbol++ for equations, dosages, and normal ranges.
-5. Add a "trap" block wherever students commonly confuse two ideas, and a "callout" block (tone: "tip" | "warn" | "danger" | "info") for clinical/safety red flags or memory aids.
-6. Add a self-contained SVG "diagram" (viewBox "0 0 640 360", <= 25 elements, no scripts/external links) when a pathway or algorithm is clearer visually.
+   - **key term or concept** for every core term, syndrome/sign name, title lead-in, and mechanism step.
+   - ==high-yield exam target== for critical exam facts, cutoff numbers, pathognomonic hallmarks, or first-line choices.
+   - ++formula, dose or symbol++ for equations, dosages, fluid rates, and normal ranges.
+5. Add a "trap" block wherever students commonly confuse two look-alike conditions, mechanisms, or treatments, and a "callout" block (tone: "tip" | "warn" | "danger" | "info") for clinical red flags, contraindications, or memory aids (mnemonics).
+6. Add a self-contained SVG "diagram" (viewBox "0 0 640 360", <= 25 elements, no scripts/external links) when a physiological pathway, anatomical relation, or management algorithm is clearer visually.
 7. If the SOURCE has slide or page markers, cite them as "p.N" or "slide N".
 
 Hard rules — NEGATIVES (DON'T):
-1. NEVER invent facts, numbers, dates, examples, or citations not present in the SOURCE.
+1. NEVER invent facts, numbers, dosages, dates, examples, or citations not present in the SOURCE. Every number you write is audited against the SOURCE.
 2. NEVER write fluff introductions, meta-commentary ("this section explains..."), or generic conclusions.
 3. NEVER write long unbroken walls of prose; keep each bullet point crisp (at most 22 words per point).
 4. NEVER skip comparison tables when the lecture contrasts two or more classifications, degrees, or treatments.
@@ -233,7 +233,7 @@ export function buildOscePrompt({ lang = "en", title = "", text = "", stations =
   const system = [
     CONTRACT,
     LANGUAGE[lang] || LANGUAGE.en,
-    `Build OSCE-style stations from the SOURCE. Each station is a realistic, short scenario that tests a skill or decision in the SOURCE. JSON shape:
+    `Build clinical/practical OSCE-style stations from the SOURCE. Each station is a realistic clinical scenario (with patient presentation, key findings/vitals from the SOURCE, and candidate instructions) that tests examination, diagnosis, or step-by-step management taught in the SOURCE. JSON shape:
 {
   "title": T,
   "stations": [
@@ -248,15 +248,15 @@ export function buildOscePrompt({ lang = "en", title = "", text = "", stations =
     }
   ]
 }
-Every checklist item is observable, with marks 1 or 2. Use only what the SOURCE teaches.`,
+Every checklist item is observable, specific, and verifiable (with exact doses, signs, or manoeuvres from the SOURCE), with marks 1 or 2 (2 marks for critical life-saving or diagnostic actions). Use only what the SOURCE teaches.`,
   ].join("\n\n");
   const user = [
-    `Create ${stations} stations. Each station has 4 to 8 checklist items.`,
+    `Create ${stations} stations. Each station has 5 to 8 observable checklist items, 2 to 4 candidate tasks, key clinical phrases, and common exam pitfalls/errors.`,
     `Source title: ${title || "untitled"}`,
     `SOURCE:\n"""\n${String(text).slice(0, LIMITS.maxSourceChars)}\n"""`,
     "Return the JSON object now.",
   ].join("\n\n");
-  return { system, user, maxTokens: 3200 };
+  return { system, user, maxTokens: 3800 };
 }
 
 /** Asked once when the first reply is not valid JSON. */

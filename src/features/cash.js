@@ -16,10 +16,17 @@ const WINDOW_MS = 30 * 60 * 1000;
 const SMS_TTL_MS = 7 * 24 * 3600 * 1000;
 const USED_TTL_MS = 90 * 24 * 3600 * 1000;
 
-const RECEIVED = /تم استلام|you (?:have )?received/i;
-const SENT = /تم تحويل|تم سحب|you (?:have )?sent|transferred/i;
-const AMOUNT_PATTERNS = [/مبلغ\s*(\d+(?:\.\d{1,2})?)\s*جنيه/, /received\s+(\d+(?:\.\d{1,2})?)\s*(?:EGP|LE|L\.E)/i];
-const TX_PATTERNS = [/رقم العملية\s*[:：]?\s*(\d{6,20})/, /transaction\s*(?:id|number|no\.?)?\s*[:#]?\s*(\d{6,20})/i];
+const RECEIVED = /تم استلام|تم إيداع|تم ايداع|وصلتك تحويلة|إضافة مبلغ|اضافة مبلغ|you (?:have )?received|credited with/i;
+const SENT = /تم تحويل|تم سحب|تم خصم|you (?:have )?sent|transferred/i;
+const AMOUNT_PATTERNS = [
+  /مبلغ\s*(\d+(?:[.,]\d{1,2})?)\s*(?:جنيه|ج\.م|جم|EGP|LE)/i,
+  /(?:تم استلام|تم إيداع|تم ايداع)\s*(\d+(?:[.,]\d{1,2})?)\s*(?:جنيه|ج\.م|جم|EGP|LE)/i,
+  /received\s+(\d+(?:[.,]\d{1,2})?)\s*(?:EGP|LE|L\.E)/i,
+];
+const TX_PATTERNS = [
+  /(?:رقم العملية|رقم المرجع|الرقم المرجعي)\s*[:：#]?\s*(\d{6,20})/,
+  /(?:transaction|ref(?:erence)?)\s*(?:id|number|no\.?)?\s*[:#]?\s*(\d{6,20})/i,
+];
 
 /** Converts Arabic-Indic and Persian digits to ASCII, and removes tatweel and marks. */
 export function normaliseDigits(s = "") {

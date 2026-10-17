@@ -43,9 +43,11 @@ test("parsing: promotional text and Arabic-Indic digits", () => {
   assert.equal(normaliseDigits("١٠٣"), "103");
 });
 
-test("parsing: English received message", () => {
+test("parsing: English received message and InstaPay / ج.م format", () => {
   const en = "You have received 250 EGP in your wallet 01000000000. Transaction ID: 987654321.";
   assert.deepEqual(parseCashSms(en, { receiver: WALLET }), { txId: "987654321", amount: 250 });
+  const instapay = "تم إيداع مبلغ 100.00 ج.م في حسابك 01000000000. الرقم المرجعي: 5544332211";
+  assert.deepEqual(parseCashSms(instapay, { receiver: WALLET }), { txId: "5544332211", amount: 100 });
 });
 
 test("ingest: wrong secret is refused; the sent message is never stored", () => {

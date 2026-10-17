@@ -11,12 +11,13 @@ export function inputRows(lang, premium) {
   const c = copy(lang).btn;
   const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
   const podLabel = lang === "ar" ? "بودكاست المحاضرة" : "Lecture Podcast";
+  const osceLabel = lang === "ar" ? "محطات OSCE عملية" : "OSCE Stations";
   return [
     [b(c.summary, "summary", act("sum", "basic"), "primary"), b(c.quiz, "quiz", act("qc", "pick", "text"), "success")],
-    [b(c.explain, "explain", act("explain"), "primary"), b(podLabel, "spark", act("pod"))],
-    [b(c.cards, "cards", act("cards")), b(c.key, "concepts", act("key"))],
-    [b(c.ask, "ask", act("ask")), b(c.newInput, "upload", act("new"))],
-    [b(c.menu, "home", act("menu"))],
+    [b(c.explain, "explain", act("explain"), "primary"), b(osceLabel, "summary", act("tpl", "osce"), "success")],
+    [b(podLabel, "spark", act("pod")), b(c.cards, "cards", act("cards"))],
+    [b(c.key, "concepts", act("key")), b(c.ask, "ask", act("ask"))],
+    [b(c.newInput, "upload", act("new")), b(c.menu, "home", act("menu"))],
   ];
 }
 

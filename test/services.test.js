@@ -70,5 +70,23 @@ test("file kinds: extension and MIME detection", () => {
   assert.equal(kindOf("slides.pptx", ""), "pptx");
   assert.equal(kindOf("readme.md", ""), "text");
   assert.equal(kindOf("photo.jpg", ""), "image");
+  assert.equal(kindOf("voice-note.ogg", "audio/ogg"), "audio");
+  assert.equal(kindOf("Syncope.m4a", "audio/mp4"), "audio");
   assert.equal(kindOf("archive.zip", "application/zip"), null);
+});
+
+test("audio extraction: transcribes voice notes and lecture recordings via AI", async () => {
+  const { extractText } = await import("../src/services/files.js");
+  let seenMime = null;
+  const fakeAi = {
+    complete: async ({ images }) => {
+      seenMime = images?.[0]?.mime;
+      return { text: JSON.stringify({ title: "Syncope Lecture", text: "Vasovagal syncope is the most common cause of transient loss of consciousness." }) };
+    },
+  };
+  const out = await extractText({ buffer: Buffer.from("fake-audio"), name: "Syncope.m4a", mime: "" }, fakeAi);
+  assert.equal(out.kind, "audio");
+  assert.equal(seenMime, "audio/mp4");
+  assert.equal(out.title, "Syncope Lecture");
+  assert.match(out.text, /Vasovagal syncope/);
 });

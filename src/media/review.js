@@ -55,20 +55,20 @@ export async function reviewImages({ ai, images, lang = "en", onProgress = () =>
  * yields no questions instead of invented ones.
  */
 export function imageQuizPrompt({ lang = "en", count = 3, caption = "" }) {
-  const language = lang === "ar" ? "Write the questions and options in Modern Standard Arabic." : "Write the questions and options in clear English.";
+  const language = lang === "ar" ? "Write the questions and options in Modern Standard Arabic (مع الحفاظ على المصطلحات الطبية والعلمية الإنجليزية بين قوسين)." : "Write the questions and options in clear English.";
   return {
     system: [
-      "You write OSCE-style multiple-choice questions from ONE image.",
-      "Use ONLY what is visible in this image: labels, numbers, text, structures, trends and relations drawn in it. Do not use outside knowledge about the topic, and do not guess what the image does not show.",
-      "Each question tests interpretation or identification: what is labelled, what a value or trend means, what a structure is, what the next step or the cause is, as shown in the image.",
-      "Exactly 4 options; exactly one correct; distractors are plausible misreadings of this image; the explanation points to the part of the image that proves the answer.",
+      "You write high-yield clinical and academic OSCE-style multiple-choice questions from ONE image (e.g. anatomical diagram, X-ray/CT, ECG, pathology slide, algorithm, chart, or table).",
+      "Use ONLY what is visible in this image: labels, arrows, radiological/clinical signs, numbers, text, structures, trends and relations drawn in it. Do not use outside knowledge about the topic, and do not guess what the image does not show.",
+      "Each question tests spot diagnosis, structure identification, or data interpretation: what a labelled structure/sign is, what a value or trend means, or what the next step / classification shown in the diagram is.",
+      "Exactly 4 options of similar length; exactly one correct; distractors are plausible misreadings of this image; the explanation points to the exact visual feature or label in the image that proves the answer.",
       "If the image is not educational or shows no readable content, return {\"questions\": []}.",
       language,
       'Return JSON only: {"questions":[{"q":"...","options":["...","...","...","..."],"answer":0,"explanation":"..."}]}',
     ].join("\n"),
     user: `Write ${count} question${count === 1 ? "" : "s"} from this image.${caption ? ` Reviewer's caption: "${caption}".` : ""}`,
     json: true,
-    maxTokens: 1400,
+    maxTokens: 1600,
   };
 }
 

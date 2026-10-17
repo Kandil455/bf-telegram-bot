@@ -113,7 +113,8 @@ export async function generateDocument({ ai, template, lang, title, text, images
   const usageAcc = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
   if (template === "osce") {
-    const prompt = buildOscePrompt({ lang: normaliseOpts.lang, title, text });
+    const stationsCount = detail === "detailed" ? 5 : detail === "concise" ? 2 : 3;
+    const prompt = buildOscePrompt({ lang: normaliseOpts.lang, title, text, stations: stationsCount });
     const raw = await askJson(ai, prompt, usageAcc);
     const osce = normaliseOsce(raw, { lang: normaliseOpts.lang });
     return osce.stations.length ? { kind: "osce", osce, usage: usageAcc } : null;

@@ -5,7 +5,22 @@ import { existsSync } from "node:fs";
 //   PPTX  -> slides built with pptxgenjs from the same normalised document
 // Both libraries load lazily, so the bot runs without them and says so when asked.
 
-const TEXT = (v, lang) => (typeof v === "string" ? v : lang === "ar" ? v?.ar || v?.en || "" : v?.en || v?.ar || "");
+const cleanInlineMarkup = (s) =>
+  String(s || "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/==(.+?)==/g, "$1")
+    .replace(/\+\+(.+?)\+\+/g, "$1");
+
+const TEXT = (v, lang) => {
+  if (typeof v === "string") return cleanInlineMarkup(v);
+  if (lang === "bilingual") {
+    const en = cleanInlineMarkup(v?.en || "");
+    const ar = cleanInlineMarkup(v?.ar || "");
+    if (en && ar && en !== ar) return `${en}\n${ar}`;
+    return en || ar;
+  }
+  return cleanInlineMarkup(lang === "ar" ? v?.ar || v?.en || "" : v?.en || v?.ar || "");
+};
 
 const TONE_TITLE = { info: ["Note", "ملاحظة"], tip: ["Tip", "نصيحة"], warn: ["Watch out", "انتبه"], danger: ["Danger", "خطر"] };
 

@@ -1,4 +1,5 @@
-// End-to-end: a real grammY bot, a fake Telegram Bot API on localhost, and a /start update.
+// End-to-end: a real grammY bot, a fake Telegram Bot API on localhost (or in-process transformer
+// when OS sandbox forbids loopback bind), and a /start update.
 // Needs the grammy package (npm install). Without it, the test is skipped, not faked.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -29,14 +30,23 @@ test("end to end: /start goes through grammY and comes back as a menu", { skip: 
       res.end(JSON.stringify({ ok: true, result }));
     });
   });
-  await new Promise((r) => server.listen(0, "127.0.0.1", r));
-  const port = server.address().port;
+
+  let port = null;
+  try {
+    await new Promise((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", resolve);
+    });
+    port = server.address().port;
+  } catch (err) {
+    if (err?.code !== "EPERM" && err?.code !== "EACCES") throw err;
+  }
 
   try {
     const { createApp } = await import("../src/bot.js");
     const cfg = {
       botToken: "123456:TESTTOKEN",
-      apiRoot: `http://127.0.0.1:${port}`,
+      apiRoot: port ? `http://127.0.0.1:${port}` : null,
       premiumEmoji: {},
       freeDailyTasks: 10,
       proDailyTasks: 120,
@@ -52,6 +62,18 @@ test("end to end: /start goes through grammY and comes back as a menu", { skip: 
       tzOffset: 0,
     };
     const app = createApp(cfg, { logger: { info() {}, warn() {}, error() {} } });
+    if (!port) {
+      app.bot.api.config.use(async (_prev, method, payload) => {
+        calls.push({ method, body: JSON.stringify(payload || {}) });
+        const result =
+          method === "getMe"
+            ? { id: 1, is_bot: true, first_name: "BF", username: "bf_test_bot" }
+            : method === "sendMessage"
+              ? { message_id: 77, date: 0, chat: { id: 5, type: "private" }, text: "" }
+              : true;
+        return { ok: true, result };
+      });
+    }
     await app.bot.init();
     await app.bot.handleUpdate({
       update_id: 1,
@@ -63,6 +85,6 @@ test("end to end: /start goes through grammY and comes back as a menu", { skip: 
     assert.match(payload.text, /Black Fighters/);
     assert.ok(payload.reply_markup.inline_keyboard.length >= 3);
   } finally {
-    server.close();
+    if (port) server.close();
   }
 });

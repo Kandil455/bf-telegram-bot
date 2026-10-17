@@ -70,3 +70,16 @@ test("Chrome detection: an explicit path wins, then the usual installs, and noth
   assert.equal(findChrome("/missing", (p) => p.includes("Google Chrome")), "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome");
   assert.equal(findChrome(null, () => false), null);
 });
+
+test("slides: strips inline markup (**bold**, ==highlight==, ++key++) and keeps bilingual lines", () => {
+  const doc = normaliseDocument(
+    {
+      title: { en: "**Burns**", ar: "**الحروق**" },
+      sections: [{ type: "points", items: [{ en: "==Parkland== is ++4 mL++", ar: "==باركلاند== هي ++4 مل++" }] }],
+    },
+    { lang: "bilingual" }
+  );
+  const slides = slidesFromDoc(doc, "bilingual");
+  assert.equal(slides[0].title, "Burns\nالحروق");
+  assert.equal(slides[1].bullets[0], "Parkland is 4 mL\nباركلاند هي 4 مل");
+});

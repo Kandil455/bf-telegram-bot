@@ -90,6 +90,8 @@ export function createApp(cfg, { store = null, logger = console, fetchImpl } = {
         caption: m.caption,
         document: m.document ? pick(m.document) : null,
         photo: m.photo?.length ? pick(m.photo[m.photo.length - 1]) : null,
+        voice: m.voice ? pickVoice(m.voice) : null,
+        audio: m.audio ? pickAudio(m.audio) : null,
         successfulPayment: m.successful_payment || null,
         contact: m.contact ? { phone: m.contact.phone_number, userId: m.contact.user_id } : null,
       });
@@ -142,4 +144,12 @@ export function createApp(cfg, { store = null, logger = console, fetchImpl } = {
 
 function pick(f) {
   return { file_id: f.file_id, file_unique_id: f.file_unique_id, file_name: f.file_name, mime_type: f.mime_type, file_size: f.file_size };
+}
+
+function pickVoice(v) {
+  return { file_id: v.file_id, file_unique_id: v.file_unique_id, file_name: "voice-note.ogg", mime_type: v.mime_type || "audio/ogg", file_size: v.file_size, duration: v.duration };
+}
+
+function pickAudio(a) {
+  return { file_id: a.file_id, file_unique_id: a.file_unique_id, file_name: a.file_name || a.title || "audio.mp3", mime_type: a.mime_type || "audio/mpeg", file_size: a.file_size, duration: a.duration };
 }

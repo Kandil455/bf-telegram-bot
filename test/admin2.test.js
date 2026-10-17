@@ -91,3 +91,18 @@ test("admin: a wrong token is refused on every action", async () => {
   await handle(r, res);
   assert.equal(res.status, 401);
 });
+
+test("admin: approves pending Vodafone Cash transfer and broadcasts to users", async () => {
+  const { handle, store, plans, sent } = setup();
+  store.set("cash:pending:99887766", { userId: 42, firstName: "Lina", txId: "99887766", at: NOW });
+  const payments = await call(handle, "GET", "/admin/api/payments");
+  assert.equal(payments.json.pendingCash.length, 1);
+  const decide = await call(handle, "POST", "/admin/api/cash-decide", { userId: 42, txId: "99887766", approve: true });
+  assert.equal(decide.status, 200);
+  assert.equal(plans.active(42), "pro");
+  assert.equal(store.get("cash:pending:99887766"), undefined);
+  const bcast = await call(handle, "POST", "/admin/api/broadcast", { text: "Hello everyone" });
+  assert.equal(bcast.status, 200);
+  assert.equal(bcast.json.sent, 1);
+  assert.ok(sent.some((m) => m.id === 42 && /Hello everyone/.test(m.html)));
+});
