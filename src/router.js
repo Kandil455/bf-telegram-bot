@@ -109,6 +109,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
    */
   async function runTask({ chatId, userId, lang, cost, label, work, failRows = menuRows(lang, premium, { isAdmin: quota.isAdmin(userId) }) }) {
     const c = copy(lang);
+    const tokStatus = typeof quota.tokenStatus === "function" ? quota.tokenStatus(userId) : null;
+    if (tokStatus && !tokStatus.unlimited && tokStatus.left <= 0) {
+      const resetStr = humanize(tokStatus.resetMs || 3600_000, c);
+      const tokMsg = lang === "ar"
+        ? `⛔ <b>انتهى رصيد التوكنز اليومي (${tokStatus.limit.toLocaleString("en-US")} توكن)</b>\n${HR}\nيتجدد الرصيد تلقائياً بعد <b>${resetStr}</b>، أو يمكنك الترقية لباقة Pro للحصول على 250,000 توكن يومياً + 150,000 توكن هدية بالمحفظة.`
+        : `⛔ <b>Daily AI token limit reached (${tokStatus.limit.toLocaleString("en-US")} tokens)</b>\n${HR}\nResets in <b>${resetStr}</b>, or upgrade to Pro from /plans for 250,000 daily tokens + 150,000 bonus wallet tokens.`;
+      return ui.send(chatId, tokMsg, failRows);
+    }
     const reserve = quota.consume(userId, cost);
     if (!reserve.ok) {
       return ui.send(chatId, c.quotaReached(reserve.limit, humanize(reserve.resetMs, c)), failRows);
@@ -683,7 +691,12 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const c = copy(lang);
     const current = plans ? plans.active(m.userId) : "free";
     const lines = Object.values(PLANS)
-      .map((p) => `${p.id === current ? "✅" : "•"} <b>${esc(p.name[lang] || p.name.en)}</b>${p.stars ? ` · ${p.stars} ⭐ / ${p.days}d` : ""}\n<i>${esc((p.features[lang] || p.features.en).join(" · "))}</i>`)
+      .map((p) => {
+        const priceTag = p.stars || p.egp
+          ? ` · ${[p.egp ? `${p.egp} ${lang === "ar" ? "ج.م" : "EGP"}` : null, p.stars ? `${p.stars} ⭐` : null].filter(Boolean).join(" / ")} (${p.days}${lang === "ar" ? " يوم" : "d"})`
+          : "";
+        return `${p.id === current ? "✅" : "•"} <b>${esc(p.name[lang] || p.name.en)}</b>${priceTag}\n<i>${esc((p.features[lang] || p.features.en).join(" · "))}</i>`;
+      })
       .join("\n\n");
     const rows = Object.values(PLANS)
       .filter((p) => p.stars)
