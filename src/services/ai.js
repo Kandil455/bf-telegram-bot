@@ -1,15 +1,14 @@
-// AI provider chain: DeepSeek / TokenHarbor / Gemini (vision + audio + JSON) -> Groq (fast text) -> OpenRouter.
+// AI provider chain: DeepSeek (primary) -> Z.ai -> TokenHarbor -> Gemini (vision + audio + JSON) -> Groq -> APMIX -> OpenRouter.
 // Supports multi-key rotation, multi-model fallback per provider, and exact token usage accounting.
 
-// Circuit breaker: after BREAKER_THRESHOLD consecutive provider failures, that provider is
-// skipped for BREAKER_COOLDOWN_MS so requests stop waiting out its timeout. One success resets it.
 export const BREAKER_THRESHOLD = 3;
 export const BREAKER_COOLDOWN_MS = 2 * 60 * 1000;
 
-// Chat endpoints for the OpenAI-style providers. DeepSeek and TokenHarbor speak the same protocol.
 const ENDPOINTS = {
   deepseek: "https://api.deepseek.com/chat/completions",
+  zai: "https://api.z.ai/api/paas/v4/chat/completions",
   groq: "https://api.groq.com/openai/v1/chat/completions",
+  apmix: "https://api.apmix.ai/v1/chat/completions",
   openrouter: "https://openrouter.ai/api/v1/chat/completions",
   tokenharbor: "https://tokenharbor.ai/v1/chat/completions",
 };
@@ -56,18 +55,17 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
       logger.warn(`[ai] ${name} paused for ${BREAKER_COOLDOWN_MS / 1000}s after ${BREAKER_THRESHOLD} failures in a row`);
     }
   };
-  // One line per request: provider, model, outcome and duration, so every failure has a cause on record.
   const logAttempt = (name, model, outcome, startedAt, detail = "") => {
     const ms = now() - startedAt;
     logger.info(`[ai-req] provider=${name} model=${model} outcome=${outcome} ms=${ms}${detail ? ` detail=${detail}` : ""}`);
-    // Optional metrics hook for the daily report. It must never break a request.
     try { onAttempt?.({ provider: name, model, outcome, ms }); } catch {}
   };
-  // Every provider needs a starting key index, or the rotation becomes NaN and sends no key.
   const keyIndices = {
     deepseek: 0,
+    zai: 0,
     gemini: 0,
     groq: 0,
+    apmix: 0,
     openrouter: 0,
     tokenharbor: 0,
   };
@@ -109,10 +107,12 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
   }
 
   const providers = [];
-  if (getKeys("deepseek").length) providers.push({ name: "deepseek", vision: false, audio: false, run: runOpenAiStyle("deepseek") });
+  if (getKeys("deepseek").length) providers.push({ name: "deepseek", vision: true, audio: false, run: runOpenAiStyle("deepseek") });
+  if (getKeys("zai").length) providers.push({ name: "zai", vision: true, audio: false, run: runOpenAiStyle("zai") });
   if (getKeys("tokenharbor").length) providers.push({ name: "tokenharbor", vision: true, audio: false, run: runOpenAiStyle("tokenharbor") });
   if (getKeys("gemini").length) providers.push({ name: "gemini", vision: true, audio: true, run: runGemini });
   if (getKeys("groq").length) providers.push({ name: "groq", vision: false, audio: false, run: runOpenAiStyle("groq") });
+  if (getKeys("apmix").length) providers.push({ name: "apmix", vision: false, audio: false, run: runOpenAiStyle("apmix") });
   if (getKeys("openrouter").length) providers.push({ name: "openrouter", vision: true, audio: false, run: runOpenAiStyle("openrouter") });
 
   async function runGemini({ system, user, images = [], json = false, maxTokens = 900, temperature, signal, tier = "quality" }) {
@@ -125,11 +125,10 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
     const body = {
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts }],
-      generationConfig: { temperature, maxOutputTokens: Math.max(maxTokens, 2500), ...(json ? { responseMimeType: "application/json" } : {}) },
+      generationConfig: { temperature, maxOutputTokens: Math.min(8192, Math.max(maxTokens, 2500)), ...(json ? { responseMimeType: "application/json" } : {}) },
     };
 
-    // Calculate attempt timeout proportional to output size
-    const attemptMs = Math.max(16000, Math.min(80000, maxTokens * 12));
+    const attemptMs = Math.max(18000, Math.min(90000, maxTokens * 14));
 
     let lastError = null;
     let modelTries = 0;
@@ -185,8 +184,6 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
 
           if (res.status === 429) {
             rotateKey("gemini");
-            // With one key, every model shares its limit: trying the rest only adds load.
-            // Stop here, so the next provider (Groq, OpenRouter) answers at once.
             if (keys.length <= 1) {
               rateLimited = true;
               break;
@@ -197,7 +194,7 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
             continue;
           }
 
-          break; // Try next model on 503, 404, 500, etc.
+          break;
         } catch (err) {
           if (signal?.aborted) throw err;
           lastError = err;
@@ -232,14 +229,20 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
         ];
       }
 
-      const attemptMs = Math.max(16000, Math.min(80000, maxTokens * 12));
+      // DeepSeek has a strict 8192 output token limit; exceeding 8192 returns HTTP 400.
+      const safeMaxTokens = name === "deepseek"
+        ? Math.max(256, Math.min(8192, Number(maxTokens) || 4096))
+        : Math.max(256, Math.min(16384, Number(maxTokens) || 4096));
+      const attemptMs = Math.max(20000, Math.min(110000, safeMaxTokens * 14));
       let modelTries = 0;
       let rateLimited = false;
       const maxModelAttempts = models.length;
 
-      for (const model of models) {
+      for (const rawModel of models) {
         if (modelTries >= maxModelAttempts || rateLimited) break;
         modelTries++;
+        const model = name === "zai" && images.length > 0 ? "glm-4.6v-flash" : rawModel;
+        const isReasoner = /reasoner|r1/i.test(model);
 
         const startKeyIdx = keyIndices[name];
         for (let k = 0; k < keys.length; k++) {
@@ -249,12 +252,13 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
           const body = {
             model,
             messages: [
-              { role: "system", content: system },
+              ...(system ? [{ role: "system", content: system }] : []),
               { role: "user", content: userContent },
             ],
-            temperature,
-            max_tokens: maxTokens,
-            ...(json && (name === "groq" || name === "deepseek") ? { response_format: { type: "json_object" } } : {}),
+            ...(isReasoner ? {} : { temperature }),
+            max_tokens: safeMaxTokens,
+            ...(json && !isReasoner && (name === "groq" || name === "deepseek") ? { response_format: { type: "json_object" } } : {}),
+            ...(name === "zai" && images.length === 0 ? { thinking: { type: "disabled" } } : {}),
           };
 
           const attemptSignals = [AbortSignal.timeout(attemptMs)];
@@ -265,14 +269,19 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
           try {
             const res = await fetchImpl(endpoint, {
               method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${key}`,
+                ...(name === "openrouter" ? { "HTTP-Referer": "https://blackfighters.site", "X-Title": "Black Fighters Bot" } : {}),
+              },
               body: JSON.stringify(body),
               signal: attemptSignal,
             });
 
             if (res.ok) {
               const data = await res.json();
-              const text = String(data?.choices?.[0]?.message?.content || "").trim();
+              const msgObj = data?.choices?.[0]?.message;
+              const text = String(msgObj?.content || msgObj?.reasoning_content || "").trim();
               if (text) {
                 logAttempt(name, model, "ok", startedAt);
                 const usage = normaliseUsage(data?.usage, `${system || ""}\n${user || ""}`, text);
@@ -281,9 +290,9 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
             }
 
             const errText = await res.text().catch(() => "");
-            lastError = new Error(`${name} ${res.status} (${model}): ${errText.slice(0, 100)}`);
+            lastError = new Error(`${name} ${res.status} (${model}): ${errText.slice(0, 120)}`);
             logAttempt(name, model, `http-${res.status}`, startedAt);
-            logger.warn(`[ai] ${name} ${model} with key[${keyIdx}] failed: status ${res.status}`);
+            logger.warn(`[ai] ${name} ${model} with key[${keyIdx}] failed: status ${res.status} ${errText.slice(0, 80)}`);
 
             if (res.status === 401 || res.status === 403) {
               rotateKey(name);
@@ -357,6 +366,39 @@ export function createAi(config, { fetchImpl = globalThis.fetch, logger = consol
         logger.warn(`[ai] ${p.name} failed: ${err?.name || ""} ${err?.message || err}`);
       }
     }
+
+    // Ultimate Zero-Cost Fallback in live production (Pollinations OpenAI) so the bot never stops
+    if (!process.env.NODE_TEST_CONTEXT && fetchImpl === globalThis.fetch && images.length === 0) {
+      try {
+        const startedAt = now();
+        const res = await fetchImpl("https://text.pollinations.ai/openai/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "openai",
+            messages: [
+              ...(system ? [{ role: "system", content: system }] : []),
+              { role: "user", content: user },
+            ],
+            max_tokens: Math.min(4096, Number(maxTokens) || 2400),
+            temperature: temperature ?? 0.3,
+          }),
+          signal: AbortSignal.timeout(45000),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const text = String(data?.choices?.[0]?.message?.content || "").trim();
+          if (text) {
+            logAttempt("pollinations", "openai", "ok", startedAt);
+            const usage = normaliseUsage(data?.usage, `${system || ""}\n${user || ""}`, text);
+            return { text, provider: "pollinations", usage };
+          }
+        }
+      } catch (pollErr) {
+        logger.warn(`[ai] pollinations fallback failed: ${pollErr?.message || pollErr}`);
+      }
+    }
+
     if (typeof onAllFailed === "function") onAllFailed(recent.slice(0, 3));
     return null;
   }

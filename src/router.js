@@ -47,7 +47,18 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     questionsLeft: () => maxQDefault,
   };
   summaryCache = cachedSummary(store, { onHit: () => {} });
-  const FRAMES = ["▰▱▱▱▱", "▰▰▱▱▱", "▰▰▰▱▱", "▰▰▰▰▱", "▰▰▰▰▰"];
+  function registerSharedQuiz(items, title = "Quiz", lang = "ar", userId = null, customId = null) {
+    if (!items || !items.length) return null;
+    const shareId = customId || randomBytes(6).toString("hex");
+    store.set(`shared_quiz:${shareId}`, {
+      items: items.map((it) => ({ ...it })),
+      title: title || "Quiz",
+      lang: lang || "ar",
+      createdBy: userId,
+      createdAt: now(),
+    }, 30 * 24 * 3600 * 1000);
+    return shareId;
+  }
   const appRows = (qid, lang) => (qid && cfg.appUrl ? [[button({ label: lang === "ar" ? "افتح الكويز في التطبيق" : "Open quiz in the app", icon: "app", webApp: `${cfg.appUrl}/app?qid=${qid}`, style: "primary", premium })]] : []);
   const EFFECT = { confetti: "5046509860389126442", fire: "5104841245755180586" };
   const MEDIA_KINDS = ["pdf", "docx", "pptx"];
@@ -402,8 +413,13 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
           };
         }
 
-        const quiz = { items, index: 0, score: 0, answered: -1, title: topic || input.title, wrongItems: [], timerSec: 0 };
+        const shareId = registerSharedQuiz(items, topic || input?.title || "Quiz", lang, m.userId);
+        const quiz = { items, index: 0, score: 0, answered: -1, title: topic || input.title, wrongItems: [], timerSec: 0, shareId };
         const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
+        if (qid) {
+          store.set(`appquiz:${qid}`, { userId: m.userId, items, title: quiz.title, lang, at: now() }, 30 * 24 * 3600 * 1000);
+          registerSharedQuiz(items, quiz.title, lang, m.userId, qid);
+        }
         const batchBadge = remainingAfterThis > 0
           ? (lang === "ar" ? `\n📦 <b>دفعة 1 (${items.length} سؤال)</b> من إجمالي <b>${requestedTotal}</b> سؤال (باقي ${remainingAfterThis} سؤال في الدفعات التالية)` : `\n📦 <b>Batch 1 (${items.length} Qs)</b> of <b>${requestedTotal}</b> total (${remainingAfterThis} left in next batches)`)
           : "";
@@ -421,13 +437,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
           file: bankFile,
           usage: totalUsage,
           after: (taskMsgId) => {
-            if (qid) store.set(`appquiz:${qid}`, { userId: m.userId, items, at: now() }, 2 * 3600 * 1000);
             saveSession(m.chatId, {
               quiz,
               quizMsgId: taskMsgId,
               awaiting: null,
               questionsUsed: Number(session(m.chatId).questionsUsed || 0) + items.length,
               lastQuizTitle: quiz.title,
+              lastShareId: shareId,
+              lastQuizItems: items,
               remainingQuizTotal: remainingAfterThis,
               lastQuizTopic: topic,
             });
@@ -541,17 +558,20 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
 
     const wrongItems = quiz.wrongItems || [];
     const remaining = Number(s.remainingQuizTotal || 0);
+    const shareId = quiz.shareId || s.lastShareId || registerSharedQuiz(quiz.items, quiz.title, lang, m.userId);
     saveSession(m.chatId, {
       quiz: null,
       quizMsgId: null,
       retryQuizItems: wrongItems.length ? wrongItems : null,
       lastQuizTitle: quiz.title,
+      lastShareId: shareId,
+      lastQuizItems: quiz.items,
     });
     stat("quizzes");
     await ui.sendWithEffect(
       m.chatId,
       c.quizDone(quiz.score, quiz.items.length),
-      finishRows(lang, premium, wrongItems.length, remaining),
+      finishRows(lang, premium, wrongItems.length, remaining, shareId),
       quiz.score === quiz.items.length ? EFFECT.confetti : EFFECT.fire
     );
     return { ok: true };
@@ -1017,9 +1037,22 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       const made = await withSpinner(m.chatId, msgId, c.thinking, () => media.imageQuiz(m.chatId, lang, size));
       if (!made) return ui.edit(m.chatId, msgId, c.noQuizFromImages, menuRows(lang, premium));
       await media.sendUsedImages(m.chatId, made.used, lang);
-      const quiz = { items: made.items, index: 0, score: 0, answered: -1, title: "images", wrongItems: [] };
-      saveSession(m.chatId, { quiz, awaiting: null, questionsUsed: Number(s.questionsUsed || 0) + made.items.length, lastQuizTitle: "images" });
-      await ui.edit(m.chatId, msgId, `${c.quizIntro(made.items.length)}\n\n${c.quizQuestion({ index: 1, total: made.items.length, q: made.items[0].q, options: made.items[0].options })}`, quizRows(0, made.items[0].options, premium));
+      const shareId = registerSharedQuiz(made.items, "Image Quiz", lang, m.userId);
+      const quiz = { items: made.items, index: 0, score: 0, answered: -1, title: "images", wrongItems: [], shareId };
+      saveSession(m.chatId, {
+        quiz,
+        awaiting: null,
+        questionsUsed: Number(s.questionsUsed || 0) + made.items.length,
+        lastQuizTitle: "images",
+        lastShareId: shareId,
+        lastQuizItems: made.items,
+      });
+      await ui.edit(
+        m.chatId,
+        msgId,
+        `${c.quizIntro(made.items.length)}\n\n${c.quizQuestion({ index: 1, total: made.items.length, q: made.items[0].q, options: made.items[0].options })}`,
+        [...quizRows(0, made.items[0].options, premium), ...appRows(null, lang)]
+      );
     } catch (err) {
       logger.error("[bot] image quiz failed:", err?.message || err);
       if (msgId) await ui.edit(m.chatId, msgId, c.failed).catch(() => {});
@@ -1544,10 +1577,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   async function startBurnsInteractive(m, lang) {
     if (!quota.isAdmin(m.userId)) return ui.send(m.chatId, copy(lang).menu, menuRows(lang, premium));
     const items = BURNS_QUIZ_ITEMS.map((item) => ({ ...item }));
-    const quiz = { items, index: 0, score: 0, answered: -1, title: BURNS_QUIZ_TITLE, wrongItems: [] };
+    const shareId = registerSharedQuiz(items, BURNS_QUIZ_TITLE, lang, m.userId);
+    const quiz = { items, index: 0, score: 0, answered: -1, title: BURNS_QUIZ_TITLE, wrongItems: [], shareId };
     const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
-    if (qid) store.set(`appquiz:${qid}`, { userId: m.userId, items, at: now() }, 2 * 3600 * 1000);
-    saveSession(m.chatId, { quiz, awaiting: null, lastQuizTitle: BURNS_QUIZ_TITLE });
+    if (qid) {
+      store.set(`appquiz:${qid}`, { userId: m.userId, items, title: BURNS_QUIZ_TITLE, lang, at: now() }, 30 * 24 * 3600 * 1000);
+      registerSharedQuiz(items, BURNS_QUIZ_TITLE, lang, m.userId, qid);
+    }
+    saveSession(m.chatId, { quiz, awaiting: null, lastQuizTitle: BURNS_QUIZ_TITLE, lastShareId: shareId, lastQuizItems: items });
     const c = copy(lang);
     const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q, options: items[0].options })}`;
     return ui.send(m.chatId, html, [...quizRows(0, items[0].options, premium), ...appRows(qid, lang)]);
@@ -1646,10 +1683,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const part = ORTHO_QUIZ_PARTS[pid - 1];
     const items = getOrthoQuizPart(pid).map((item) => ({ ...item }));
     const quizTitle = `Ortho Quiz ${pid} (${part.range})`;
-    const quiz = { items, index: 0, score: 0, answered: -1, title: quizTitle, wrongItems: [] };
+    const shareId = registerSharedQuiz(items, quizTitle, lang, m.userId);
+    const quiz = { items, index: 0, score: 0, answered: -1, title: quizTitle, wrongItems: [], shareId };
     const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
-    if (qid) store.set(`appquiz:${qid}`, { userId: m.userId, items, at: now() }, 2 * 3600 * 1000);
-    saveSession(m.chatId, { quiz, awaiting: null, lastQuizTitle: quizTitle });
+    if (qid) {
+      store.set(`appquiz:${qid}`, { userId: m.userId, items, title: quizTitle, lang, at: now() }, 30 * 24 * 3600 * 1000);
+      registerSharedQuiz(items, quizTitle, lang, m.userId, qid);
+    }
+    saveSession(m.chatId, { quiz, awaiting: null, lastQuizTitle: quizTitle, lastShareId: shareId, lastQuizItems: items });
     const c = copy(lang);
     const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q, options: items[0].options })}`;
     return ui.send(m.chatId, html, [...quizRows(0, items[0].options, premium), ...appRows(qid, lang)]);
@@ -1704,6 +1745,71 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const admin = quota.isAdmin(m.userId);
     switch (cmd) {
       case "/start": {
+        const quizMatch = String(m.text || "").match(/^\/start\s+(?:quiz_|qz_)([a-zA-Z0-9_-]+)/i);
+        if (quizMatch) {
+          const shareId = quizMatch[1];
+          const shared = store.get(`shared_quiz:${shareId}`) || store.get(`appquiz:${shareId}`);
+          if (!shared || !shared.items || !shared.items.length) {
+            return ui.send(
+              m.chatId,
+              lang === "ar"
+                ? `❌ <b>عذراً، هذا الكويز غير موجود أو انتهت صلاحيته.</b>\n${HR}\nتأكد من صحة الرابط أو اطلب من زميلك إعادة إرساله.`
+                : `❌ <b>Sorry, this quiz was not found or has expired.</b>\n${HR}\nPlease verify the link or ask your friend to send it again.`,
+              menuRows(lang, premium, { isAdmin: admin })
+            );
+          }
+
+          const slot = entitle.takeFileSlot(m.userId);
+          if (!slot.ok) {
+            return ui.send(
+              m.chatId,
+              lang === "ar"
+                ? `⛔ <b>وصلت للحد اليومي للملفات والكويزات!</b>\n${HR}\nلكل طالب <b>${slot.limit}</b> عمليات/ملفات مجانية يومياً.\nفتح كويز مشترك يستهلك (1) من رصيد عملياتك اليومية.\nيتجدد رصيدك يومياً في منتصف الليل UTC، أو يمكنك الاشتراك في Pro لعمليات غير محدودة 🚀`
+                : `⛔ <b>Daily file/quiz limit reached!</b>\n${HR}\nYou get <b>${slot.limit}</b> free actions/files per day.\nOpening a shared quiz consumes 1 slot from your daily quota.\nYour quota resets at midnight UTC, or upgrade to Pro for unlimited access 🚀`,
+              menuRows(lang, premium, { isAdmin: admin })
+            );
+          }
+
+          clearActiveTimer(m.chatId);
+          const quiz = {
+            items: shared.items.map((it) => ({ ...it })),
+            index: 0,
+            score: 0,
+            answered: -1,
+            title: shared.title || "Shared Quiz",
+            wrongItems: [],
+            timerSec: 0,
+            shareId,
+          };
+          saveSession(m.chatId, {
+            quiz,
+            awaiting: null,
+            lastInput: null,
+            lastQuizTitle: quiz.title,
+            lastShareId: shareId,
+            lastQuizItems: quiz.items,
+          });
+          stat("quizzes");
+
+          const quotaNotice = slot.unlimited
+            ? (lang === "ar" ? "✨ رصيدك غير محدود (Pro/Admin)" : "✨ Unlimited access (Pro/Admin)")
+            : (lang === "ar"
+                ? `🎟️ <b>تم خصم كويز (1) من رصيد عملياتك اليومية</b> (متبقي لك <b>${slot.left}</b> من أصل <b>${slot.limit}</b> لليوم).`
+                : `🎟️ <b>1 quiz action deducted from your daily quota</b> (<b>${slot.left}</b> of <b>${slot.limit}</b> remaining today).`);
+
+          const quizIntroHtml = lang === "ar"
+            ? `🎯 <b>تم فتح كويز مشترك بنجاح!</b>\n${HR}\n📌 <b>العنوان:</b> ${esc(quiz.title)}\n❓ <b>عدد الأسئلة:</b> <b>${quiz.items.length}</b> سؤال\n${quotaNotice}\n\n${c.quizQuestion({ index: 1, total: quiz.items.length, q: quiz.items[0].q, options: quiz.items[0].options })}`
+            : `🎯 <b>Shared Quiz Opened!</b>\n${HR}\n📌 <b>Title:</b> ${esc(quiz.title)}\n❓ <b>Questions:</b> <b>${quiz.items.length}</b> Qs\n${quotaNotice}\n\n${c.quizQuestion({ index: 1, total: quiz.items.length, q: quiz.items[0].q, options: quiz.items[0].options })}`;
+
+          const sentMsgId = await ui.send(
+            m.chatId,
+            `${quizIntroHtml}\n${HR}\n${progress(0, quiz.items.length)}`,
+            [...quizRows(0, quiz.items[0].options, premium), ...appRows(shareId, lang)]
+          );
+          saveSession(m.chatId, { quizMsgId: sentMsgId });
+          return { ok: true };
+        }
+
         const refMatch = String(m.text || "").match(/^\/start\s+(?:ref_|r_)?(\d+)/i);
         if (refMatch) {
           const referrerId = Number(refMatch[1]);
@@ -1731,6 +1837,41 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "/invite":
       case "/share":
         return showInvite(m, lang);
+      case "/sharequiz": {
+        const shareId = s.lastShareId;
+        const shared = shareId ? (store.get(`shared_quiz:${shareId}`) || store.get(`appquiz:${shareId}`)) : null;
+        if (!shared || !shared.items || !shared.items.length) {
+          return ui.send(m.chatId, lang === "ar" ? "❌ مفيش كويز سابق تم حله للمشاركة. امتحن كويز الأول!" : "❌ No previous quiz found to share. Take a quiz first!");
+        }
+        const botUser = cfg.botUsername || "Black_Fighters_FREE_bot";
+        const shareUrl = `https://t.me/${botUser}?start=quiz_${shareId}`;
+        const title = esc(shared.title || "Medical Quiz");
+        const count = shared.items.length;
+        const shareText = encodeURIComponent(
+          lang === "ar"
+            ? `امتحن معايا كويز (${title} - ${count} أسئلة) على بوت Black Fighters 🩺🔥:`
+            : `Take this quiz with me (${title} - ${count} Qs) on Black Fighters bot 🩺🔥:`
+        );
+        const tgShareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${shareText}`;
+        const msg = lang === "ar"
+          ? `🔗 <b>رابط مشاركة الكويز مع زملائك</b>\n${HR}\n📌 <b>اسم الكويز:</b> ${title}\n❓ <b>عدد الأسئلة:</b> <b>${count}</b> سؤال\n\n🌐 <b>الرابط المباشر:</b>\n<code>${shareUrl}</code>\n\n⚠️ <b>تنبيه للمستلم:</b>\nعند فتح الرابط، سيتم احتساب الكويز واستهلاك <b>(1) من رصيد العمليات/الملفات اليومية</b> للشخص المستلم.`
+          : `🔗 <b>Share Quiz Link</b>\n${HR}\n📌 <b>Quiz:</b> ${title}\n❓ <b>Questions:</b> <b>${count}</b> Qs\n\n🌐 <b>Direct Link:</b>\n<code>${shareUrl}</code>\n\n⚠️ <b>Note for recipient:</b>\nOpening this link will deduct <b>1 slot from their daily file/quiz limit</b>.`;
+
+        const keyboard = [
+          [
+            button({
+              label: lang === "ar" ? "🚀 إرسال الرابط لزميل أو جروب" : "🚀 Send Link to Friend / Group",
+              icon: "forward",
+              url: tgShareUrl,
+              style: "primary",
+              premium,
+            }),
+          ],
+          [button({ label: lang === "ar" ? "🔙 القائمة الرئيسية" : "🔙 Main Menu", icon: "home", action: act("menu"), premium })],
+        ];
+
+        return ui.send(m.chatId, msg, keyboard);
+      }
       case "/menu":
         return ui.send(m.chatId, c.menu, menuRows(lang, premium, { isAdmin: admin }));
       case "/help":
@@ -1952,13 +2093,53 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
           title: s.lastQuizTitle ? `${s.lastQuizTitle} (تصحيح الأخطاء)` : (lang === "ar" ? "تصحيح الأخطاء" : "Mistakes Retry"),
           wrongItems: [],
         };
-        saveSession(m.chatId, { quiz, retryQuizItems: null });
+        const shareId = registerSharedQuiz(retryItems, quiz.title, lang, m.userId);
+        quiz.shareId = shareId;
+        saveSession(m.chatId, { quiz, retryQuizItems: null, lastShareId: shareId, lastQuizItems: retryItems });
         const item0 = retryItems[0];
         const intro = lang === "ar"
           ? `🔄 <b>جولة تصحيح الأخطاء (${retryItems.length} سؤال)</b>\n${HR}\nركز وصحح الأسئلة اللي غلطت فيها 👇`
           : `🔄 <b>Mistakes Retry Round (${retryItems.length} questions)</b>\n${HR}\nFocus and correct the questions you missed 👇`;
         const html = `${intro}\n\n${c.quizQuestion({ index: 1, total: retryItems.length, q: item0.q, options: item0.options })}`;
-        return ui.send(m.chatId, html, quizRows(0, item0.options, premium));
+        return ui.send(m.chatId, html, [...quizRows(0, item0.options, premium), ...appRows(null, lang)]);
+      }
+      case "qshare": {
+        await ui.ack(m.callbackId);
+        const s = session(m.chatId);
+        const shareId = a0 || s.lastShareId;
+        const shared = shareId ? (store.get(`shared_quiz:${shareId}`) || store.get(`appquiz:${shareId}`)) : null;
+        if (!shared || !shared.items || !shared.items.length) {
+          return ui.send(m.chatId, lang === "ar" ? "❌ لم يتم العثور على الكويز للمشاركة." : "❌ Quiz not found to share.");
+        }
+        const botUser = cfg.botUsername || "Black_Fighters_FREE_bot";
+        const shareUrl = `https://t.me/${botUser}?start=quiz_${shareId}`;
+        const title = esc(shared.title || "Medical Quiz");
+        const count = shared.items.length;
+        const shareText = encodeURIComponent(
+          lang === "ar"
+            ? `امتحن معايا كويز (${title} - ${count} أسئلة) على بوت Black Fighters 🩺🔥:`
+            : `Take this quiz with me (${title} - ${count} Qs) on Black Fighters bot 🩺🔥:`
+        );
+        const tgShareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${shareText}`;
+
+        const msg = lang === "ar"
+          ? `🔗 <b>رابط مشاركة الكويز مع زملائك</b>\n${HR}\n📌 <b>اسم الكويز:</b> ${title}\n❓ <b>عدد الأسئلة:</b> <b>${count}</b> سؤال\n\n🌐 <b>الرابط المباشر:</b>\n<code>${shareUrl}</code>\n\n⚠️ <b>تنبيه للمستلم:</b>\nعند فتح الرابط، سيتم احتساب الكويز واستهلاك <b>(1) من رصيد العمليات/الملفات اليومية</b> للشخص المستلم.`
+          : `🔗 <b>Share Quiz Link</b>\n${HR}\n📌 <b>Quiz:</b> ${title}\n❓ <b>Questions:</b> <b>${count}</b> Qs\n\n🌐 <b>Direct Link:</b>\n<code>${shareUrl}</code>\n\n⚠️ <b>Note for recipient:</b>\nOpening this link will deduct <b>1 slot from their daily file/quiz limit</b>.`;
+
+        const keyboard = [
+          [
+            button({
+              label: lang === "ar" ? "🚀 إرسال الرابط لزميل أو جروب" : "🚀 Send Link to Friend / Group",
+              icon: "forward",
+              url: tgShareUrl,
+              style: "primary",
+              premium,
+            }),
+          ],
+          [button({ label: lang === "ar" ? "🔙 القائمة الرئيسية" : "🔙 Main Menu", icon: "home", action: act("menu"), premium })],
+        ];
+
+        return ui.send(m.chatId, msg, keyboard);
       }
       case "lang": {
         const next = a0 === "ar" ? "ar" : "en";

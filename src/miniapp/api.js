@@ -48,17 +48,17 @@ export function createAppApi({ store, botToken, now = () => Date.now() }) {
 
     if (req.method === "GET" && url.pathname === "/api/app/quiz") {
       const qid = url.searchParams.get("qid") || "";
-      const q = store.get(`appquiz:${qid}`);
+      const q = store.get(`appquiz:${qid}`) || store.get(`shared_quiz:${qid}`);
       if (!q) return json(res, 404, { error: "not_found" }), true;
-      if (Number(q.userId) !== session.user.id) return json(res, 403, { error: "forbidden" }), true;
+      if (q.userId && Number(q.userId) !== session.user.id && !store.get(`shared_quiz:${qid}`)) return json(res, 403, { error: "forbidden" }), true;
       return json(res, 200, { total: q.items.length, items: q.items.map((it) => ({ q: it.q, options: it.options })), name: session.user.first_name || "" }), true;
     }
 
     if (req.method === "POST" && url.pathname === "/api/app/answer") {
       const body = await readBody(req);
-      const q = body && store.get(`appquiz:${body.qid}`);
+      const q = body && (store.get(`appquiz:${body.qid}`) || store.get(`shared_quiz:${body.qid}`));
       if (!q) return json(res, 404, { error: "not_found" }), true;
-      if (Number(q.userId) !== session.user.id) return json(res, 403, { error: "forbidden" }), true;
+      if (q.userId && Number(q.userId) !== session.user.id && !store.get(`shared_quiz:${body.qid}`)) return json(res, 403, { error: "forbidden" }), true;
       const item = q.items[Number(body.index)];
       if (!item) return json(res, 400, { error: "bad_index" }), true;
       const choice = Number(body.choice);

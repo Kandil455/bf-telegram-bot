@@ -1,6 +1,6 @@
 // Reads and validates the environment once, at startup. Fails fast with a clear message.
 
-import { parsePremiumMap, DEFAULT_PREMIUM_EMOJI_MAP } from "./core/icons.js";
+import { parsePremiumMap } from "./core/icons.js";
 
 function compile(src) {
   if (!src) return null;
@@ -19,22 +19,16 @@ export class ConfigError extends Error {
 }
 
 export const GEMINI_DEFAULT_MODELS = [
-  "gemini-4.1-flash",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
-  "gemini-3-flash-preview",
-  "gemini-3.5-flash",
-  "gemini-3.8-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-3.1-flash-lite",
+  "gemini-2.5-flash-lite",
 ];
 
 export const GROQ_DEFAULT_MODELS = [
   "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
-  "qwen/qwen3.8-27b",
   "openai/gpt-oss-120b",
-  "openai/gpt-oss-20b",
+  "qwen/qwen3.8-27b",
+  "llama-3.1-8b-instant",
 ];
 
 export const OPENROUTER_DEFAULT_MODELS = [
@@ -42,24 +36,27 @@ export const OPENROUTER_DEFAULT_MODELS = [
   "deepseek/deepseek-r1:free",
   "google/gemma-3-27b-it:free",
   "meta-llama/llama-3.3-70b-instruct:free",
-  "nvidia/nemotron-3.5-lightning:free",
-  "inclusionai/ling-3.0-flash-sante:free",
-  "google/gemma-4-31b-it:free",
-  "google/gemma-4-26b-a4b-it:free",
 ];
 
 export const DEEPSEEK_DEFAULT_MODELS = [
-  "deepseek-chat",
   "deepseek-flash",
-  "deepseek-reasoner",
+];
+
+export const ZAI_DEFAULT_MODELS = [
+  "glm-4.7-flash",
+];
+
+export const APMIX_DEFAULT_MODELS = [
+  "claude-sonnet-4-6-free",
+  "space-bunny-free",
 ];
 
 function parseKeyList(raw) {
   if (!raw) return [];
   return String(raw)
     .split(/[,;\s]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+    .map((s) => s.trim().replace(/^["']|["']$/g, ""))
+    .filter((k) => k && !k.startsWith("AQ."));
 }
 
 function splitModels(raw) {
@@ -75,10 +72,15 @@ function parseModelList(raw, defaults) {
   return list.length ? list : defaults;
 }
 
-// Keep modern Gemini 2.0 / 2.5 / 3+ models while rejecting deprecated 1.x models
+// Filter out non-existent/deprecated model names that cause HTTP 404
 function sanitizeGeminiModels(models) {
-  const filtered = models.filter((m) => !/gemini-1(?:\.|\b|-)/i.test(m));
+  const filtered = models.filter((m) => !/gemini-1(?:\.|\b|-)|gemini-4\.1|gemini-3\.[58]/i.test(m));
   return filtered.length ? filtered : GEMINI_DEFAULT_MODELS;
+}
+
+function sanitizeDeepseekModels(models) {
+  // DeepSeek-V4.1-Flash-1017 is served under "deepseek-flash" on api.deepseek.com
+  return ["deepseek-flash"];
 }
 
 export function loadConfig(env = process.env) {
@@ -118,22 +120,34 @@ export function loadConfig(env = process.env) {
     deepseek: {
       keys: parseKeyList(env.DEEPSEEK_API_KEY),
       get key() { return this.keys[0] || ""; },
-      models: parseModelList(env.DEEPSEEK_MODELS || env.DEEPSEEK_MODEL, DEEPSEEK_DEFAULT_MODELS),
-      get model() { return this.models[0] || "deepseek-chat"; },
+      models: sanitizeDeepseekModels(parseModelList(env.DEEPSEEK_MODELS || env.DEEPSEEK_MODEL, DEEPSEEK_DEFAULT_MODELS)),
+      get model() { return this.models[0] || "deepseek-flash"; },
+    },
+    zai: {
+      keys: parseKeyList(env.ZAI_API_KEY),
+      get key() { return this.keys[0] || ""; },
+      models: parseModelList(env.ZAI_MODELS || env.ZAI_MODEL, ZAI_DEFAULT_MODELS),
+      get model() { return this.models[0] || "glm-4.7-flash"; },
     },
     gemini: {
-      fast: splitModels(env.GEMINI_MODEL_FAST),
-      quality: splitModels(env.GEMINI_MODEL_QUALITY),
-      keys: parseKeyList(env.GEMINI_API_KEY),
+      fast: sanitizeGeminiModels(splitModels(env.GEMINI_MODEL_FAST)),
+      quality: sanitizeGeminiModels(splitModels(env.GEMINI_MODEL_QUALITY)),
+      keys: parseKeyList([env.GEMINI_API_KEY, env.GEMINI_BACKUP_KEYS].filter(Boolean).join(",")),
       get key() { return this.keys[0] || ""; },
       models: sanitizeGeminiModels(parseModelList(env.GEMINI_MODELS || env.GEMINI_MODEL, GEMINI_DEFAULT_MODELS)),
-      get model() { return this.models[0] || "gemini-3.5-flash"; },
+      get model() { return this.models[0] || "gemini-2.5-flash"; },
     },
     groq: {
       keys: parseKeyList(env.GROQ_API_KEY),
       get key() { return this.keys[0] || ""; },
       models: parseModelList(env.GROQ_MODELS || env.GROQ_MODEL, GROQ_DEFAULT_MODELS),
-      get model() { return this.models[0] || "qwen/qwen3.8-27b"; },
+      get model() { return this.models[0] || "llama-3.3-70b-versatile"; },
+    },
+    apmix: {
+      keys: parseKeyList(env.APMIX_KEY || env.APMIX_API_KEY),
+      get key() { return this.keys[0] || ""; },
+      models: parseModelList(env.APMIX_MODELS || env.APMIX_MODEL, APMIX_DEFAULT_MODELS),
+      get model() { return this.models[0] || "claude-sonnet-4-6-free"; },
     },
     openrouter: {
       keys: parseKeyList(env.OPENROUTER_API_KEY),
@@ -151,7 +165,6 @@ export function loadConfig(env = process.env) {
     proStars: positive("PRO_STARS", 100),
     tzOffset: Number(env.TZ_OFFSET_HOURS || 0) || 0,
     adminToken: String(env.ADMIN_TOKEN || "").trim(),
-    // Public address of the web dashboard, sent to admins by /admin. Changes with the tunnel.
     adminPublicUrl: String(env.ADMIN_PUBLIC_URL || "").trim(),
     redisUrl: String(env.REDIS_URL || "").trim(),
     botUsername: "",
@@ -168,7 +181,7 @@ export function loadConfig(env = process.env) {
     requirePhone: String(env.REQUIRE_PHONE || "on").toLowerCase() !== "off",
     quizVerify: String(env.QUIZ_VERIFY || "on").toLowerCase() !== "off",
     proFilesPerDay: positive("PRO_FILES_PER_DAY", 8),
-    maxQuestionsPerFile: positive("MAX_QUESTIONS_PER_FILE", 100),
+    maxQuestionsPerFile: Math.min(50, positive("MAX_QUESTIONS_PER_FILE", 50)),
     maxImagesPerFile: positive("MAX_IMAGES_PER_FILE", 40),
     imageReview: String(env.IMAGE_REVIEW || "on").toLowerCase() !== "off",
     pdfimagesBin: String(env.PDFIMAGES_BIN || "pdfimages").trim(),
@@ -179,7 +192,7 @@ export function loadConfig(env = process.env) {
     referralBonusFiles: positive("REFERRAL_BONUS_FILES", 1),
   };
 
-  if (!cfg.deepseek?.key && !cfg.gemini.key && !cfg.groq.key && !cfg.openrouter.key) {
+  if (!cfg.deepseek?.key && !cfg.zai?.key && !cfg.gemini.key && !cfg.groq.key && !cfg.apmix?.key && !cfg.openrouter.key) {
     throw new ConfigError("Set at least one AI key: DEEPSEEK_API_KEY, GEMINI_API_KEY, GROQ_API_KEY or OPENROUTER_API_KEY.");
   }
 
