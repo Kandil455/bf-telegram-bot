@@ -10,167 +10,81 @@ export const EMERGENCY_QUIZ_CATEGORIES = Object.freeze([
     "nameAr": "امتحان الطوارئ والإنعاش الشامل",
     "nameEn": "Core Emergency Exam",
     "count": 50,
-    "parts": [
-      1,
-      2,
-      3,
-      4,
-      5
-    ]
+    "part": 1
   },
   {
     "id": "chest",
     "nameAr": "آلام الصدر واضطراب النبض",
     "nameEn": "Chest Pain & Dysrhythmias",
     "count": 45,
-    "parts": [
-      6,
-      7,
-      8
-    ]
+    "part": 2
   },
   {
     "id": "trauma",
     "nameAr": "الحوادث وإصابات التروما",
     "nameEn": "Trauma & Resuscitation",
     "count": 43,
-    "parts": [
-      9,
-      10,
-      11
-    ]
+    "part": 3
   },
   {
     "id": "shock",
-    "nameAr": "أنواع الصدمة والعناية المركزة",
+    "nameAr": "أنواع الصدمات والعناية المركزة",
     "nameEn": "Shock & Critical Care",
     "count": 27,
-    "parts": [
-      12,
-      13
-    ]
+    "part": 4
   },
   {
     "id": "gi",
     "nameAr": "نزيف وطوارئ الجهاز الهضمي",
     "nameEn": "Gastrointestinal Bleeding",
     "count": 17,
-    "parts": [
-      14
-    ]
+    "part": 5
   }
 ]);
 
 export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   {
     "id": 1,
-    "catId": "core",
-    "name": "Resuscitation & Critical Care",
-    "range": "Q1 - Q10",
+    "name": "Core Emergency Exam",
+    "nameAr": "امتحان الطوارئ والإنعاش الشامل",
+    "range": "Q1 - Q50",
+    "count": 50,
     "start": 1,
-    "end": 10
-  },
-  {
-    "id": 2,
-    "catId": "core",
-    "name": "DKA, Shock & Trauma Assessment",
-    "range": "Q11 - Q20",
-    "start": 11,
-    "end": 20
-  },
-  {
-    "id": 3,
-    "catId": "core",
-    "name": "Airway, Hemothorax & Cardiac Arrest",
-    "range": "Q21 - Q30",
-    "start": 21,
-    "end": 30
-  },
-  {
-    "id": 4,
-    "catId": "core",
-    "name": "Trauma Protocol & Tension Pneumothorax",
-    "range": "Q31 - Q40",
-    "start": 31,
-    "end": 40
-  },
-  {
-    "id": 5,
-    "catId": "core",
-    "name": "ABG, Toxicology & Medical Emergencies",
-    "range": "Q41 - Q50",
-    "start": 41,
     "end": 50
   },
   {
-    "id": 6,
-    "catId": "chest",
-    "name": "Chest Pain 1: ACS & Ischemia",
-    "range": "Q51 - Q65",
+    "id": 2,
+    "name": "Chest Pain & Dysrhythmias",
+    "nameAr": "آلام الصدر واضطراب النبض",
+    "range": "Q51 - Q95",
+    "count": 45,
     "start": 51,
-    "end": 65
-  },
-  {
-    "id": 7,
-    "catId": "chest",
-    "name": "Chest Pain 2: Dysrhythmias & Syncope",
-    "range": "Q66 - Q80",
-    "start": 66,
-    "end": 80
-  },
-  {
-    "id": 8,
-    "catId": "chest",
-    "name": "Chest Pain 3: Pericarditis & Aorta",
-    "range": "Q81 - Q95",
-    "start": 81,
     "end": 95
   },
   {
-    "id": 9,
-    "catId": "trauma",
-    "name": "Trauma 1: Head & Cervical Spine",
-    "range": "Q96 - Q109",
+    "id": 3,
+    "name": "Trauma & Resuscitation",
+    "nameAr": "الحوادث وإصابات التروما",
+    "range": "Q96 - Q138",
+    "count": 43,
     "start": 96,
-    "end": 109
-  },
-  {
-    "id": 10,
-    "catId": "trauma",
-    "name": "Trauma 2: Thoracic & Abdominal",
-    "range": "Q110 - Q123",
-    "start": 110,
-    "end": 123
-  },
-  {
-    "id": 11,
-    "catId": "trauma",
-    "name": "Trauma 3: Pelvis, Extremity & Burns",
-    "range": "Q124 - Q138",
-    "start": 124,
     "end": 138
   },
   {
-    "id": 12,
-    "catId": "shock",
-    "name": "Shock 1: Hypovolemic & Septic",
-    "range": "Q139 - Q151",
+    "id": 4,
+    "name": "Shock & Critical Care",
+    "nameAr": "أنواع الصدمات والعناية المركزة",
+    "range": "Q139 - Q165",
+    "count": 27,
     "start": 139,
-    "end": 151
-  },
-  {
-    "id": 13,
-    "catId": "shock",
-    "name": "Shock 2: Cardiogenic & Anaphylaxis",
-    "range": "Q152 - Q165",
-    "start": 152,
     "end": 165
   },
   {
-    "id": 14,
-    "catId": "gi",
-    "name": "GI Bleeding: Upper, Lower & Endoscopy",
+    "id": 5,
+    "name": "Gastrointestinal Bleeding",
+    "nameAr": "نزيف وطوارئ الجهاز الهضمي",
     "range": "Q166 - Q182",
+    "count": 17,
     "start": 166,
     "end": 182
   }
@@ -319,7 +233,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 11,
-    "part": 2,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "What is the first step in management of DKA/HHS?",
     "options": [
@@ -333,7 +247,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 12,
-    "part": 2,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "Anion gap is typically:",
     "options": [
@@ -347,7 +261,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 13,
-    "part": 2,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "pH 7.50, Paco2 28, HCO3- 22. What is the acid base abnormality?",
     "options": [
@@ -361,7 +275,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 14,
-    "part": 2,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 27-year-old male presents after an MVC with abdominal pain, BP 90/60, HR 120, guarding, and positive FAST for free fluid. What is the next step?",
     "options": [
@@ -375,7 +289,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 15,
-    "part": 2,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 28-year-old male presents after head trauma (GCS 6, intubated). BP is 160/90, pulse is 50 bpm, irregular breathing. Likely condition?",
     "options": [
@@ -389,7 +303,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 16,
-    "part": 2,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 32-year-old male is brought after an MVA with severe midline cervical tenderness. Conscious and stable. What is the immediate management?",
     "options": [
@@ -403,7 +317,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 17,
-    "part": 2,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 40-year-old male presents after a fall with hypotension (BP 80/50), bradycardia (HR 45), and paralysis below chest level. Initial management?",
     "options": [
@@ -417,7 +331,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 18,
-    "part": 2,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 25-year-old male presents with acute ascending flaccid paralysis over 3 days and absent reflexes following a respiratory infection. Next step?",
     "options": [
@@ -431,7 +345,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 19,
-    "part": 2,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 30-year-old male after an RTA: Eye opening to pain (2), Verbal response inappropriate words (3), Motor response withdraws (4). GCS score?",
     "options": [
@@ -445,7 +359,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 20,
-    "part": 2,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "According to classification of head trauma according to GCS, a score of 9 is classified as:",
     "options": [
@@ -459,7 +373,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 21,
-    "part": 3,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "What are the indications for emergent thoracotomy in massive hemothorax?",
     "options": [
@@ -473,7 +387,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 22,
-    "part": 3,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 38-year-old male patient was rescued from a pool with hypotension (BP 80/60) and pulse 50 bpm. What is your provisional diagnosis?",
     "options": [
@@ -487,7 +401,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 23,
-    "part": 3,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "Which of the following is not part of 'the primary survey' in trauma patients?",
     "options": [
@@ -501,7 +415,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 24,
-    "part": 3,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "Which drug can be used in a patient on beta-blockers who is not responding to adrenaline?",
     "options": [
@@ -515,7 +429,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 25,
-    "part": 3,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "Definitive airway management is achieved by:",
     "options": [
@@ -529,7 +443,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 26,
-    "part": 3,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 22-year-old man with kidney stones has pH 7.29, PCO2 32, HCO3 15, Na 138, K 3, Cl 110. What is the most likely acid-base disorder?",
     "options": [
@@ -543,7 +457,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 27,
-    "part": 3,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 48-year-old presented with no signs of life. The defibrillator/monitor shows a flat line with no electrical activity. What is this rhythm?",
     "options": [
@@ -557,7 +471,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 28,
-    "part": 3,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 41-year-old male presents with palpitations, dyspnea, and BP 70/40. ECG shows rapid regular narrow-complex SVT. What is the immediate management?",
     "options": [
@@ -571,7 +485,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 29,
-    "part": 3,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 55-year-old heavy smoker presents to the ED. ECG reveals ST elevation in leads II, III, and aVF. What is the diagnosis?",
     "options": [
@@ -585,7 +499,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 30,
-    "part": 3,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "Which of the following is an established major risk factor for acute coronary syndrome?",
     "options": [
@@ -599,7 +513,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 31,
-    "part": 4,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "WHAT ARE THE CHARACTERISTICS of STEMI?",
     "options": [
@@ -613,7 +527,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 32,
-    "part": 4,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "In management of acute coronary syndrome, we use MONA. The 'N' letter stands for what?",
     "options": [
@@ -627,7 +541,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 33,
-    "part": 4,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "To open the airway in a trauma patient with spinal injury, we use the head-tilt chin-lift technique.",
     "options": [
@@ -639,7 +553,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 34,
-    "part": 4,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A trauma patient arrives after a road traffic collision. According to the ABCDE approach, what should be assessed first?",
     "options": [
@@ -653,7 +567,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 35,
-    "part": 4,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "During the Breathing assessment, which observation indicates tension pneumothorax?",
     "options": [
@@ -667,7 +581,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 36,
-    "part": 4,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "The AVPU scale is used to assess what?",
     "options": [
@@ -681,7 +595,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 37,
-    "part": 4,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "After ABCD assessment, the nurse removes the patient's clothing and notices a hidden penetrating wound in the back. Which principle is this?",
     "options": [
@@ -695,7 +609,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 38,
-    "part": 4,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A tension pneumothorax occurs when:",
     "options": [
@@ -709,7 +623,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 39,
-    "part": 4,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "The priority treatment for suspected tension pneumothorax is:",
     "options": [
@@ -723,7 +637,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 40,
-    "part": 4,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "Which fluid should you give during resuscitation for hypovolemic shock?",
     "options": [
@@ -737,7 +651,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 41,
-    "part": 5,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "Flail chest occurs in which condition?",
     "options": [
@@ -751,7 +665,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 42,
-    "part": 5,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A patient with chest trauma presents with hypotension, distended neck veins, muffled heart sounds, and tachycardia. What is the diagnosis?",
     "options": [
@@ -765,7 +679,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 43,
-    "part": 5,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "The normal arterial blood pH range is:",
     "options": [
@@ -779,7 +693,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 44,
-    "part": 5,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "An elevated PaCO2 (>45 mmHg) usually indicates:",
     "options": [
@@ -793,7 +707,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 45,
-    "part": 5,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A patient is breathing rapidly due to severe anxiety. ABG: pH = 7.50, PaCO2 = 28 mmHg, HCO3- = 24 mEq/L. What is the diagnosis?",
     "options": [
@@ -807,7 +721,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 46,
-    "part": 5,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A patient in septic shock has: pH = 7.18, PaCO2 = 30 mmHg, HCO3- = 14 mEq/L. What is the most likely acid-base disorder?",
     "options": [
@@ -819,7 +733,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 47,
-    "part": 5,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 65-year-old female presents with seizures and serum Na 110 mmol/L. What is your decision after seizure control?",
     "options": [
@@ -833,7 +747,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 48,
-    "part": 5,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 70-year-old patient suffers from syncope and chest pain. ECG shows HR 30 bpm. What is the correct initial dose of atropine?",
     "options": [
@@ -847,7 +761,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 49,
-    "part": 5,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 25-year-old pregnant woman develops eclamptic seizures. What is the drug of choice for her condition?",
     "options": [
@@ -861,7 +775,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 50,
-    "part": 5,
+    "part": 1,
     "category": "Core Emergency Exam",
     "q": "A 25-year-old male presents with pinpoint pupils and RR 6/min from opioid overdose. What is your initial drug for management?",
     "options": [
@@ -875,7 +789,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 51,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "59M with chest pain radiating to left arm, HTN, hyperlipidemia, smoking. ECG shows T-wave inversions in lateral leads. What is the most appropriate next step in management?",
     "options": [
@@ -890,7 +804,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 52,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "36F with sudden left-sided chest pain, dyspnea worsened by deep breath, recent 7-hr flight, left calf swelling. What is the most common ECG finding in this condition?",
     "options": [
@@ -905,7 +819,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 53,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "51M with HTN and intermittent palpitations for a week. HR 130, BP 130/75, stable. ECG shows atrial fibrillation with rapid ventricular response. What is the most appropriate next step?",
     "options": [
@@ -920,7 +834,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 54,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "54F with ESRD on dialysis, fatigue and confusion for 3 days. Alert and oriented to person only. ECG shows peaked T waves and widened QRS. Which electrolyte abnormality explains this?",
     "options": [
@@ -935,7 +849,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 55,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "29M tall thin man with 2 days of dyspnea. Stable vitals, normal exam. CXR shows small right spontaneous pneumothorax (<10%), which decreased on repeat CXR at 6 hours. Next step?",
     "options": [
@@ -950,7 +864,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 56,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "42M alcoholic, vomiting, acute persistent chest pain, dysphagia, pain on neck flexion. HR 101, crunching heart sound. CXR shows lateral displacement of left mediastinal pleural. Most likely diagnosis?",
     "options": [
@@ -965,7 +879,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 57,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "65M hypertensive with sudden tearing chest pain radiating to jaw, BP 205/110, diastolic murmur at right sternal border, widened mediastinum on CXR. Preferred diagnostic study?",
     "options": [
@@ -980,7 +894,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 58,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "47M hypertensive with continuous left chest pain after snorting cocaine. BP 170/90, HR 101. Only alprazolam. Which medication is contraindicated?",
     "options": [
@@ -995,7 +909,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 59,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "32F IV drug user with fever 101°F, heart murmur, splenomegaly, bilateral patchy infiltrates, WBC 14,000, first-degree AV block. Most appropriate next step?",
     "options": [
@@ -1010,7 +924,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 60,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "61F with chest pressure, diaphoresis, dyspnea. BP 130/70, HR 76. ECG shows ST elevation in V1–V4. Which location of MI?",
     "options": [
@@ -1025,7 +939,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 61,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "31yo male mover with gradual chest pain worse with activity and reproducible tenderness at left sternal border 3rd/4th rib. HR 68, BP 120/70, clear lungs, no murmur. ECG sinus rhythm, CXR normal. Next step?",
     "options": [
@@ -1040,7 +954,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 62,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "21yo woman with mitral valve prolapse and lightheadedness. HR 170, BP 105/55. After medication, HR 89, regular. ECG: PR 100 msec with slurred upstroke of QRS. Most likely diagnosis?",
     "options": [
@@ -1055,7 +969,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 63,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "55yo diabetic smoker presents with weakness, cramps, paresthesias and diffuse weakness. ECG shows peaked T waves. What is the most important next step in management?",
     "options": [
@@ -1070,7 +984,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 64,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "55yo man feels steak stuck, drooling, retching, no respiratory distress. Vitals stable, CXR no free air. Most appropriate next step?",
     "options": [
@@ -1085,7 +999,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 65,
-    "part": 6,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "59yo man with 2 hours of pressure-like left chest pain radiating to arm, diaphoresis. ECG shows 2-mm ST elevation in I, aVL, V3-V6. Which is an absolute contraindication to thrombolytics?",
     "options": [
@@ -1100,7 +1014,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 66,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "67F with dyspnea, palpitations, HR 139, BP 80/50, cool/diaphoretic, bilateral crackles, chest pain. ECG: narrow complex irregular rhythm in 140s. Best immediate treatment?",
     "options": [
@@ -1115,7 +1029,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 67,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "61F with CHF presents with dyspnea, SpO2 85% on RA, rales halfway up, BP 185/90, JVP elevated, pitting edema. Best first-line medication to lower preload?",
     "options": [
@@ -1130,7 +1044,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 68,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "27M healthy, thumb laceration repaired, requests ECG. ECG shows early repolarization pattern (benign). Most appropriate next step?",
     "options": [
@@ -1145,7 +1059,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 69,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "56F with ovarian cancer, acute right chest pain, SOB, HR 101, BP 131/75, SpO2 97% on RA. Suspected PE. Which test is most likely abnormal?",
     "options": [
@@ -1160,7 +1074,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 70,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "61F with diabetes/hypertension, 12h of dyspnea, chest tingling, diaphoresis. ECG: ST depression in II, III, aVF. NSTEMI suspected. Which marker rises in 3-6h, peaks 12-24h, normalizes in 7-10d?",
     "options": [
@@ -1175,7 +1089,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 71,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "27M with palpitations and lightheadedness for 1 hour. HR 180, BP 110/65, SpO2 99%. ECG: regular narrow-complex tachycardia, no discernible P waves. Most appropriate medication?",
     "options": [
@@ -1190,7 +1104,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 72,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "59M with left-sided chest pain and dyspnea for 1 hour. BP 85/45, HR 105, SpO2 94%. ECG shows ST-segment elevation. Most appropriate definitive treatment?",
     "options": [
@@ -1205,7 +1119,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 73,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "55M with left-sided chest pain radiating to left arm. Takes beta-blocker, PPI, statin, and took sildenafil last night. BP 130/70, HR 77. Which medication is contraindicated?",
     "options": [
@@ -1220,7 +1134,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 74,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "31F with sharp substernal chest pain radiating to back, worse lying down, better sitting up. Temp 100.6°F, friction rub. ECG shows diffuse ST elevation. CXR and echo normal. Next step?",
     "options": [
@@ -1235,7 +1149,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 75,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "71M with left-sided chest pain, left hand numbness, and dyspnea. ECG performed. Which best describes the order of ECG changes in an MI?",
     "options": [
@@ -1250,7 +1164,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 76,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "63M with dyspnea, RR 31, BP 185/90, SpO2 90%, crackles and 2+ edema after stopping diuretic. ECG shows sinus tachycardia. He is sitting up and speaking. After monitor and IV, best next step?",
     "options": [
@@ -1265,7 +1179,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 77,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "23M collapses during basketball, BP 80/palp, family history of young sudden cardiac death. Monitor shows polymorphic VT with twisting axis. Best rhythm description?",
     "options": [
@@ -1280,7 +1194,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 78,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "Which patient has the lowest clinical probability for pulmonary embolism?",
     "options": [
@@ -1295,7 +1209,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 79,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "75M with exertional syncope while shoveling snow, now asymptomatic, BP 160/85, harsh systolic ejection murmur, ECG shows LVH. Most likely diagnosis?",
     "options": [
@@ -1310,7 +1224,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 80,
-    "part": 7,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "56M with substernal chest pain radiating to left arm, relieved by antacid and nitroglycerin; ECG normal. Which statement about acute MI diagnosis is most accurate?",
     "options": [
@@ -1325,7 +1239,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 81,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "62yo woman with weakness, dyspnea, substernal chest pain radiating to left shoulder. BP 155/80, HR 92, RR 16. Suspected acute MI. Which therapeutic agent independently reduces mortality in acute MI?",
     "options": [
@@ -1340,7 +1254,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 82,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "22yo college student with 5 days fever, fatigue, myalgias, vomiting/diarrhea, now constant substernal chest pain and dyspnea. T 100.9°F, HR 119, BP 120/75, RR 18. ECG sinus tachycardia, CXR normal, mild leukocytosis. Most common cause?",
     "options": [
@@ -1355,7 +1269,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 83,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "51yo athletic woman with 5 days of crushing substernal chest pressure waking her from sleep, resolving in 20-30 min. ECG shows ST elevations, biomarkers negative, pain relieved by nitroglycerin. Minimal CAD on angiography. Best treatment?",
     "options": [
@@ -1370,7 +1284,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 84,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "23yo teacher with syncope preceded by lightheadedness, no seizure. Father died of 'heart problem' at 32. Vitals and exam normal. ECG (rhythm strip) shows prolonged QT interval. Most likely diagnosis?",
     "options": [
@@ -1385,7 +1299,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 85,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "Patient with AICD reports repeated shocks after returning from radiology; monitor shows sinus rhythm and a third shock occurs. Most appropriate next step?",
     "options": [
@@ -1400,7 +1314,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 86,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "55M with chest pain, SOB; BP 170/80, SpO2 90%. Crackles halfway up both lungs, new holosystolic murmur loudest at apex radiating to axilla. ECG: inferior ST elevations. CXR: pulmonary edema, normal cardiac silhouette. Cause of murmur?",
     "options": [
@@ -1415,7 +1329,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 87,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "82F with fatigue, dizziness, lightheadedness; HR 37, BP 140/70, RR 15. ECG shows third-degree AV block. Most appropriate next step?",
     "options": [
@@ -1430,7 +1344,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 88,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "22M with acute MI (ST elevations, positive biomarkers). Smokes 0.5 ppd for 3 months, occasional alcohol, grandfather had MI at 80. No HTN/DM, normal lipids. Most likely explanation?",
     "options": [
@@ -1445,7 +1359,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 89,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "29M syncope during basketball. Systolic ejection murmur at LSB/apex. ECG: LVH, LA enlargement, septal Q waves. Valsalva maneuver effect on murmur intensity?",
     "options": [
@@ -1460,7 +1374,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 90,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "61F with metastatic breast cancer, chest pain, cough, progressive SOB ×1 week. JVD present, BP 105/70, HR 98. CXR shows large pericardial effusion. Associated ECG finding?",
     "options": [
@@ -1475,7 +1389,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 91,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "68F with uterine cancer presents with acute sharp right-sided chest pain worse on inspiration. BP 135/85, HR 107, RR 20, SpO2 97%. Exam: swollen tender right calf. ECG: sinus tachycardia. Best next step?",
     "options": [
@@ -1490,7 +1404,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 92,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "57M with palpitations and lightheadedness for 1 hour. History of coronary stenting, smoking. HR 140, BP 115/70, SpO2 99%. ECG: regular wide-complex tachycardia at 140. Prior ECG: sinus rhythm at 80. Best medication?",
     "options": [
@@ -1505,7 +1419,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 93,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "55M with HTN and smoking presents with 3 episodes of severe heavy chest pain radiating to left shoulder at rest this morning. Prior exertional angina relieved by rest. BP 155/80, HR 76, pain-free in ED. ECG sinus rhythm at 72. Troponin negative. Diagnosis?",
     "options": [
@@ -1520,7 +1434,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 94,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "58M with syncope at dinner. Wife reports sudden loss of consciousness for 1 minute. Patient had chest discomfort and dyspnea prior. EMS rhythm strip shown (ECG shows progressive PR prolongation with dropped beats). Findings?",
     "options": [
@@ -1535,7 +1449,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 95,
-    "part": 8,
+    "part": 2,
     "category": "Chest Pain & Dysrhythmias",
     "q": "Same patient develops chest discomfort, dyspnea, and another syncopal episode. ECG shown (ECG shows complete heart block with slow wide-complex escape). Most appropriate next step?",
     "options": [
@@ -1550,7 +1464,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 96,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "58F fell on ice, 1-min LOC, now repeatedly asks what happened/where she is, vomited once. Normal CT brain. No focal deficits. Most likely diagnosis?",
     "options": [
@@ -1565,7 +1479,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 97,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "41M restrained driver in high-speed MVC, chest wall bruising, HR 121, GCS 14, suspected cardiac injury. Which location most commonly involves cardiac contusions?",
     "options": [
@@ -1580,7 +1494,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 98,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "25M motorcycle crash, BP 90/60, HR 115. Which smallest amount of blood loss produces a decrease in systolic BP in adults?",
     "options": [
@@ -1595,7 +1509,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 99,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "Mass casualty: two dead, one critically hypotensive, three stable injured. Which is the leading cause of death and disability in trauma victims?",
     "options": [
@@ -1610,7 +1524,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 100,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "45M high-speed MVC, BP 85/50, HR 131 after 2L NS, slow to respond. RUQ ultrasound shows free fluid. Most appropriate next step?",
     "options": [
@@ -1625,7 +1539,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 101,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "17-year-old football player 'spears' another player, has severe neck pain, no paresthesias, moves all extremities. Cervical CT shows multiple fractures of C1. Which fracture is this?",
     "options": [
@@ -1640,7 +1554,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 102,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "20-year-old with multiple chest stab wounds, BP 85/50, HR 123, mumbling, good air entry, JVD. Pulseless and no BP while listening to heart. Next best step?",
     "options": [
@@ -1655,7 +1569,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 103,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "22-year-old punched in face, holding avulsed front incisor. What is the best advice to preserve the tooth until ED arrival?",
     "options": [
@@ -1670,7 +1584,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 104,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "19-year-old after head-on cycling accident without helmet. Eyes closed but open to command; moves arms/legs on command; disoriented but conversant. What is his GCS score?",
     "options": [
@@ -1685,7 +1599,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 105,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "18-year-old stabbed in abdomen, HR 140, BP 90/40, pain. Two large-bore IVs, fluids wide open; after 2 L BP does not improve. Most common organ injured in stab wounds?",
     "options": [
@@ -1700,7 +1614,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 106,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "61M chest wall pain after MVC. Speaking full sentences, equal breath sounds, well-perfused. BP 150/75, HR 92, SpO2 97% RA. CXR: right 7th/8th anterolateral rib fractures, no other injury. Best treatment?",
     "options": [
@@ -1715,7 +1629,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 107,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "27M after MVC: RR 45, SpO2 89%, HR 112, BP 115/75. Decreased breath sounds on the left. Most appropriate next step?",
     "options": [
@@ -1730,7 +1644,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 108,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "29M stabbed in left back. BP 120/80, HR 105, RR 16, SpO2 98% RA. Secondary survey: left lower extremity motor weakness and loss of pain sensation in right lower extremity. Most likely diagnosis?",
     "options": [
@@ -1745,7 +1659,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 109,
-    "part": 9,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "33M intoxicated, assaulted with multiple head blows. BP 150/75, HR 90, RR 13, SpO2 100% on NRB. Opens eyes to pain, pupils equal/reactive, withdraws to pain, moans. Best next step?",
     "options": [
@@ -1760,7 +1674,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 110,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "74M after MVC, chest hit steering wheel, pain with breathing. RR 20, SpO2 98% RA, BP 145/75, HR 90. Exam: paradoxical respirations. Which best describes a flail chest?",
     "options": [
@@ -1775,7 +1689,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 111,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "29yo man stabbed in neck between mandible and cricoid; wound violates platysma, oozing blood, no expanding hematoma. Vitals normal, speaking full sentences. Best next step?",
     "options": [
@@ -1790,7 +1704,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 112,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "45yo man after head-on MVC; C-spine x-ray shows bilateral C2 fractures. Neuro exam normal. Which fracture is this?",
     "options": [
@@ -1805,7 +1719,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 113,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "71yo man fallen one story; hypothermic, hypotensive, confused. Clear fluid dripping from left ear and ecchymosis over mastoid. Most likely diagnosis?",
     "options": [
@@ -1820,7 +1734,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 114,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "34yo fall from 30 ft; hypotensive, hypoxic, gurgling respirations, diminished right breath sounds, unstable pelvis, blood at meatus, deformed extremities. Next step?",
     "options": [
@@ -1835,7 +1749,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 115,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "20yo man after MVC, initially lucid then collapsed; BP 175/90, HR 65, right pupil fixed/dilated. (Head CT shows biconvex lens-shaped hyperdensity.) Most likely diagnosis?",
     "options": [
@@ -1850,7 +1764,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 116,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "81-year-old woman tripped, hyperextension neck injury, in collar. No upper extremity sensorimotor function, 1/5 quadriceps, patchy lower sensation, decreased rectal tone. Most likely diagnosis?",
     "options": [
@@ -1865,7 +1779,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 117,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "22-year-old man ejected in MVC, BP 85/55, HR 141. Received 3 L crystalloid, BP 83/57. Best statement regarding management of hypotensive trauma patient failing volume resuscitation?",
     "options": [
@@ -1880,7 +1794,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 118,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "24-year-old man run over by car, BP 90/HR 121, unstable pelvis, FAST negative. Large-bore fluids running. Most appropriate immediate next step?",
     "options": [
@@ -1895,7 +1809,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 119,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "32-year-old man diving accident, cannot move arms/legs, cannot feel pain below clavicle but light touch and position intact. C-spine x-ray no fracture. Most likely diagnosis?",
     "options": [
@@ -1910,7 +1824,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 120,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "22-year-old unrestrained driver, SOB, HR 117, BP 80/60, bruise central chest, neck veins flat, absent right breath sounds. After 2 L LR BP still 80. Next step?",
     "options": [
@@ -1925,7 +1839,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 121,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "87M after fall down steps, on board/collar. HR 99, BP 160/90, RR 16, alert. Breath sounds equal, right arm fracture. No cervical tenderness or deformity. Which statement is true?",
     "options": [
@@ -1940,7 +1854,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 122,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "41M restrained passenger in high-speed MVC. BP 90/50, HR 125. Abdomen soft, pelvis unstable. FAST and DPL negative. X-ray shows open book pelvic fracture. After 2L LR, BP 80/40. Next step?",
     "options": [
@@ -1955,7 +1869,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 123,
-    "part": 10,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "45M after head-on MVC. BP 85/45, HR 130, coherent, breath sounds equal. After 2L fluids, BP 80/40. FAST shows fluid in Morison pouch. Most likely injured organ in blunt abdominal trauma?",
     "options": [
@@ -1970,7 +1884,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 124,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "47M after 20-ft fall. HR 110, BP 110/80, RR 20, SpO2 100%. Chest clear, abdomen nontender, pelvis stable, FAST negative. Large scrotal hematoma and blood at urethral meatus. Next step?",
     "options": [
@@ -1985,7 +1899,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 125,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "17M hit in right eye with tennis ball. Periorbital swelling and ecchymosis. Visual acuity 20/20. Right eye cannot look superiorly; pain on upward gaze. Most likely diagnosis?",
     "options": [
@@ -2000,7 +1914,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 126,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "24yo man shot in abdomen. BP 100/60→85/65, HR 115→125 after 2L fluid. Entry right of umbilicus, exit right of lumbar spine. GCS 15. Most appropriate next step?",
     "options": [
@@ -2015,7 +1929,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 127,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "55yo woman with 3h epistaxis. Anterior packing failed; bleeding from posterior septum. Stable vitals, normal labs. Most appropriate management?",
     "options": [
@@ -2030,7 +1944,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 128,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "44yo man struck by car. BP 70/palp, HR 125, O2 89% RA. Eyes closed, no verbal or motor response. Deformed left foot, arm laceration. Next step?",
     "options": [
@@ -2045,7 +1959,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 129,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "17yo boy found unconscious in pool, intubated. HR 49, BP 80/50, spontaneous abdominal breathing 16/min. Earliest condition to consider?",
     "options": [
@@ -2060,7 +1974,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 130,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "26yo belted driver in head-on MVC with dyspnea, hemoptysis, right chest ecchymosis, equal breath sounds, no crepitus, trachea midline. CXR (not shown) likely shows?",
     "options": [
@@ -2075,7 +1989,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 131,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "22yo man with GSW to right thigh. HR 105, BP 115/75. Large medial thigh hematoma, numb/pale right foot, no palpable distal pulse but Doppler present, cannot move foot. Next step?",
     "options": [
@@ -2090,7 +2004,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 132,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "67yo woman struck by cyclist. GCS 6, BP 175/90, HR 75. Right pupil 8 mm nonreactive, left 4 mm minimally reactive. Most common manifestation of rising ICP causing herniation?",
     "options": [
@@ -2105,7 +2019,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 133,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "34yo man with right chest GSW, hypotensive, diminished right breath sounds, hazy right lung on CXR. After 36F chest tube, 1200 cc blood drained. Which is an indication for thoracotomy?",
     "options": [
@@ -2120,7 +2034,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 134,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "32yo woman MVC, abdominal pain, distended abdomen, positive FAST in LUQ, BP 90/70, HR 120. After 2 L crystalloid, BP 80/60. Next step?",
     "options": [
@@ -2135,7 +2049,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 135,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "27yo pregnant woman (3rd trimester) in low-speed MVC, seat-belted. BP 120/70, HR 107. FAST negative, fetus stable. Next step in management?",
     "options": [
@@ -2150,7 +2064,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 136,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "61M with low back pain after slip, bilateral leg radiation, urinary difficulty, absent plantar flexion, diminished rectal tone. History of vascular surgery. Best diagnosis?",
     "options": [
@@ -2165,7 +2079,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 137,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "55F struck by car, GCS 8, left pupil dilated. Preparing to intubate. Which has the quickest effect to reduce ICP?",
     "options": [
@@ -2180,7 +2094,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 138,
-    "part": 11,
+    "part": 3,
     "category": "Trauma & Resuscitation",
     "q": "19M shot in chest, RR 32, SpO2 88% on 15L, trachea deviated left, absent breath sounds right. Most appropriate next step?",
     "options": [
@@ -2195,7 +2109,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 139,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "79yo woman with CAD, prior CABG, 2 days dyspnea/confusion, no chest pain/fever/cough. BP 85/50, HR 125, RR 26, rales at bases, 2+ bilateral edema. Most likely diagnosis?",
     "options": [
@@ -2210,7 +2124,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 140,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "32yo man with palpitations, weakness for 2 days, heart racing for 6 hours. No chest pain or dyspnea. Vitals and ECG not provided. What is the most likely diagnosis?",
     "options": [
@@ -2225,7 +2139,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 141,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "78yo woman on airplane with chest pain, dyspnea. BP 75/40, HR 180, wide QRS regular tachycardia, no P waves, bounding carotid pulse. Next step after emergency landing?",
     "options": [
@@ -2240,7 +2154,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 142,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "41yo IV heroin user in PEA arrest, intubated, no IV access. Which drug is ineffective when administered via endotracheal tube?",
     "options": [
@@ -2255,7 +2169,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 143,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "75yo man with chest pain, dyspnea. BP 70/40, HR 140 irregular, rales at bases. ECG shows atrial fibrillation with rapid ventricular response. First-line treatment?",
     "options": [
@@ -2270,7 +2184,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 144,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "19M struck by car. Awake, severe right leg pain. BP 85/50, HR 125, RR 24. Airway patent, equal breath sounds, soft nontender abdomen. Right leg shortened, angulated, swollen anterior thigh, no open wound. Most likely diagnosis?",
     "options": [
@@ -2285,7 +2199,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 145,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "Hypotensive patient with altered mental status. ECG shows atrial flutter at 150 bpm with 2:1 AV block. Unstable, you elect emergency cardioversion. Monitor leads attached. Critical next step?",
     "options": [
@@ -2300,7 +2214,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 146,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "54M found down, intubated, CPR ongoing. Monitor shows sinus bradycardia but no palpable pulses. Bilateral breath sounds, soft abdomen, no rashes, left arm AV graft. Next intervention besides CPR, epi, atropine?",
     "options": [
@@ -2315,7 +2229,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 147,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "85M nursing home, incoherent, not eating. PMH: HTN, DM, dementia, BPH. Combative, oriented to name only. T 101°F, BP 85/50, HR 125, RR 22, glucose 154. Cachectic, clear lungs with scant crackles, soft abdomen, Foley with cloudy white urine. Most likely diagnosis?",
     "options": [
@@ -2330,7 +2244,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 148,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "72M with weakness, sudden unresponsive on monitor. Rhythm shown (monitor shows ventricular fibrillation). Next step?",
     "options": [
@@ -2345,7 +2259,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 149,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "Called to a code: patient intubated, IV access, monitor shows flat line with no pulses. EMT student doing chest compressions is asked to stop. Next step in management?",
     "options": [
@@ -2360,7 +2274,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 150,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "34-year-old woman at sushi dinner develops itching, facial flushing, chest pain, dyspnea, dizziness; BP 85/50, HR 125, RR 26, SpO2 91%. Most likely diagnosis?",
     "options": [
@@ -2375,7 +2289,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 151,
-    "part": 12,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "82-year-old in septic shock intubated; tube passed through cords, colorimetric ETCO2 changes color, equal breath sounds, chest wall motion. Most reliable method to verify ET tube placement?",
     "options": [
@@ -2390,7 +2304,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 152,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "82-year-old man on HCTZ, benazepril, atenolol, metformin presents weak, dizzy, dyspneic; denies chest pain, GI bleeding, syncope. Vitals truncated. What is the next best step?",
     "options": [
@@ -2405,7 +2319,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 153,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "25-year-old man fell off surfboard onto rocks, immobilized, alert but weak in all extremities. Vitals truncated. What is the most appropriate next step?",
     "options": [
@@ -2420,7 +2334,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 154,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "48M, CABG 1 month ago, bedridden with dizziness. HR 44, BP 86/60. Monitor shows complete heart block. What is initial treatment?",
     "options": [
@@ -2435,7 +2349,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 155,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "54F with schizophrenia and CAD, chest pain resolved, then transient loss of consciousness. Monitor shows torsades de pointes. Next step?",
     "options": [
@@ -2450,7 +2364,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 156,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "48M with cirrhosis vomiting bright red blood, hypotensive (75/43), HR 130. Which fluid is most critical for resuscitation?",
     "options": [
@@ -2465,7 +2379,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 157,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "19M with RLQ stab wound, BP 130/95, HR 111, soft nontender abdomen. Which fluid for initial resuscitation?",
     "options": [
@@ -2480,7 +2394,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 158,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "EMS brings in a patient who collapsed 5 min ago, intubated and in cardiac arrest. Monitor shows ventricular fibrillation. Next step?",
     "options": [
@@ -2495,7 +2409,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 159,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "18F with fever, headache, arthralgias, petechial rash, nuchal rigidity, photophobia, oozing gums; platelets 80, PTT 60s, INR 1.9, fibrinogen 250. On ceftriaxone/vancomycin for meningococcemia. Next step?",
     "options": [
@@ -2510,7 +2424,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 160,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "82M COPD/HTN, septic shock from pneumonia, hypotensive despite IV fluids and dopamine. BP 75/50. Next most appropriate step?",
     "options": [
@@ -2525,7 +2439,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 161,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "64F depressed, found down, bradycardic 42, hypotensive 70/40, first-degree AV block. On fluoxetine and atenolol. Most specific treatment for ingestion?",
     "options": [
@@ -2540,7 +2454,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 162,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "19M GSW left chest, hypotensive 70/40, HR 140, distended neck veins, clear lungs, muffled heart sounds; CXR globular heart. Given 2L NS. Definitive management?",
     "options": [
@@ -2555,7 +2469,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 163,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "84F metastatic breast cancer, dyspnea, hypotensive 70/50, HR 110; ultrasound shows echo-free space with RA/RV collapse. Most likely diagnosis?",
     "options": [
@@ -2570,7 +2484,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 164,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "50M with HTN, 1h severe left chest pain radiating to arm, nausea. Vitals: 98.3F, 160/92, HR 92, RR 16, SpO2 98%. ECG: ST elevation in II, III, aVF. Given aspirin, nitroglycerin, morphine. 10 min later BP 60/30, HR 100. Most likely cause of hypotension?",
     "options": [
@@ -2585,7 +2499,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 165,
-    "part": 13,
+    "part": 4,
     "category": "Shock & Critical Care",
     "q": "87F with dementia, arthritis, HTN presents with mid-epigastric pain and one episode of nonbloody, nonbilious vomiting. Oriented to name only. Temp 99.8F, HR 110, BP 80/44, RR 16, SpO2 96%. Abdomen soft, nontender, no rebound/guarding. Stool brown, guaiac negative. Two IVs placed, fluids started",
     "options": [
@@ -2600,7 +2514,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 166,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "51M with bleeding ulcer, black stool, hematemesis. BP 90/60→80/50, HR 110→114, becoming drowsy. Most appropriate next step?",
     "options": [
@@ -2615,7 +2529,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 167,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "45F with 1 day painful rectal bleeding. Exquisitely tender, bluish, engorged swelling distal to anal verge. HR 105. Next best step?",
     "options": [
@@ -2630,7 +2544,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 168,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "20M with fever, RLQ pain, 2 months crampy pain, weight loss, bloody diarrhea, recurrent perirectal abscesses. CT: distal ileal and colonic inflammation, no appendiceal stranding. Diagnosis?",
     "options": [
@@ -2645,7 +2559,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 169,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "62M with sudden severe epigastric pain, prior postprandial pain. Pale, rigid tender abdomen, guarding/rebound, orthostatic vitals, Hb 8.5. Diagnosis?",
     "options": [
@@ -2660,7 +2574,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 170,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "60M alcoholic with hematemesis after binge vomiting, red eyes, no abdominal/chest pain. HR 115, stable otherwise. Endoscopy likely confirms?",
     "options": [
@@ -2675,7 +2589,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 171,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "50M with hematemesis, HR 127, BP 79/45. Spider angiomata, palmar erythema, gynecomastia. Hct 28%, platelets 40, AST 675, ALT 325, bili 14.4. Most likely diagnosis?",
     "options": [
@@ -2690,7 +2604,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 172,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "55M alcoholic with cirrhosis, portal hypertension, and known esophageal varices presents with hematemesis, HR 110, BP 80/55. Which is inappropriate in initial management?",
     "options": [
@@ -2705,7 +2619,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 173,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "70F with dark stool and occasional bright red blood for 3 weeks, decreased appetite, constipation, 10-lb weight loss, fatigue. Orthostatic. Most likely diagnosis?",
     "options": [
@@ -2720,7 +2634,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 174,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "76F with CHF, CAD, irregular heartbeat, several days abdominal pain. HR 114 irregularly irregular, abdomen soft nontender, stool heme-positive. Highest risk for which condition?",
     "options": [
@@ -2735,7 +2649,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 175,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "70F with HTN, CHF, AF, acute diffuse abdominal pain, pain out of proportion, lactate 8, trace heme-positive stool. Concerned for mesenteric ischemia. Best diagnostic test?",
     "options": [
@@ -2750,7 +2664,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 176,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "55M with ESRD on HD presents with painless hematochezia; prior angiodysplasia. HR 90, BP 145/95, abdomen soft/nontender. Which statement about angiodysplasia is true?",
     "options": [
@@ -2765,7 +2679,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 177,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "49M vomited ~3 cups blood over 2 hours with epigastric pain. NG tube returns 200 mL coffee-ground blood. What is the most common etiology of upper GI bleed?",
     "options": [
@@ -2780,7 +2694,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 178,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "68M 4h post-upper endoscopy with biopsy of ulcerated dysphagia lesion; severe neck/chest pain, HR 123, T 101, crepitus in neck, crunching over heart. Next best step after surgical consult?",
     "options": [
@@ -2795,7 +2709,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 179,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "65M with diverticulosis presents with 2-3 days RLQ pain, fever, nausea; RLQ tenderness with rebound/guarding, HR 95, T 101.3. CT shows pericolic fat inflammation, bowel wall thickening, fluid-filled appendix. Next step?",
     "options": [
@@ -2810,7 +2724,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 180,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "20M with several weeks of painful rectal bleeding, worst during and after defecation; bright red blood on toilet paper. No fever, nausea, or vomiting. Most common etiology of painful rectal bleeding?",
     "options": [
@@ -2825,7 +2739,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 181,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "67F with HTN/CHF presents with burning epigastric pain worsening over weeks, now waking her at night, unrelieved by usual meds. Guaiac-positive stool. What is the most common serious complication of peptic ulcer disease?",
     "options": [
@@ -2840,7 +2754,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   },
   {
     "id": 182,
-    "part": 14,
+    "part": 5,
     "category": "Gastrointestinal Bleeding",
     "q": "78M with ASCVD/CHF presents with sudden progressive abdominal pain for 1 day, one episode of melena. HR 105, temp 99F. He is at high risk for which condition?",
     "options": [
@@ -2862,5 +2776,5 @@ export function getEmergencyQuizPart(pid) {
 export function getEmergencyQuizCategory(catId) {
   const cat = EMERGENCY_QUIZ_CATEGORIES.find((c) => c.id === catId);
   if (!cat) return [];
-  return EMERGENCY_QUIZ_ITEMS.filter((item) => cat.parts.includes(item.part));
+  return EMERGENCY_QUIZ_ITEMS.filter((item) => item.part === cat.part);
 }

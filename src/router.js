@@ -1737,56 +1737,52 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
   }
 
-  /** Emergency Medicine 182 MCQs Complete Quiz Bank (14 Quizzes across 5 categories) */
+  /** Emergency Medicine 182 MCQs Complete Quiz Bank (5 Quizzes directly matching the 5 files, max 50 Qs per quiz) */
   function showEmergencyMenu(m, lang) {
     const ar = lang === "ar";
     const title = ar ? "🚨 <b>بنك كويزات الطوارئ الشامل (Emergency Medicine 182 MCQs)</b>" : "🚨 <b>Complete Emergency Medicine 182 MCQs Bank</b>";
     const desc = ar
-      ? `${title}\n${HR}\nبنك أسئلة طب وجراحة الطوارئ والعناية المركزة الشامل (182 سؤال) مقسم إلى 5 أقسام رئيسية و 14 كويز بالإجابات النموذجية والشرح السريري:\n\n` +
-        `• <b>1. امتحان الطوارئ والإنعاش الشامل:</b> (50 سؤال · 5 كويزات)\n` +
-        `• <b>2. آلام الصدر واضطراب النبض:</b> (45 سؤال · 3 كويزات)\n` +
-        `• <b>3. الحوادث وإصابات التروما:</b> (43 سؤال · 3 كويزات)\n` +
-        `• <b>4. أنواع الصدمات والعناية الحرجة:</b> (27 سؤال · 2 كويز)\n` +
-        `• <b>5. نزيف وطوارئ الجهاز الهضمي:</b> (17 سؤال · كويز واحد)\n\n` +
-        `<i>اختر القسم المطلوب للبدء فوراً 👇</i>`
-      : `${title}\n${HR}\nComprehensive 182-question Emergency Medicine Question Bank divided into 5 modules and 14 quizzes with verified answers & clinical explanations:\n\n` +
-        `• <b>1. Core Emergency Exam:</b> (50 Qs · 5 Quizzes)\n` +
-        `• <b>2. Chest Pain & Dysrhythmias:</b> (45 Qs · 3 Quizzes)\n` +
-        `• <b>3. Trauma & Resuscitation:</b> (43 Qs · 3 Quizzes)\n` +
-        `• <b>4. Shock & Critical Care:</b> (27 Qs · 2 Quizzes)\n` +
-        `• <b>5. Gastrointestinal Bleeding:</b> (17 Qs · 1 Quiz)\n\n` +
-        `<i>Select a module below to start 👇</i>`;
+      ? `${title}\n${HR}\nبنك أسئلة طب وجراحة الطوارئ والعناية المركزة (182 سؤال) مقسم إلى 5 كويزات متكاملة حسب الملفات (كل كويز بحد أقصى 50 سؤال بالإجابات النموذجية والشرح بدون صور):\n\n` +
+        `• <b>🚨 كويز 1:</b> امتحان الطوارئ الشامل (50 سؤال)\n` +
+        `• <b>🫀 كويز 2:</b> آلام الصدر واضطراب النبض (45 سؤال)\n` +
+        `• <b>💥 كويز 3:</b> الحوادث وإصابات التروما (43 سؤال)\n` +
+        `• <b>⚡ كويز 4:</b> أنواع الصدمات والعناية الحرجة (27 سؤال)\n` +
+        `• <b>🩸 كويز 5:</b> نزيف وطوارئ الجهاز الهضمي (17 سؤال)\n\n` +
+        `<i>اختر الكويز المطلوب للبدء فوراً 👇</i>`
+      : `${title}\n${HR}\nComprehensive 182-question Emergency Medicine Question Bank divided into 5 quizzes matching your files (max 50 Qs each, text-only with clinical answers & explanations):\n\n` +
+        `• <b>🚨 Quiz 1:</b> Core Emergency Exam (50 Qs)\n` +
+        `• <b>🫀 Quiz 2:</b> Chest Pain & Dysrhythmias (45 Qs)\n` +
+        `• <b>💥 Quiz 3:</b> Trauma & Resuscitation (43 Qs)\n` +
+        `• <b>⚡ Quiz 4:</b> Shock & Critical Care (27 Qs)\n` +
+        `• <b>🩸 Quiz 5:</b> GI Bleeding (17 Qs)\n\n` +
+        `<i>Select a quiz below to start 👇</i>`;
     return ui.send(m.chatId, desc, emergencyMenuRows(lang, premium));
   }
 
   function showEmergencyCategory(m, lang, catId) {
-    const cat = EMERGENCY_QUIZ_CATEGORIES.find((c) => c.id === catId) || EMERGENCY_QUIZ_CATEGORIES[0];
-    const ar = lang === "ar";
-    const title = ar ? `🚨 <b>قسم: ${cat.nameAr} (${cat.count} سؤال)</b>` : `🚨 <b>Module: ${cat.nameEn} (${cat.count} Qs)</b>`;
-    const desc = ar
-      ? `${title}\n${HR}\nاختر الكويز المطلوب للمذاكرة أو حل الاستفتاءات:\n\n` +
-        `<i>متاح حل تفاعلي، أو استفتاءات بمؤقت، أو إرسال للشات، أو تحميل HTML 👇</i>`
-      : `${title}\n${HR}\nSelect a quiz to practice or download:\n\n` +
-        `<i>Interactive, timed polls, send to chat, or HTML export available 👇</i>`;
-    return ui.send(m.chatId, desc, emergencyCategoryRows(cat.id, lang, premium));
+    const cat = EMERGENCY_QUIZ_CATEGORIES.find((c) => c.id === catId);
+    if (cat && cat.part) return showEmergencyPartLaunch(m, lang, cat.part);
+    return showEmergencyMenu(m, lang);
   }
 
   function showEmergencyPartLaunch(m, lang, partId) {
-    const pid = Math.min(14, Math.max(1, parseInt(partId, 10) || 1));
+    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5 };
+    const rawPid = map[String(partId).toLowerCase()] || parseInt(partId, 10) || 1;
+    const pid = Math.min(5, Math.max(1, rawPid));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
     const items = getEmergencyQuizPart(pid);
     const ar = lang === "ar";
     const title = ar
-      ? `🚨 <b>كويز الطوارئ رقم ${pid} (${part.name} · ${part.range})</b>`
-      : `🚨 <b>Emergency Quiz ${pid} (${part.name} · ${part.range})</b>`;
+      ? `🚨 <b>كويز الطوارئ رقم ${pid}: ${part.nameAr} (${items.length} سؤال)</b>`
+      : `🚨 <b>Emergency Quiz ${pid}: ${part.name} (${items.length} Qs)</b>`;
     const desc = ar
-      ? `${title}\n${HR}\nعدد الأسئلة: <b>${items.length} سؤال</b> بالإجابات النموذجية والشرح الكامل.\n\n` +
+      ? `${title}\n${HR}\nعدد الأسئلة: <b>${items.length} سؤال</b> بالإجابات النموذجية والشرح الكامل (أسئلة نصية بدون صور).\n\n` +
         `اختر طريقة الحل المفضلة:\n` +
-        `• <b>استفتاءات تيليجرام بمؤقت:</b> بمؤقت تيليجرام الرسمي وسرعة فائقة.\n` +
+        `• <b>استفتاءات تيليجرام بمؤقت:</b> بمؤقت تيليجرام وسرعة فائقة.\n` +
         `• <b>كويز تفاعلي بأزرار البوت:</b> حل براحتك بأزرار البوت بدون مؤقت.\n` +
         `• <b>إرسال كامل الأسئلة للشات:</b> بيبعت الـ ${items.length} استفتاء للشات للمذاكرة الجماعية.\n` +
         `• <b>تحميل ملف HTML:</b> ملف ويب تفاعلي للمذاكرة بدون نت.`
-      : `${title}\n${HR}\nTotal questions: <b>${items.length} MCQs</b> with clinical explanations.\n\n` +
+      : `${title}\n${HR}\nTotal questions: <b>${items.length} MCQs</b> with clinical explanations (text-only).\n\n` +
         `Select your preferred mode:\n` +
         `• <b>Telegram Polls:</b> Native poll countdown timer.\n` +
         `• <b>Interactive Buttons:</b> Untimed in-bot questions.\n` +
@@ -1796,23 +1792,27 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function startEmergencyPolls(m, lang, partId, openPeriod = 30) {
-    const pid = Math.min(14, Math.max(1, parseInt(partId, 10) || 1));
+    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5 };
+    const rawPid = map[String(partId).toLowerCase()] || parseInt(partId, 10) || 1;
+    const pid = Math.min(5, Math.max(1, rawPid));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
     const items = getEmergencyQuizPart(pid);
     if (!groups) return ui.send(m.chatId, lang === "ar" ? "⚠️ ميزة الاستفتاءات غير متوفرة." : "⚠️ Poll feature unavailable.");
     const sec = Math.max(5, Math.min(600, Number(openPeriod) || 30));
     await groups.start(m.chatId, items, sec);
     const msg = lang === "ar"
-      ? `🚨 <b>تم إطلاق كويز الطوارئ ${pid} (${part.range} - ${items.length} أسئلة)!</b>\n${HR}\n⏱️ المؤقت: <b>${sec} ثانية</b> لكل سؤال.\nانطلق بالحل في استفتاء تيليجرام بالأسفل بمؤقت تيليجرام 👇`
-      : `🚨 <b>Emergency Quiz ${pid} (${part.range} - ${items.length} Qs) launched!</b>\n${HR}\n⏱️ Timer: <b>${sec}s</b> per question.\nAnswer the question in the Telegram poll below 👇`;
+      ? `🚨 <b>تم إطلاق كويز الطوارئ ${pid}: ${part.nameAr} (${items.length} سؤال)!</b>\n${HR}\n⏱️ المؤقت: <b>${sec} ثانية</b> لكل سؤال.\nانطلق بالحل في استفتاء تيليجرام بالأسفل بمؤقت تيليجرام 👇`
+      : `🚨 <b>Emergency Quiz ${pid}: ${part.name} (${items.length} Qs) launched!</b>\n${HR}\n⏱️ Timer: <b>${sec}s</b> per question.\nAnswer the question in the Telegram poll below 👇`;
     return ui.send(m.chatId, msg);
   }
 
   async function startEmergencyInteractive(m, lang, partId) {
-    const pid = Math.min(14, Math.max(1, parseInt(partId, 10) || 1));
+    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5 };
+    const rawPid = map[String(partId).toLowerCase()] || parseInt(partId, 10) || 1;
+    const pid = Math.min(5, Math.max(1, rawPid));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
     const items = getEmergencyQuizPart(pid).map((item) => ({ ...item }));
-    const quizTitle = `ER Quiz ${pid} (${part.name})`;
+    const quizTitle = `ER Quiz ${pid}: ${part.name} (${items.length} Qs)`;
     const shareId = registerSharedQuiz(items, quizTitle, lang, m.userId);
     const quiz = { items, index: 0, score: 0, answered: -1, title: quizTitle, wrongItems: [], shareId };
     const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
@@ -1827,7 +1827,9 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function sendAllEmergencyPolls(m, lang, partId) {
-    const pid = Math.min(14, Math.max(1, parseInt(partId, 10) || 1));
+    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5 };
+    const rawPid = map[String(partId).toLowerCase()] || parseInt(partId, 10) || 1;
+    const pid = Math.min(5, Math.max(1, rawPid));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
     const items = getEmergencyQuizPart(pid);
     await ui.send(m.chatId, lang === "ar" ? `⏳ جاري إرسال جميع أسئلة كويز الطوارئ ${pid} (${items.length} سؤال) كاستفتاءات تيليجرام...` : `⏳ Sending all ${items.length} ER Quiz ${pid} questions as polls...`);
@@ -1848,10 +1850,12 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function downloadEmergencyPartHtml(m, lang, partId) {
-    const pid = Math.min(14, Math.max(1, parseInt(partId, 10) || 1));
+    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5 };
+    const rawPid = map[String(partId).toLowerCase()] || parseInt(partId, 10) || 1;
+    const pid = Math.min(5, Math.max(1, rawPid));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
     const items = getEmergencyQuizPart(pid);
-    const title = `Emergency Medicine Quiz ${pid} (${part.range} · ${part.name})`;
+    const title = `Emergency Medicine Quiz ${pid}: ${part.name} (${items.length} Qs)`;
     const fileHtml = renderQuizBankHtml(title, items, lang);
     const fileName = `emergency-quiz-${pid}-${items.length}q.html`;
     const caption = lang === "ar" ? `📎 بنك أسئلة كويز الطوارئ ${pid} (${items.length} سؤال بالإجابات النموذجية)` : `📎 ER Quiz ${pid} Bank (${items.length} Qs with answers)`;
@@ -1860,19 +1864,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
 
   async function downloadEmergencyCategoryHtml(m, lang, catId) {
     const cat = EMERGENCY_QUIZ_CATEGORIES.find((c) => c.id === catId) || EMERGENCY_QUIZ_CATEGORIES[0];
-    const items = getEmergencyQuizCategory(cat.id);
-    const title = `Emergency Medicine - ${cat.nameEn} (${items.length} MCQs)`;
-    const fileHtml = renderQuizBankHtml(title, items, lang);
-    const fileName = `emergency-${cat.id}-${items.length}q.html`;
-    const caption = lang === "ar" ? `📎 بنك أسئلة ${cat.nameAr} (${items.length} سؤال بالإجابات النموذجية والشرح)` : `📎 ${cat.nameEn} Bank (${items.length} Qs with answers)`;
-    await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
+    return downloadEmergencyPartHtml(m, lang, cat.part);
   }
 
   async function downloadAllEmergencyHtml(m, lang) {
     const title = "Emergency Medicine 182 MCQs Complete Bank";
     const fileHtml = renderQuizBankHtml(title, EMERGENCY_QUIZ_ITEMS, lang);
     const fileName = "emergency-medicine-182-mcqs-complete.html";
-    const caption = lang === "ar" ? "📎 بنك أسئلة طب الطوارئ والعناية الشامل كاملاً (182 سؤال بالإجابات النموذجية والشرح السريري)" : "📎 Complete Emergency Medicine 182 MCQs Bank (Full 182 Qs with clinical answers)";
+    const caption = lang === "ar" ? "📎 بنك أسئلة طب الطوارئ والعناية الشامل كاملاً (182 سؤال بالإجابات النموذجية والشرح السريري بدون صور)" : "📎 Complete Emergency Medicine 182 MCQs Bank (Full 182 Qs with clinical answers, text-only)";
     await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
   }
 

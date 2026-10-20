@@ -115,17 +115,17 @@ export function emergencyMenuRows(lang, premium) {
   const ar = lang === "ar";
   return [
     [
-      b(ar ? "🚨 1. امتحان الطوارئ الشامل (50 س)" : "🚨 1. Core Emergency Exam (50 Qs)", "quiz", act("em", "cat", "core"), "primary"),
+      b(ar ? "🚨 كويز 1: امتحان الطوارئ الشامل (50 س)" : "🚨 Quiz 1: Core ER Exam (50 Qs)", "quiz", act("em", "p", "1"), "primary"),
     ],
     [
-      b(ar ? "🫀 2. آلام الصدر واضطراب النبض (45 س)" : "🫀 2. Chest Pain & Dysrhythmias (45 Qs)", "quiz", act("em", "cat", "chest"), "primary"),
+      b(ar ? "🫀 كويز 2: آلام الصدر واضطراب النبض (45 س)" : "🫀 Quiz 2: Chest Pain & Dysrhythmias (45 Qs)", "quiz", act("em", "p", "2"), "primary"),
     ],
     [
-      b(ar ? "💥 3. الحوادث وإصابات التروما (43 س)" : "💥 3. Trauma & Resuscitation (43 Qs)", "quiz", act("em", "cat", "trauma")),
-      b(ar ? "⚡ 4. الصدمات والعناية الحرجة (27 س)" : "⚡ 4. Shock & Critical Care (27 Qs)", "quiz", act("em", "cat", "shock")),
+      b(ar ? "💥 كويز 3: الحوادث وإصابات التروما (43 س)" : "💥 Quiz 3: Trauma & Resuscitation (43 Qs)", "quiz", act("em", "p", "3")),
+      b(ar ? "⚡ كويز 4: الصدمات والعناية الحرجة (27 س)" : "⚡ Quiz 4: Shock & Critical Care (27 Qs)", "quiz", act("em", "p", "4")),
     ],
     [
-      b(ar ? "🩸 5. نزيف الجهاز الهضمي (17 س)" : "🩸 5. GI Bleeding (17 Qs)", "quiz", act("em", "p", "14")),
+      b(ar ? "🩸 كويز 5: نزيف الجهاز الهضمي (17 س)" : "🩸 Quiz 5: GI Bleeding (17 Qs)", "quiz", act("em", "p", "5")),
     ],
     [
       b(ar ? "📥 تحميل بنك أسئلة الطوارئ كامل HTML (182 سؤال)" : "📥 Download Full ER Bank HTML (182 Qs)", "file", act("em", "dl_all"), "success"),
@@ -135,73 +135,11 @@ export function emergencyMenuRows(lang, premium) {
 }
 
 export function emergencyCategoryRows(catId, lang, premium) {
-  const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
-  const ar = lang === "ar";
-  if (catId === "core") {
-    return [
-      [
-        b(ar ? "🚨 كويز 1: Resuscitation (1-10)" : "🚨 Quiz 1: Resuscitation (1-10)", "quiz", act("em", "p", "1"), "primary"),
-        b(ar ? "🚨 كويز 2: DKA & Trauma (11-20)" : "🚨 Quiz 2: DKA & Trauma (11-20)", "quiz", act("em", "p", "2"), "primary"),
-      ],
-      [
-        b(ar ? "🚨 كويز 3: Airway & Arrest (21-30)" : "🚨 Quiz 3: Airway & Arrest (21-30)", "quiz", act("em", "p", "3")),
-        b(ar ? "🚨 كويز 4: Trauma Protocol (31-40)" : "🚨 Quiz 4: Trauma Protocol (31-40)", "quiz", act("em", "p", "4")),
-      ],
-      [
-        b(ar ? "🚨 كويز 5: ABG & Tox (41-50)" : "🚨 Quiz 5: ABG & Tox (41-50)", "quiz", act("em", "p", "5")),
-      ],
-      [
-        b(ar ? "📥 تحميل قسم الامتحان الشامل HTML (50 س)" : "📥 Download Core Exam HTML (50 Qs)", "file", act("em", "dl_cat", "core"), "success"),
-      ],
-      [b(ar ? "⬅️ رجوع لقائمة الطوارئ" : "⬅️ Back to ER Menu", "back", act("em", "menu"))],
-    ];
-  }
-  if (catId === "chest") {
-    return [
-      [
-        b(ar ? "🫀 كويز 1: ACS & Ischemia (51-65)" : "🫀 Quiz 1: ACS & Ischemia (51-65)", "quiz", act("em", "p", "6"), "primary"),
-        b(ar ? "🫀 كويز 2: Dysrhythmias & Syncope (66-80)" : "🫀 Quiz 2: Dysrhythmias & Syncope (66-80)", "quiz", act("em", "p", "7"), "primary"),
-      ],
-      [
-        b(ar ? "🫀 كويز 3: Pericarditis & Aorta (81-95)" : "🫀 Quiz 3: Pericarditis & Aorta (81-95)", "quiz", act("em", "p", "8")),
-      ],
-      [
-        b(ar ? "📥 تحميل قسم آلام الصدر HTML (45 س)" : "📥 Download Chest Pain HTML (45 Qs)", "file", act("em", "dl_cat", "chest"), "success"),
-      ],
-      [b(ar ? "⬅️ رجوع لقائمة الطوارئ" : "⬅️ Back to ER Menu", "back", act("em", "menu"))],
-    ];
-  }
-  if (catId === "trauma") {
-    return [
-      [
-        b(ar ? "💥 كويز 1: Head & C-Spine (96-109)" : "💥 Quiz 1: Head & C-Spine (96-109)", "quiz", act("em", "p", "9"), "primary"),
-        b(ar ? "💥 كويز 2: Thoracic & Abdomen (110-123)" : "💥 Quiz 2: Thoracic & Abdomen (110-123)", "quiz", act("em", "p", "10"), "primary"),
-      ],
-      [
-        b(ar ? "💥 كويز 3: Pelvis, Extremity & Burns (124-138)" : "💥 Quiz 3: Pelvis, Extremity & Burns (124-138)", "quiz", act("em", "p", "11")),
-      ],
-      [
-        b(ar ? "📥 تحميل قسم التروما HTML (43 س)" : "📥 Download Trauma HTML (43 Qs)", "file", act("em", "dl_cat", "trauma"), "success"),
-      ],
-      [b(ar ? "⬅️ رجوع لقائمة الطوارئ" : "⬅️ Back to ER Menu", "back", act("em", "menu"))],
-    ];
-  }
-  if (catId === "shock") {
-    return [
-      [
-        b(ar ? "⚡ كويز 1: Hypovolemic & Septic (139-151)" : "⚡ Quiz 1: Hypovolemic & Septic (139-151)", "quiz", act("em", "p", "12"), "primary"),
-        b(ar ? "⚡ كويز 2: Cardiogenic & Anaphylaxis (152-165)" : "⚡ Quiz 2: Cardiogenic & Anaphylaxis (152-165)", "quiz", act("em", "p", "13"), "primary"),
-      ],
-      [
-        b(ar ? "📥 تحميل قسم الصدمة HTML (27 س)" : "📥 Download Shock HTML (27 Qs)", "file", act("em", "dl_cat", "shock"), "success"),
-      ],
-      [b(ar ? "⬅️ رجوع لقائمة الطوارئ" : "⬅️ Back to ER Menu", "back", act("em", "menu"))],
-    ];
-  }
+  // If invoked, returns back to the single-level 5-quiz menu
   return emergencyMenuRows(lang, premium);
 }
 
-export function emergencyQuizLaunchRows(partId, lang, premium, count = 10) {
+export function emergencyQuizLaunchRows(partId, lang, premium, count = 50) {
   const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
   const ar = lang === "ar";
   const pid = String(partId || 1);

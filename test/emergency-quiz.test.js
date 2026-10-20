@@ -57,31 +57,26 @@ function setup(lang = "ar") {
   return { router, ui, store, calls, polls, docs };
 }
 
-test("emergency quiz data: exactly 182 questions across 14 parts and 5 categories", () => {
+test("emergency quiz data: exactly 182 questions across 5 quizzes matching the 5 files (<= 50 Qs each)", () => {
   assert.equal(EMERGENCY_QUIZ_CATEGORIES.length, 5);
-  assert.equal(EMERGENCY_QUIZ_PARTS.length, 14);
+  assert.equal(EMERGENCY_QUIZ_PARTS.length, 5);
   assert.equal(EMERGENCY_QUIZ_ITEMS.length, 182);
 
-  // Check categories sum up to 182
-  const core = getEmergencyQuizCategory("core");
-  assert.equal(core.length, 50);
+  // Check 5 quizzes: each file is one complete quiz <= 50 Qs
+  const part1 = getEmergencyQuizPart(1);
+  assert.equal(part1.length, 50, "Quiz 1 (Core Exam) must be 50 questions");
 
-  const chest = getEmergencyQuizCategory("chest");
-  assert.equal(chest.length, 45);
+  const part2 = getEmergencyQuizPart(2);
+  assert.equal(part2.length, 45, "Quiz 2 (Chest Pain) must be 45 questions");
 
-  const trauma = getEmergencyQuizCategory("trauma");
-  assert.equal(trauma.length, 43);
+  const part3 = getEmergencyQuizPart(3);
+  assert.equal(part3.length, 43, "Quiz 3 (Trauma) must be 43 questions");
 
-  const shock = getEmergencyQuizCategory("shock");
-  assert.equal(shock.length, 27);
+  const part4 = getEmergencyQuizPart(4);
+  assert.equal(part4.length, 27, "Quiz 4 (Shock) must be 27 questions");
 
-  const gi = getEmergencyQuizCategory("gi");
-  assert.equal(gi.length, 17);
-
-  for (let p = 1; p <= 14; p++) {
-    const part = getEmergencyQuizPart(p);
-    assert.ok(part.length >= 10, `Part ${p} should have at least 10 questions`);
-  }
+  const part5 = getEmergencyQuizPart(5);
+  assert.equal(part5.length, 17, "Quiz 5 (GI Bleeding) must be 17 questions");
 });
 
 test("emergency quiz user answer corrections: Q7 is C and Q30 is B", () => {
@@ -96,7 +91,7 @@ test("emergency quiz user answer corrections: Q7 is C and Q30 is B", () => {
   assert.match(q30.options[q30.answer], /High blood cholesterol/i);
 });
 
-test("emergency quiz limits: telegram poll constraints strictly met across all 182 questions", () => {
+test("emergency quiz limits: telegram poll constraints strictly met across all 182 questions (text-only)", () => {
   for (const item of EMERGENCY_QUIZ_ITEMS) {
     assert.ok(item.q.length <= 300, `Q${item.id} question text exceeds 300 chars: ${item.q.length}`);
     assert.ok(item.options.length >= 2 && item.options.length <= 10, `Q${item.id} must have 2-10 options`);
@@ -110,15 +105,17 @@ test("emergency quiz limits: telegram poll constraints strictly met across all 1
   }
 });
 
-test("emergency command: /emergency and /er display the 5-module menu", async () => {
+test("emergency command: /emergency and /er display the 5-quiz menu", async () => {
   const { router, calls } = setup();
   await router.onMessage({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 1, text: "/emergency" });
 
   const msg = calls[calls.length - 1];
   assert.match(msg.html, /Emergency Medicine 182 MCQs/i);
-  assert.match(msg.html, /امتحان الطوارئ والإنعاش الشامل/);
-  assert.match(msg.html, /آلام الصدر واضطراب النبض/);
-  assert.match(msg.html, /الحوادث وإصابات التروما/);
+  assert.match(msg.html, /كويز 1.*50 سؤال/);
+  assert.match(msg.html, /كويز 2.*45 سؤال/);
+  assert.match(msg.html, /كويز 3.*43 سؤال/);
+  assert.match(msg.html, /كويز 4.*27 سؤال/);
+  assert.match(msg.html, /كويز 5.*17 سؤال/);
   assert.ok(msg.rows.length >= 5);
 
   await router.onMessage({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 2, text: "/er" });
@@ -126,30 +123,18 @@ test("emergency command: /emergency and /er display the 5-module menu", async ()
   assert.match(msg2.html, /Emergency Medicine 182 MCQs/i);
 });
 
-test("emergency category view: opens category parts", async () => {
+test("emergency quiz launch: selecting a quiz presents launch modes with exact file count", async () => {
   const { router, calls } = setup();
-  await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 1, callbackId: "cb1", data: act("em", "cat", "chest") });
+  await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 1, callbackId: "cb1", data: act("em", "p", "2") });
 
   const msg = calls[calls.length - 1];
-  assert.match(msg.html, /آلام الصدر واضطراب النبض/);
+  assert.match(msg.html, /كويز الطوارئ رقم 2/);
   assert.match(msg.html, /45 سؤال/);
   const flat = msg.rows.flat();
-  assert.ok(flat.some((b) => b.callback_data === act("em", "p", "6")));
-  assert.ok(flat.some((b) => b.callback_data === act("em", "dl_cat", "chest")));
-});
-
-test("emergency quiz launch: selecting a part presents launch modes", async () => {
-  const { router, calls } = setup();
-  await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 1, callbackId: "cb1", data: act("em", "p", "1") });
-
-  const msg = calls[calls.length - 1];
-  assert.match(msg.html, /كويز الطوارئ رقم 1/);
-  assert.match(msg.html, /10 سؤال/);
-  const flat = msg.rows.flat();
-  assert.ok(flat.some((b) => b.callback_data === act("em", "start_p", "1", "30")));
-  assert.ok(flat.some((b) => b.callback_data === act("em", "start_i", "1")));
-  assert.ok(flat.some((b) => b.callback_data === act("em", "dl", "1")));
-  assert.ok(flat.some((b) => b.callback_data === act("em", "send_all", "1")));
+  assert.ok(flat.some((b) => b.callback_data === act("em", "start_p", "2", "30")));
+  assert.ok(flat.some((b) => b.callback_data === act("em", "start_i", "2")));
+  assert.ok(flat.some((b) => b.callback_data === act("em", "dl", "2")));
+  assert.ok(flat.some((b) => b.callback_data === act("em", "send_all", "2")));
 });
 
 test("emergency poll mode: launches telegram poll quiz with openPeriod timer", async () => {
@@ -161,13 +146,13 @@ test("emergency poll mode: launches telegram poll quiz with openPeriod timer", a
   assert.match(polls[0].question, /The recommended maternal position/i);
 });
 
-test("emergency interactive mode: initiates interactive session", async () => {
+test("emergency interactive mode: initiates interactive session with all questions from that file", async () => {
   const { router, calls, store } = setup();
   await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 1, callbackId: "cb1", data: act("em", "start_i", "1") });
 
   const sess = store.get("s:123");
   assert.ok(sess.quiz, "Interactive quiz session must be initialized");
-  assert.equal(sess.quiz.items.length, 10);
+  assert.equal(sess.quiz.items.length, 50, "Quiz 1 should load all 50 questions");
   assert.equal(sess.quiz.index, 0);
 
   const last = calls[calls.length - 1];
@@ -176,20 +161,15 @@ test("emergency interactive mode: initiates interactive session", async () => {
   assert.equal(qaButtons.length, 4); // 4 option buttons A, B, C, D
 });
 
-test("emergency download: sends HTML file for single part, category, and full 182-question bank", async () => {
+test("emergency download: sends HTML file for single quiz and full 182-question bank", async () => {
   const { router, docs } = setup();
   await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 1, callbackId: "cb1", data: act("em", "dl", "1") });
   assert.equal(docs.length, 1);
-  assert.equal(docs[0].name, "emergency-quiz-1-10q.html");
+  assert.equal(docs[0].name, "emergency-quiz-1-50q.html");
   assert.match(docs[0].html, /Emergency Medicine Quiz 1/);
 
-  await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 2, callbackId: "cb2", data: act("em", "dl_cat", "chest") });
+  await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 2, callbackId: "cb2", data: act("em", "dl_all") });
   assert.equal(docs.length, 2);
-  assert.equal(docs[1].name, "emergency-chest-45q.html");
-  assert.match(docs[1].html, /Chest Pain.*Dysrhythmias/);
-
-  await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 3, callbackId: "cb3", data: act("em", "dl_all") });
-  assert.equal(docs.length, 3);
-  assert.equal(docs[2].name, "emergency-medicine-182-mcqs-complete.html");
-  assert.match(docs[2].html, /Emergency Medicine 182 MCQs Complete Bank/);
+  assert.equal(docs[1].name, "emergency-medicine-182-mcqs-complete.html");
+  assert.match(docs[1].html, /Emergency Medicine 182 MCQs Complete Bank/);
 });
