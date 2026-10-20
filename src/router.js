@@ -9,10 +9,10 @@ import { detectIntent } from "./core/intent.js";
 import { detectLang, pickLang } from "./core/lang.js";
 import { normaliseCards, normaliseQuiz } from "./core/quiz.js";
 import { HR, chunk, esc, parseJsonLoose, progress, sanitizeHtml, wordCount } from "./core/text.js";
-import { adminRows, burnsQuizRows, channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows, afterDocumentRows, stylePickerRows, orthoMenuRows, orthoQuizLaunchRows, emergencyMenuRows, emergencyQuizLaunchRows } from "./keyboards.js";
+import { adminRows, burnsQuizRows, channelJoinRows, finishRows, inputRows, inviteRows, menuRows, nextRows, quizRows, afterDocumentRows, stylePickerRows, orthoMenuRows, orthoQuizLaunchRows, emergencyMenuRows, emergencyCategoryRows, emergencyQuizLaunchRows } from "./keyboards.js";
 import { BURNS_QUIZ_ITEMS, BURNS_QUIZ_TITLE } from "./data/burns-quiz.js";
 import { ORTHO_QUIZ_TITLE, ORTHO_QUIZ_PARTS, ORTHO_QUIZ_ITEMS, getOrthoQuizPart } from "./data/ortho-quiz.js";
-import { EMERGENCY_QUIZ_TITLE, EMERGENCY_QUIZ_PARTS, EMERGENCY_QUIZ_ITEMS, getEmergencyQuizPart } from "./data/emergency-quiz.js";
+import { EMERGENCY_QUIZ_TITLE, EMERGENCY_QUIZ_CATEGORIES, EMERGENCY_QUIZ_PARTS, EMERGENCY_QUIZ_ITEMS, getEmergencyQuizPart, getEmergencyQuizCategory } from "./data/emergency-quiz.js";
 import { kindOf } from "./services/files.js";
 import { renderDocument, renderOsce, previewLines } from "./render/html.js";
 import { generateDocument } from "./render/pipeline.js";
@@ -323,7 +323,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
 
   /** Renders a standalone HTML Quiz Bank file when a user generates a large quiz (e.g. 30-500 questions). */
   function renderQuizBankHtml(title, items, lang) {
-    const letters = ["A", "B", "C", "D"];
+    const letters = ["A", "B", "C", "D", "E", "F", "G", "H"];
     const dir = lang === "ar" ? "rtl" : "ltr";
     const cards = items.map((it, idx) => {
       const opts = it.options.map((o, i) => `<li style="padding:4px 8px;margin:3px 0;border-radius:4px;${i === it.answer ? "background:#fde047;color:#000;font-weight:700;" : ""}"><b>${letters[i]})</b> ${esc(o)}${i === it.answer ? " ✓" : ""}</li>`).join("");
@@ -1737,30 +1737,42 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
   }
 
-  /** Emergency Medicine 50 MCQs Quiz Bank (5 Quizzes of 10 questions each) */
+  /** Emergency Medicine 182 MCQs Complete Quiz Bank (14 Quizzes across 5 categories) */
   function showEmergencyMenu(m, lang) {
     const ar = lang === "ar";
-    const title = ar ? "🚨 <b>بنك كويزات الطوارئ (Emergency Medicine 50 MCQs)</b>" : "🚨 <b>Emergency Medicine 50 MCQs Quiz Bank</b>";
+    const title = ar ? "🚨 <b>بنك كويزات الطوارئ الشامل (Emergency Medicine 182 MCQs)</b>" : "🚨 <b>Complete Emergency Medicine 182 MCQs Bank</b>";
     const desc = ar
-      ? `${title}\n${HR}\nبنك أسئلة طب وجراحة الطوارئ والعناية المركزة (50 سؤال) مقسم إلى 5 كويزات (كل كويز 10 أسئلة بالإجابات النموذجية والشرح المفصل):\n\n` +
-        `• <b>كويز 1:</b> Resuscitation & Critical Care (1 - 10)\n` +
-        `• <b>كويز 2:</b> DKA, Shock & Trauma Assessment (11 - 20)\n` +
-        `• <b>كويز 3:</b> Airway, Hemothorax & Cardiac Arrest (21 - 30)\n` +
-        `• <b>كويز 4:</b> Trauma Protocol & Tension Pneumothorax (31 - 40)\n` +
-        `• <b>كويز 5:</b> ABG, Toxicology & Medical Emergencies (41 - 50)\n\n` +
-        `<i>اختر الكويز المطلوب للبدء فوراً 👇</i>`
-      : `${title}\n${HR}\nComprehensive 50-question Emergency Medicine MCQ Bank divided into 5 quizzes of 10 questions each with answers & clinical explanations:\n\n` +
-        `• <b>Quiz 1:</b> Resuscitation & Critical Care (1 - 10)\n` +
-        `• <b>Quiz 2:</b> DKA, Shock & Trauma Assessment (11 - 20)\n` +
-        `• <b>Quiz 3:</b> Airway, Hemothorax & Cardiac Arrest (21 - 30)\n` +
-        `• <b>Quiz 4:</b> Trauma Protocol & Tension Pneumothorax (31 - 40)\n` +
-        `• <b>Quiz 5:</b> ABG, Toxicology & Medical Emergencies (41 - 50)\n\n` +
-        `<i>Choose a quiz below to start 👇</i>`;
+      ? `${title}\n${HR}\nبنك أسئلة طب وجراحة الطوارئ والعناية المركزة الشامل (182 سؤال) مقسم إلى 5 أقسام رئيسية و 14 كويز بالإجابات النموذجية والشرح السريري:\n\n` +
+        `• <b>1. امتحان الطوارئ والإنعاش الشامل:</b> (50 سؤال · 5 كويزات)\n` +
+        `• <b>2. آلام الصدر واضطراب النبض:</b> (45 سؤال · 3 كويزات)\n` +
+        `• <b>3. الحوادث وإصابات التروما:</b> (43 سؤال · 3 كويزات)\n` +
+        `• <b>4. أنواع الصدمات والعناية الحرجة:</b> (27 سؤال · 2 كويز)\n` +
+        `• <b>5. نزيف وطوارئ الجهاز الهضمي:</b> (17 سؤال · كويز واحد)\n\n` +
+        `<i>اختر القسم المطلوب للبدء فوراً 👇</i>`
+      : `${title}\n${HR}\nComprehensive 182-question Emergency Medicine Question Bank divided into 5 modules and 14 quizzes with verified answers & clinical explanations:\n\n` +
+        `• <b>1. Core Emergency Exam:</b> (50 Qs · 5 Quizzes)\n` +
+        `• <b>2. Chest Pain & Dysrhythmias:</b> (45 Qs · 3 Quizzes)\n` +
+        `• <b>3. Trauma & Resuscitation:</b> (43 Qs · 3 Quizzes)\n` +
+        `• <b>4. Shock & Critical Care:</b> (27 Qs · 2 Quizzes)\n` +
+        `• <b>5. Gastrointestinal Bleeding:</b> (17 Qs · 1 Quiz)\n\n` +
+        `<i>Select a module below to start 👇</i>`;
     return ui.send(m.chatId, desc, emergencyMenuRows(lang, premium));
   }
 
+  function showEmergencyCategory(m, lang, catId) {
+    const cat = EMERGENCY_QUIZ_CATEGORIES.find((c) => c.id === catId) || EMERGENCY_QUIZ_CATEGORIES[0];
+    const ar = lang === "ar";
+    const title = ar ? `🚨 <b>قسم: ${cat.nameAr} (${cat.count} سؤال)</b>` : `🚨 <b>Module: ${cat.nameEn} (${cat.count} Qs)</b>`;
+    const desc = ar
+      ? `${title}\n${HR}\nاختر الكويز المطلوب للمذاكرة أو حل الاستفتاءات:\n\n` +
+        `<i>متاح حل تفاعلي، أو استفتاءات بمؤقت، أو إرسال للشات، أو تحميل HTML 👇</i>`
+      : `${title}\n${HR}\nSelect a quiz to practice or download:\n\n` +
+        `<i>Interactive, timed polls, send to chat, or HTML export available 👇</i>`;
+    return ui.send(m.chatId, desc, emergencyCategoryRows(cat.id, lang, premium));
+  }
+
   function showEmergencyPartLaunch(m, lang, partId) {
-    const pid = Math.min(5, Math.max(1, parseInt(partId, 10) || 1));
+    const pid = Math.min(14, Math.max(1, parseInt(partId, 10) || 1));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
     const items = getEmergencyQuizPart(pid);
     const ar = lang === "ar";
@@ -1780,11 +1792,11 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         `• <b>Interactive Buttons:</b> Untimed in-bot questions.\n` +
         `• <b>Send All Polls:</b> Drops all ${items.length} polls into chat.\n` +
         `• <b>Download HTML:</b> Standalone offline study file.`;
-    return ui.send(m.chatId, desc, emergencyQuizLaunchRows(pid, lang, premium));
+    return ui.send(m.chatId, desc, emergencyQuizLaunchRows(pid, lang, premium, items.length));
   }
 
   async function startEmergencyPolls(m, lang, partId, openPeriod = 30) {
-    const pid = Math.min(5, Math.max(1, parseInt(partId, 10) || 1));
+    const pid = Math.min(14, Math.max(1, parseInt(partId, 10) || 1));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
     const items = getEmergencyQuizPart(pid);
     if (!groups) return ui.send(m.chatId, lang === "ar" ? "⚠️ ميزة الاستفتاءات غير متوفرة." : "⚠️ Poll feature unavailable.");
@@ -1797,7 +1809,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function startEmergencyInteractive(m, lang, partId) {
-    const pid = Math.min(5, Math.max(1, parseInt(partId, 10) || 1));
+    const pid = Math.min(14, Math.max(1, parseInt(partId, 10) || 1));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
     const items = getEmergencyQuizPart(pid).map((item) => ({ ...item }));
     const quizTitle = `ER Quiz ${pid} (${part.name})`;
@@ -1815,7 +1827,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function sendAllEmergencyPolls(m, lang, partId) {
-    const pid = Math.min(5, Math.max(1, parseInt(partId, 10) || 1));
+    const pid = Math.min(14, Math.max(1, parseInt(partId, 10) || 1));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
     const items = getEmergencyQuizPart(pid);
     await ui.send(m.chatId, lang === "ar" ? `⏳ جاري إرسال جميع أسئلة كويز الطوارئ ${pid} (${items.length} سؤال) كاستفتاءات تيليجرام...` : `⏳ Sending all ${items.length} ER Quiz ${pid} questions as polls...`);
@@ -1836,21 +1848,31 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function downloadEmergencyPartHtml(m, lang, partId) {
-    const pid = Math.min(5, Math.max(1, parseInt(partId, 10) || 1));
+    const pid = Math.min(14, Math.max(1, parseInt(partId, 10) || 1));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
     const items = getEmergencyQuizPart(pid);
     const title = `Emergency Medicine Quiz ${pid} (${part.range} · ${part.name})`;
     const fileHtml = renderQuizBankHtml(title, items, lang);
-    const fileName = `emergency-quiz-${pid}-10q.html`;
+    const fileName = `emergency-quiz-${pid}-${items.length}q.html`;
     const caption = lang === "ar" ? `📎 بنك أسئلة كويز الطوارئ ${pid} (${items.length} سؤال بالإجابات النموذجية)` : `📎 ER Quiz ${pid} Bank (${items.length} Qs with answers)`;
     await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
   }
 
+  async function downloadEmergencyCategoryHtml(m, lang, catId) {
+    const cat = EMERGENCY_QUIZ_CATEGORIES.find((c) => c.id === catId) || EMERGENCY_QUIZ_CATEGORIES[0];
+    const items = getEmergencyQuizCategory(cat.id);
+    const title = `Emergency Medicine - ${cat.nameEn} (${items.length} MCQs)`;
+    const fileHtml = renderQuizBankHtml(title, items, lang);
+    const fileName = `emergency-${cat.id}-${items.length}q.html`;
+    const caption = lang === "ar" ? `📎 بنك أسئلة ${cat.nameAr} (${items.length} سؤال بالإجابات النموذجية والشرح)` : `📎 ${cat.nameEn} Bank (${items.length} Qs with answers)`;
+    await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
+  }
+
   async function downloadAllEmergencyHtml(m, lang) {
-    const title = "Emergency Medicine 50 MCQs Complete Bank";
+    const title = "Emergency Medicine 182 MCQs Complete Bank";
     const fileHtml = renderQuizBankHtml(title, EMERGENCY_QUIZ_ITEMS, lang);
-    const fileName = "emergency-medicine-50-mcqs-complete.html";
-    const caption = lang === "ar" ? "📎 بنك أسئلة طب الطوارئ الشامل كاملاً (50 سؤال بالإجابات النموذجية والشرح)" : "📎 Complete Emergency Medicine 50 MCQs Bank (Full 50 Qs with answers)";
+    const fileName = "emergency-medicine-182-mcqs-complete.html";
+    const caption = lang === "ar" ? "📎 بنك أسئلة طب الطوارئ والعناية الشامل كاملاً (182 سؤال بالإجابات النموذجية والشرح السريري)" : "📎 Complete Emergency Medicine 182 MCQs Bank (Full 182 Qs with clinical answers)";
     await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
   }
 
@@ -2367,6 +2389,8 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "em": {
         await ui.ack(m.callbackId);
         if (a0 === "menu") return showEmergencyMenu(m, lang);
+        if (a0 === "cat") return showEmergencyCategory(m, lang, a1);
+        if (a0 === "dl_cat") return downloadEmergencyCategoryHtml(m, lang, a1);
         if (a0 === "p") return showEmergencyPartLaunch(m, lang, a1);
         if (a0 === "start_p") return startEmergencyPolls(m, lang, a1, Number(a2) || 30);
         if (a0 === "start_i") return startEmergencyInteractive(m, lang, a1);
