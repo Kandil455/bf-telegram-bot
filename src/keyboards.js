@@ -29,11 +29,11 @@ export function menuRows(lang, premium, { isAdmin = false } = {}) {
   // Main menu, grouped: core study tools first, then Q&A, account, admin, and language.
   const rows = [
     [b(c.summary, "summary", act("sum", "basic"), "primary"), b(c.quiz, "quiz", act("qc", "pick", "text"), "success")],
-    [b(ar ? "🦴 كويزات العظام (501 س)" : "🦴 Ortho Quizzes (501 Qs)", "quiz", act("ortho", "menu"), "primary"), b(c.explain, "explain", act("explain"))],
-    [b(podLabel, "spark", act("pod")), b(c.ask, "ask", act("ask"))],
-    [b(c.topic, "topic", act("topic")), b(c.deck, "cards", act("deck"))],
-    [b(c.plans, "credits", act("plans"), "success"), b(c.invite || "دعوة أصدقاء", "spark", act("inv"))],
-    [b(c.help, "spark", act("help"))],
+    [b(ar ? "🚨 كويزات الطوارئ (50 س)" : "🚨 Emergency Quizzes (50 Qs)", "quiz", act("em", "menu"), "danger"), b(ar ? "🦴 كويزات العظام (501 س)" : "🦴 Ortho Quizzes (501 Qs)", "quiz", act("ortho", "menu"), "primary")],
+    [b(podLabel, "spark", act("pod")), b(c.explain, "explain", act("explain"))],
+    [b(c.topic, "topic", act("topic")), b(c.ask, "ask", act("ask"))],
+    [b(c.plans, "credits", act("plans"), "success"), b(c.deck, "cards", act("deck"))],
+    [b(c.invite || "دعوة أصدقاء", "spark", act("inv")), b(c.help, "spark", act("help"))],
   ];
   if (isAdmin) rows.push([b(c.adminPanel, "stats", act("admin"), "primary")]);
   rows.push([b(c.langAr, "lang", act("lang", "ar")), b(c.langEn, "lang", act("lang", "en"))]);
@@ -50,8 +50,9 @@ export function adminRows(lang, premium) {
     [b(ar ? "تفعيل Pro / شحن توكنز" : "Grant Pro / Add Tokens", "credits", act("admin", "grant"), "success"), b(ar ? "حظر / فك حظر" : "Ban / Unban User", "back", act("admin", "ban"), "danger")],
     [b(ar ? "تصفير استهلاك مستخدم" : "Reset User Quota", "clock", act("admin", "reset")), b(c.adminUsers, "topic", act("admin", "users"))],
     [b(c.stats, "stats", act("stats"), "primary"), b(c.adminPayments, "credits", act("admin", "pay"))],
-    [b(ar ? "🦴 كويزات العظام (501 س)" : "🦴 Ortho Quizzes (501 Qs)", "quiz", act("ortho", "menu"), "primary"), b(ar ? "كويز الحروق (30 س)" : "Burns Quiz (30 Qs)", "quiz", act("admin", "burn"))],
-    [b(c.adminAi, "spark", act("admin", "ai")), b(c.menu, "home", act("menu"))],
+    [b(ar ? "🚨 كويزات الطوارئ (50 س)" : "🚨 Emergency Quizzes (50 Qs)", "quiz", act("em", "menu"), "danger"), b(ar ? "🦴 كويزات العظام (501 س)" : "🦴 Ortho Quizzes (501 Qs)", "quiz", act("ortho", "menu"), "primary")],
+    [b(ar ? "كويز الحروق (30 س)" : "Burns Quiz (30 Qs)", "quiz", act("admin", "burn")), b(c.adminAi, "spark", act("admin", "ai"))],
+    [b(c.menu, "home", act("menu"))],
   ];
 }
 
@@ -106,6 +107,51 @@ export function orthoQuizLaunchRows(partId, lang, premium) {
       b(ar ? "📥 تحميل ملف الكويز HTML" : "📥 Download Quiz HTML", "file", act("ortho", "dl", pid)),
     ],
     [b(ar ? "⬅️ رجوع لكويزات العظام" : "⬅️ Back to Ortho Quizzes", "back", act("ortho", "menu"))],
+  ];
+}
+
+export function emergencyMenuRows(lang, premium) {
+  const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
+  const ar = lang === "ar";
+  return [
+    [
+      b(ar ? "🚨 كويز 1: Resuscitation (1-10)" : "🚨 Quiz 1: Resuscitation (1-10)", "quiz", act("em", "p", "1"), "primary"),
+      b(ar ? "🚨 كويز 2: DKA & Trauma (11-20)" : "🚨 Quiz 2: DKA & Trauma (11-20)", "quiz", act("em", "p", "2"), "primary"),
+    ],
+    [
+      b(ar ? "🚨 كويز 3: Airway & Arrest (21-30)" : "🚨 Quiz 3: Airway & Arrest (21-30)", "quiz", act("em", "p", "3")),
+      b(ar ? "🚨 كويز 4: Trauma Protocol (31-40)" : "🚨 Quiz 4: Trauma Protocol (31-40)", "quiz", act("em", "p", "4")),
+    ],
+    [
+      b(ar ? "🚨 كويز 5: ABG & Tox (41-50)" : "🚨 Quiz 5: ABG & Tox (41-50)", "quiz", act("em", "p", "5")),
+    ],
+    [
+      b(ar ? "📥 تحميل بنك أسئلة الطوارئ كامل HTML (50 سؤال)" : "📥 Download Full ER Bank HTML (50 Qs)", "file", act("em", "dl_all"), "success"),
+    ],
+    [b(ar ? "⬅️ القائمة الرئيسية" : "⬅️ Main Menu", "home", act("menu"))],
+  ];
+}
+
+export function emergencyQuizLaunchRows(partId, lang, premium) {
+  const b = (label, icon, action, style) => button({ label, icon, action, style, premium });
+  const ar = lang === "ar";
+  const pid = String(partId || 1);
+  return [
+    [
+      b(ar ? "⏱️ استفتاءات تيليجرام بمؤقت (30 ثانية)" : "⏱️ Telegram Polls (30s Timer)", "clock", act("em", "start_p", pid, "30"), "primary"),
+    ],
+    [
+      b(ar ? "⏱️ مؤقت 45 ثانية" : "⏱️ 45s Timer", "clock", act("em", "start_p", pid, "45")),
+      b(ar ? "⏱️ مؤقت 60 ثانية" : "⏱️ 60s Timer", "clock", act("em", "start_p", pid, "60")),
+    ],
+    [
+      b(ar ? "🎯 كويز تفاعلي بأزرار البوت (بدون مؤقت)" : "🎯 In-Bot Interactive Quiz (Untimed)", "quiz", act("em", "start_i", pid), "success"),
+    ],
+    [
+      b(ar ? "📤 إرسال الـ 10 أسئلة كاملة للشات" : "📤 Send All 10 Polls to Chat", "upload", act("em", "send_all", pid)),
+      b(ar ? "📥 تحميل ملف الكويز HTML" : "📥 Download Quiz HTML", "file", act("em", "dl", pid)),
+    ],
+    [b(ar ? "⬅️ رجوع لكويزات الطوارئ" : "⬅️ Back to ER Quizzes", "back", act("em", "menu"))],
   ];
 }
 
