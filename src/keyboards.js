@@ -29,7 +29,7 @@ export function menuRows(lang, premium, { isAdmin = false } = {}) {
   // Main menu, grouped: core study tools first, then Q&A, account, admin, and language.
   const rows = [
     [b(c.summary, "summary", act("sum", "basic"), "primary"), b(c.quiz, "quiz", act("qc", "pick", "text"), "success")],
-    [b(ar ? "🚨 كويزات الطوارئ والأشعة (300 س بالصور 🖼️)" : "🚨 ER & Radiology Quizzes (300 Qs 🖼️)", "quiz", act("em", "menu"), "danger"), b(ar ? "🦴 كويزات العظام (501 س)" : "🦴 Ortho Quizzes (501 Qs)", "quiz", act("ortho", "menu"), "primary")],
+    [b(ar ? "🚨 كويزات الطوارئ والأشعة (334 س بالصور 🖼️)" : "🚨 ER & Radiology Quizzes (334 Qs 🖼️)", "quiz", act("em", "menu"), "danger"), b(ar ? "🦴 كويزات العظام (501 س)" : "🦴 Ortho Quizzes (501 Qs)", "quiz", act("ortho", "menu"), "primary")],
     [b(podLabel, "spark", act("pod")), b(c.explain, "explain", act("explain"))],
     [b(c.topic, "topic", act("topic")), b(c.ask, "ask", act("ask"))],
     [b(c.plans, "credits", act("plans"), "success"), b(c.deck, "cards", act("deck"))],
@@ -50,7 +50,7 @@ export function adminRows(lang, premium) {
     [b(ar ? "تفعيل Pro / شحن توكنز" : "Grant Pro / Add Tokens", "credits", act("admin", "grant"), "success"), b(ar ? "حظر / فك حظر" : "Ban / Unban User", "back", act("admin", "ban"), "danger")],
     [b(ar ? "تصفير استهلاك مستخدم" : "Reset User Quota", "clock", act("admin", "reset")), b(c.adminUsers, "topic", act("admin", "users"))],
     [b(c.stats, "stats", act("stats"), "primary"), b(c.adminPayments, "credits", act("admin", "pay"))],
-    [b(ar ? "🚨 كويزات الطوارئ والأشعة (300 س بالصور 🖼️)" : "🚨 ER & Radiology Quizzes (300 Qs 🖼️)", "quiz", act("em", "menu"), "danger"), b(ar ? "🦴 كويزات العظام (501 س)" : "🦴 Ortho Quizzes (501 Qs)", "quiz", act("ortho", "menu"), "primary")],
+    [b(ar ? "🚨 كويزات الطوارئ والأشعة (334 س بالصور 🖼️)" : "🚨 ER & Radiology Quizzes (334 Qs 🖼️)", "quiz", act("em", "menu"), "danger"), b(ar ? "🦴 كويزات العظام (501 س)" : "🦴 Ortho Quizzes (501 Qs)", "quiz", act("ortho", "menu"), "primary")],
     [b(ar ? "كويز الحروق (30 س)" : "Burns Quiz (30 Qs)", "quiz", act("admin", "burn")), b(c.adminAi, "spark", act("admin", "ai"))],
     [b(c.menu, "home", act("menu"))],
   ];
@@ -115,30 +115,30 @@ export function emergencyMenuRows(lang, premium) {
   const ar = lang === "ar";
   return [
     [
-      b(ar ? "🚨 كويز 1: امتحان الطوارئ الشامل (50 س)" : "🚨 Quiz 1: Core ER Exam (50 Qs)", "quiz", act("em", "p", "1"), "primary"),
+      b(ar ? "🚨 كويز 1: امتحان الطوارئ والإنعاش الشامل (50 س)" : "🚨 Quiz 1: Core ER Exam (50 Qs)", "quiz", act("em", "p", "1"), "primary"),
     ],
     [
       b(ar ? "🫀 كويز 2: آلام الصدر واضطراب النبض (45 س)" : "🫀 Quiz 2: Chest Pain & Dysrhythmias (45 Qs)", "quiz", act("em", "p", "2"), "primary"),
     ],
     [
-      b(ar ? "💥 كويز 3: الحوادث وإصابات التروما (43 س)" : "💥 Quiz 3: Trauma & Resuscitation (43 Qs)", "quiz", act("em", "p", "3")),
-      b(ar ? "⚡ كويز 4: الصدمات والعناية الحرجة (27 س)" : "⚡ Quiz 4: Shock & Critical Care (27 Qs)", "quiz", act("em", "p", "4")),
+      b(ar ? "💥 كويز 3: إصابات الحوادث والتروما (43 س)" : "💥 Quiz 3: Trauma & Resuscitation (43 Qs)", "quiz", act("em", "p", "3")),
+      b(ar ? "⚡ كويز 4: أنواع الصدمات والإنعاش (27 س)" : "⚡ Quiz 4: Shock & Resuscitation (27 Qs)", "quiz", act("em", "p", "4")),
     ],
     [
       b(ar ? "🩸 كويز 5: نزيف الجهاز الهضمي (17 س)" : "🩸 Quiz 5: GI Bleeding (17 Qs)", "quiz", act("em", "p", "5")),
-      b(ar ? "🫁 كويز 6: الإنعاش ورسم القلب ALS (22 س بالصور)" : "🫁 Quiz 6: ALS & ECG (22 Qs with Images)", "quiz", act("em", "p", "6")),
+      b(ar ? "🫁 كويز 6: الإنعاش المتقدم وتخطيط القلب (22 س بالصور 🖼️)" : "🫁 Quiz 6: ALS & ECG (22 Qs with Images 🖼️)", "quiz", act("em", "p", "6")),
     ],
     [
       b(ar ? "🩻 كويز 7: أشعة وحالات الطوارئ (10 أسئلة بالصور 🖼️)" : "🩻 Quiz 7: ER Radiology (10 Qs with Images 🖼️)", "quiz", act("em", "p", "7"), "primary"),
     ],
     [
-      b(ar ? "🫀 كويز 8: أساسيات وحالات الإنعاش BLS 1 (46 س)" : "🫀 Quiz 8: BLS Core & Scenarios (46 Qs)", "quiz", act("em", "p", "8")),
+      b(ar ? "🫀 كويز 8: اختبار وأساسيات الإنعاش BLS Pretest (34 س)" : "🫀 Quiz 8: BLS Pretest & CPR (34 Qs)", "quiz", act("em", "p", "8")),
     ],
     [
-      b(ar ? "⚡ كويز 9: تدريبات الإنعاش والصدمات BLS 2 (40 س)" : "⚡ Quiz 9: BLS MCQs & AED (40 Qs)", "quiz", act("em", "p", "9")),
+      b(ar ? "⚡ كويز 9: بنك الإسعافات والإنعاش الشامل (86 س)" : "⚡ Quiz 9: Comprehensive BLS & First Aid Bank (86 Qs)", "quiz", act("em", "p", "9")),
     ],
     [
-      b(ar ? "📥 تحميل بنك أسئلة الطوارئ كامل HTML (300 س بالصور 🖼️)" : "📥 Download Full ER Bank HTML (300 Qs with Images)", "file", act("em", "dl_all"), "success"),
+      b(ar ? "📥 تحميل بنك أسئلة الطوارئ كامل HTML (334 س بالصور 🖼️)" : "📥 Download Full ER Bank HTML (334 Qs with Images)", "file", act("em", "dl_all"), "success"),
     ],
     [b(ar ? "⬅️ القائمة الرئيسية" : "⬅️ Main Menu", "home", act("menu"))],
   ];

@@ -1752,32 +1752,32 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
   }
 
-  /** Emergency Medicine 182 MCQs Complete Quiz Bank (5 Quizzes directly matching the 5 files, max 50 Qs per quiz) */
+  /** Emergency Medicine 334 MCQs Complete Quiz Bank (9 Quizzes directly matching the 9 files) */
   function showEmergencyMenu(m, lang) {
     const ar = lang === "ar";
-    const title = ar ? "🚨 <b>بنك كويزات الطوارئ والأشعة الشامل (Emergency Medicine 300 MCQs 🖼️)</b>" : "🚨 <b>Complete ER & Radiology 300 MCQs Bank (with Images 🖼️)</b>";
+    const title = ar ? "🚨 <b>بنك كويزات الطوارئ والأشعة الشامل (Emergency Medicine 334 MCQs 🖼️)</b>" : "🚨 <b>Complete ER & Radiology 334 MCQs Bank (with Images 🖼️)</b>";
     const desc = ar
-      ? `${title}\n${HR}\nبنك أسئلة طب وجراحة الطوارئ والإنعاش والعناية المركزة (300 سؤال) مقسم إلى 9 كويزات متكاملة حسب الملفات (تشمل الصور الأصلية للأشعة المقطعية والعادية ورسم القلب):\n\n` +
-        `• <b>🚨 كويز 1:</b> امتحان الطوارئ الشامل (50 سؤال)\n` +
+      ? `${title}\n${HR}\nبنك أسئلة طب وجراحة الطوارئ والإنعاش والعناية المركزة (334 سؤال) مقسم إلى 9 كويزات متكاملة حسب الملفات بالضبط (تشمل الصور الأصلية للأشعة المقطعية والعادية ورسم القلب):\n\n` +
+        `• <b>🚨 كويز 1:</b> امتحان الطوارئ والإنعاش الشامل (50 سؤال)\n` +
         `• <b>🫀 كويز 2:</b> آلام الصدر واضطراب النبض (45 سؤال)\n` +
-        `• <b>💥 كويز 3:</b> الحوادث وإصابات التروما (43 سؤال)\n` +
-        `• <b>⚡ كويز 4:</b> أنواع الصدمات والعناية الحرجة (27 سؤال)\n` +
+        `• <b>💥 كويز 3:</b> إصابات الحوادث والتروما (43 سؤال)\n` +
+        `• <b>⚡ كويز 4:</b> أنواع الصدمات والإنعاش (27 سؤال)\n` +
         `• <b>🩸 كويز 5:</b> نزيف وطوارئ الجهاز الهضمي (17 سؤال)\n` +
         `• <b>🫁 كويز 6:</b> الإنعاش المتقدم وتخطيط القلب ALS (22 سؤال بالصور 🖼️)\n` +
         `• <b>🩻 كويز 7:</b> أشعة وحالات الطوارئ المقطعية والعادية (10 أسئلة بالصور 🖼️)\n` +
-        `• <b>🫀 كويز 8:</b> أساسيات وحالات الإنعاش BLS 1 (46 سؤال)\n` +
-        `• <b>⚡ كويز 9:</b> تدريبات الإنعاش وجهاز الصدمات BLS 2 (40 سؤال)\n\n` +
+        `• <b>🫀 كويز 8:</b> اختبار وأساسيات الإنعاش BLS Pretest (34 سؤال)\n` +
+        `• <b>⚡ كويز 9:</b> بنك الإسعافات والإنعاش الشامل (86 سؤال)\n\n` +
         `<i>اختر الكويز المطلوب للبدء فوراً 👇</i>`
-      : `${title}\n${HR}\nComprehensive 300-question Emergency Medicine & Radiology Bank divided into 9 quizzes matching your files (including original CT scans, X-rays & ECG strips):\n\n` +
-        `• <b>🚨 Quiz 1:</b> Core Emergency Exam (50 Qs)\n` +
-        `• <b>🫀 Quiz 2:</b> Chest Pain & Dysrhythmias (45 Qs)\n` +
+      : `${title}\n${HR}\nComprehensive 334-question Emergency Medicine & Radiology Bank divided into 9 quizzes matching your files exactly (including original CT scans, X-rays & ECG strips):\n\n` +
+        `• <b>🚨 Quiz 1:</b> Core Emergency Medicine Exam (50 Qs)\n` +
+        `• <b>🫀 Quiz 2:</b> Chest Pain & Cardiac Dysrhythmias (45 Qs)\n` +
         `• <b>💥 Quiz 3:</b> Trauma & Resuscitation (43 Qs)\n` +
-        `• <b>⚡ Quiz 4:</b> Shock & Critical Care (27 Qs)\n` +
-        `• <b>🩸 Quiz 5:</b> GI Bleeding (17 Qs)\n` +
-        `• <b>🫁 Quiz 6:</b> ALS & Advanced Resuscitation (22 Qs with Images 🖼️)\n` +
-        `• <b>🩻 Quiz 7:</b> Emergency Radiology Cases (10 Qs with Images 🖼️)\n` +
-        `• <b>🫀 Quiz 8:</b> BLS Core & Scenarios (46 Qs)\n` +
-        `• <b>⚡ Quiz 9:</b> BLS Practice MCQs & AED (40 Qs)\n\n` +
+        `• <b>⚡ Quiz 4:</b> Shock & Resuscitation (27 Qs)\n` +
+        `• <b>🩸 Quiz 5:</b> Gastrointestinal Bleeding (17 Qs)\n` +
+        `• <b>🫁 Quiz 6:</b> ALS & Resuscitation with ECG (22 Qs with Images 🖼️)\n` +
+        `• <b>🩻 Quiz 7:</b> Emergency Radiology Cases: CT & X-Ray (10 Qs with Images 🖼️)\n` +
+        `• <b>🫀 Quiz 8:</b> Basic Life Support Pretest & CPR (34 Qs)\n` +
+        `• <b>⚡ Quiz 9:</b> Comprehensive CPR, First Aid & BLS Bank (86 Qs)\n\n` +
         `<i>Select a quiz below to start 👇</i>`;
     return ui.send(m.chatId, desc, emergencyMenuRows(lang, premium));
   }
@@ -1789,7 +1789,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   function showEmergencyPartLaunch(m, lang, partId) {
-    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5, als: 6, radio: 7, bls1: 8, bls2: 9 };
+    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5, als: 6, radio: 7, bls_pretest: 8, bls_bank: 9, bls1: 8, bls2: 9 };
     const rawPid = map[String(partId).toLowerCase()] || parseInt(partId, 10) || 1;
     const pid = Math.min(EMERGENCY_QUIZ_PARTS.length, Math.max(1, rawPid));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
@@ -1815,7 +1815,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function startEmergencyPolls(m, lang, partId, openPeriod = 30) {
-    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5, als: 6, radio: 7, bls1: 8, bls2: 9 };
+    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5, als: 6, radio: 7, bls_pretest: 8, bls_bank: 9, bls1: 8, bls2: 9 };
     const rawPid = map[String(partId).toLowerCase()] || parseInt(partId, 10) || 1;
     const pid = Math.min(EMERGENCY_QUIZ_PARTS.length, Math.max(1, rawPid));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
@@ -1830,7 +1830,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function startEmergencyInteractive(m, lang, partId) {
-    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5, als: 6, radio: 7, bls1: 8, bls2: 9 };
+    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5, als: 6, radio: 7, bls_pretest: 8, bls_bank: 9, bls1: 8, bls2: 9 };
     const rawPid = map[String(partId).toLowerCase()] || parseInt(partId, 10) || 1;
     const pid = Math.min(EMERGENCY_QUIZ_PARTS.length, Math.max(1, rawPid));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
@@ -1862,7 +1862,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function sendAllEmergencyPolls(m, lang, partId) {
-    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5, als: 6, radio: 7, bls1: 8, bls2: 9 };
+    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5, als: 6, radio: 7, bls_pretest: 8, bls_bank: 9, bls1: 8, bls2: 9 };
     const rawPid = map[String(partId).toLowerCase()] || parseInt(partId, 10) || 1;
     const pid = Math.min(EMERGENCY_QUIZ_PARTS.length, Math.max(1, rawPid));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
@@ -1893,7 +1893,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function downloadEmergencyPartHtml(m, lang, partId) {
-    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5, als: 6, radio: 7, bls1: 8, bls2: 9 };
+    const map = { core: 1, chest: 2, trauma: 3, shock: 4, gi: 5, als: 6, radio: 7, bls_pretest: 8, bls_bank: 9, bls1: 8, bls2: 9 };
     const rawPid = map[String(partId).toLowerCase()] || parseInt(partId, 10) || 1;
     const pid = Math.min(EMERGENCY_QUIZ_PARTS.length, Math.max(1, rawPid));
     const part = EMERGENCY_QUIZ_PARTS[pid - 1];
@@ -1911,10 +1911,10 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   }
 
   async function downloadAllEmergencyHtml(m, lang) {
-    const title = "Emergency Medicine & Resuscitation 300 MCQs Complete Bank";
+    const title = "Emergency Medicine & Resuscitation 334 MCQs Complete Bank";
     const fileHtml = renderQuizBankHtml(title, EMERGENCY_QUIZ_ITEMS, lang);
-    const fileName = "emergency-medicine-300-mcqs-complete.html";
-    const caption = lang === "ar" ? "📎 بنك أسئلة طب الطوارئ والإنعاش والأشعة كاملاً (300 سؤال بالإجابات النموذجية والشرح والصور)" : "📎 Complete Emergency Medicine 300 MCQs Bank (Full 300 Qs with clinical answers and images)";
+    const fileName = "emergency-medicine-334-mcqs-complete.html";
+    const caption = lang === "ar" ? "📎 بنك أسئلة طب الطوارئ والإنعاش والأشعة كاملاً (334 سؤال بالإجابات النموذجية والشرح والصور)" : "📎 Complete Emergency Medicine 334 MCQs Bank (Full 334 Qs with clinical answers and images)";
     await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
   }
 

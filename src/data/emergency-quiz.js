@@ -1,6 +1,6 @@
-// Comprehensive Emergency Medicine & Resuscitation Question Bank (300 MCQs)
-// High-yield emergency medicine, resuscitation, trauma, cardiology, shock, GI bleeding, ALS, radiology, and BLS.
-// Includes high-resolution imaging assets for emergency radiology and ALS ECG rhythm strips.
+// Comprehensive Emergency Medicine & Resuscitation Question Bank (334 MCQs)
+// Each quiz matches an uploaded file exactly by its name and question count.
+// High-resolution image assets are attached for Emergency Radiology CT/X-ray and ALS ECG cases.
 
 import fs from "fs";
 import path from "path";
@@ -9,70 +9,70 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const EMERGENCY_QUIZ_TITLE = "Emergency Medicine & Resuscitation Question Bank (300 MCQs with Images)";
+export const EMERGENCY_QUIZ_TITLE = "Emergency Medicine & Resuscitation Question Bank (334 MCQs with Images)";
 
 export const EMERGENCY_QUIZ_CATEGORIES = Object.freeze([
   {
     "id": "core",
     "nameAr": "امتحان الطوارئ والإنعاش الشامل",
-    "nameEn": "Core Emergency Exam",
+    "nameEn": "Core Emergency Medicine Exam",
     "count": 50,
     "part": 1
   },
   {
     "id": "chest",
-    "nameAr": "آلام الصدر واضطراب النبض",
-    "nameEn": "Chest Pain & Dysrhythmias",
+    "nameAr": "آلام الصدر واضطراب النبض (Chest Pain & Dysrhythmias)",
+    "nameEn": "Chest Pain & Cardiac Dysrhythmias",
     "count": 45,
     "part": 2
   },
   {
     "id": "trauma",
-    "nameAr": "الحوادث وإصابات التروما",
+    "nameAr": "إصابات الحوادث والتروما (Trauma)",
     "nameEn": "Trauma & Resuscitation",
     "count": 43,
     "part": 3
   },
   {
     "id": "shock",
-    "nameAr": "أنواع الصدمات والعناية المركزة",
-    "nameEn": "Shock & Critical Care",
+    "nameAr": "أنواع الصدمات والإنعاش (Shock & Resuscitation)",
+    "nameEn": "Shock & Resuscitation",
     "count": 27,
     "part": 4
   },
   {
     "id": "gi",
-    "nameAr": "نزيف وطوارئ الجهاز الهضمي",
+    "nameAr": "نزيف وطوارئ الجهاز الهضمي (Gastrointestinal Bleeding)",
     "nameEn": "Gastrointestinal Bleeding",
     "count": 17,
     "part": 5
   },
   {
     "id": "als",
-    "nameAr": "الإنعاش المتقدم ورسم القلب ALS (22 س بالصور)",
-    "nameEn": "ALS & ECG Rhythm Cases (22 Qs with Images)",
+    "nameAr": "الإنعاش المتقدم وتخطيط القلب (ALS & Resuscitation)",
+    "nameEn": "ALS & Resuscitation (with ECG)",
     "count": 22,
     "part": 6
   },
   {
     "id": "radio",
-    "nameAr": "أشعة وحالات الطوارئ (10 أسئلة بالصور 🖼️)",
-    "nameEn": "Emergency Radiology (10 Qs with Images 🖼️)",
+    "nameAr": "أشعة وحالات الطوارئ (Emergency Radiology Cases)",
+    "nameEn": "Emergency Radiology Cases (CT & X-Ray)",
     "count": 10,
     "part": 7
   },
   {
-    "id": "bls1",
-    "nameAr": "أساسيات وحالات الإنعاش الأولي (BLS 1)",
-    "nameEn": "BLS & CPR Fundamentals & Scenarios",
-    "count": 46,
+    "id": "bls_pretest",
+    "nameAr": "اختبار وأساسيات الإنعاش (BLS Pretest & CPR)",
+    "nameEn": "Basic Life Support Pretest & CPR Questions",
+    "count": 34,
     "part": 8
   },
   {
-    "id": "bls2",
-    "nameAr": "مراجعة وتدريبات الإنعاش وجهاز الصدمات (BLS 2)",
-    "nameEn": "BLS Practice MCQs & AED Mastery",
-    "count": 40,
+    "id": "bls_bank",
+    "nameAr": "بنك الإسعافات والإنعاش الشامل (First Aid & BLS Bank)",
+    "nameEn": "Comprehensive CPR, First Aid & BLS Bank",
+    "count": 86,
     "part": 9
   }
 ]);
@@ -80,7 +80,7 @@ export const EMERGENCY_QUIZ_CATEGORIES = Object.freeze([
 export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   {
     "id": 1,
-    "name": "Core Emergency Exam",
+    "name": "Core Emergency Medicine Exam",
     "nameAr": "امتحان الطوارئ والإنعاش الشامل",
     "range": "Q1 - Q50",
     "count": 50,
@@ -89,7 +89,7 @@ export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   },
   {
     "id": 2,
-    "name": "Chest Pain & Dysrhythmias",
+    "name": "Chest Pain & Cardiac Dysrhythmias",
     "nameAr": "آلام الصدر واضطراب النبض",
     "range": "Q51 - Q95",
     "count": 45,
@@ -99,7 +99,7 @@ export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   {
     "id": 3,
     "name": "Trauma & Resuscitation",
-    "nameAr": "الحوادث وإصابات التروما",
+    "nameAr": "إصابات الحوادث والتروما (Trauma)",
     "range": "Q96 - Q138",
     "count": 43,
     "start": 96,
@@ -107,8 +107,8 @@ export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   },
   {
     "id": 4,
-    "name": "Shock & Critical Care",
-    "nameAr": "أنواع الصدمات والعناية المركزة",
+    "name": "Shock & Resuscitation",
+    "nameAr": "أنواع الصدمات والإنعاش (Shock)",
     "range": "Q139 - Q165",
     "count": 27,
     "start": 139,
@@ -117,7 +117,7 @@ export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   {
     "id": 5,
     "name": "Gastrointestinal Bleeding",
-    "nameAr": "نزيف وطوارئ الجهاز الهضمي",
+    "nameAr": "نزيف وطوارئ الجهاز الهضمي (GI Bleeding)",
     "range": "Q166 - Q182",
     "count": 17,
     "start": 166,
@@ -125,8 +125,8 @@ export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   },
   {
     "id": 6,
-    "name": "ALS & ECG Rhythm Cases (22 Qs with Images)",
-    "nameAr": "الإنعاش المتقدم ورسم القلب ALS (22 س بالصور)",
+    "name": "ALS & Resuscitation (with ECG)",
+    "nameAr": "الإنعاش المتقدم وتخطيط القلب (ALS)",
     "range": "Q183 - Q204",
     "count": 22,
     "start": 183,
@@ -134,8 +134,8 @@ export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   },
   {
     "id": 7,
-    "name": "Emergency Radiology (10 Qs with Images 🖼️)",
-    "nameAr": "أشعة وحالات الطوارئ (10 أسئلة بالصور 🖼️)",
+    "name": "Emergency Radiology Cases (CT & X-Ray)",
+    "nameAr": "أشعة وحالات الطوارئ (Radiology)",
     "range": "Q205 - Q214",
     "count": 10,
     "start": 205,
@@ -143,21 +143,21 @@ export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   },
   {
     "id": 8,
-    "name": "BLS & CPR Fundamentals & Scenarios",
-    "nameAr": "أساسيات وحالات الإنعاش الأولي (BLS 1)",
-    "range": "Q215 - Q260",
-    "count": 46,
+    "name": "Basic Life Support Pretest & CPR Questions",
+    "nameAr": "اختبار وأساسيات الإنعاش (BLS Pretest)",
+    "range": "Q215 - Q248",
+    "count": 34,
     "start": 215,
-    "end": 260
+    "end": 248
   },
   {
     "id": 9,
-    "name": "BLS Practice MCQs & AED Mastery",
-    "nameAr": "مراجعة وتدريبات الإنعاش وجهاز الصدمات (BLS 2)",
-    "range": "Q261 - Q300",
-    "count": 40,
-    "start": 261,
-    "end": 300
+    "name": "Comprehensive CPR, First Aid & BLS Bank",
+    "nameAr": "بنك الإسعافات والإنعاش الشامل (BLS Bank)",
+    "range": "Q249 - Q334",
+    "count": 86,
+    "start": 249,
+    "end": 334
   }
 ]);
 
@@ -2841,7 +2841,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 183,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "Which of the following statements is correct regarding ST-segment elevation myocardial infarction (STEMI)?",
     "options": [
       "May present with ST depression in leads V1-V3",
@@ -2855,7 +2855,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 184,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "With regard to standard ECG recording and continuous monitoring:",
     "options": [
       "Normal QRS complex duration is > 0.12 s",
@@ -2869,7 +2869,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 185,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "At 4 min after cardiac arrest in a 70 kg woman with confirmed asystole on ECG and CPR ongoing, you recommend:",
     "options": [
       "Delivery of a 150 J shock",
@@ -2883,7 +2883,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 186,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "Post-VF cardiac arrest ABG on 15 L/min O2: pH 7.11, PaCO2 7.2 kPa, PaO2 22.6 kPa, HCO3 14 mmol/L, BE -10.6. These results show:",
     "options": [
       "The patient has severe acidaemia",
@@ -2897,7 +2897,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 187,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "Which statement is correct regarding Pulseless Electrical Activity (PEA)?",
     "options": [
       "Should be treated by giving 300 mg amiodarone IV",
@@ -2911,7 +2911,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 188,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "A 55-year-old woman presents with severe crushing chest pain, BP 75/45 mmHg, HR 38 bpm (sinus bradycardia). Management includes:",
     "options": [
       "Opioid analgesia is contraindicated",
@@ -2925,7 +2925,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 189,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "The correct advanced life support management of an adult in ventricular fibrillation (VF) includes:",
     "options": [
       "Adrenaline 1 mg IV after every shock",
@@ -2939,7 +2939,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 190,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "Which of the following statements regarding resuscitation drugs is correct?",
     "options": [
       "Initial dose of amiodarone for shock-refractory VF is 150 mg",
@@ -2953,7 +2953,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 191,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "During advanced life support CPR, high-quality chest compressions:",
     "options": [
       "Should be performed at a rate of 60/min in adults",
@@ -2967,7 +2967,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 192,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "In the management of acute severe asthma:",
     "options": [
       "Oxygen should be titrated to achieve SpO2 88-90%",
@@ -2981,7 +2981,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 193,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "In a patient with suspected severe anaphylaxis:",
     "options": [
       "Adrenaline 0.5 mg IM is the first-line treatment of choice",
@@ -2995,7 +2995,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 194,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "A 65-year-old with chest pain develops regular broad QRS tachycardia at 180 bpm and BP 86/54 mmHg. The immediate management is:",
     "options": [
       "Amiodarone 300 mg IV infusion over 30 minutes",
@@ -3009,7 +3009,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 195,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "Which of the following is true regarding severe hyperkalaemia?",
     "options": [
       "Can be treated by giving 10 mL 1% calcium chloride IV",
@@ -3023,7 +3023,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 196,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "During Advanced Life Support (ALS) defibrillation:",
     "options": [
       "If rhythm changes during ventilations from asystole to VF, shock",
@@ -3037,7 +3037,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 197,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "In a patient suspected of having an acute coronary syndrome (ACS):",
     "options": [
       "Thrombolysis is contraindicated if surgery within 1 month",
@@ -3051,7 +3051,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 198,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "With reference to the 12-lead ECG shown in the image:",
     "options": [
       "Cardiac monitoring is optional",
@@ -3066,7 +3066,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 199,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "Defibrillation is the treatment of choice",
@@ -3081,7 +3081,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 200,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "The rhythm is regular",
@@ -3096,7 +3096,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 201,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "This rhythm is always associated with unconsciousness",
@@ -3111,7 +3111,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 202,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "Adrenaline is contraindicated in this rhythm",
@@ -3126,7 +3126,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 203,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "P waves are clearly visible",
@@ -3141,7 +3141,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 204,
     "part": 6,
-    "category": "ALS & Advanced Resuscitation",
+    "category": "ALS & Resuscitation",
     "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "Amiodarone 300 mg slow IV is the first option",
@@ -3156,7 +3156,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 205,
     "part": 7,
-    "category": "Emergency Radiology & Imaging",
+    "category": "Emergency Radiology Cases",
     "q": "56 year old male presented by the following CT findings after road traffic accident. The initial diagnosis is:",
     "options": [
       "Acute cerebrovascular ischemia",
@@ -3172,7 +3172,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 206,
     "part": 7,
-    "category": "Emergency Radiology & Imaging",
+    "category": "Emergency Radiology Cases",
     "q": "In the same previous patient: Is this hematoma mostly associated with underlying calvarial fracture?",
     "options": [
       "Yes",
@@ -3185,7 +3185,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 207,
     "part": 7,
-    "category": "Emergency Radiology & Imaging",
+    "category": "Emergency Radiology Cases",
     "q": "In the same previous patient. The mostly affected vessel is:",
     "options": [
       "Internal carotid artery",
@@ -3201,7 +3201,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 208,
     "part": 7,
-    "category": "Emergency Radiology & Imaging",
+    "category": "Emergency Radiology Cases",
     "q": "62 year old male presented by the following CT findings after recent left hemiplegic insult. The most probable diagnosis is:",
     "options": [
       "Acute cerebral ischemic infarct",
@@ -3217,7 +3217,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 209,
     "part": 7,
-    "category": "Emergency Radiology & Imaging",
+    "category": "Emergency Radiology Cases",
     "q": "59 year old female presented by the following CT findings after recent left hemiplegic insult. The most probable diagnosis is:",
     "options": [
       "Cerebral ischemic infarct",
@@ -3233,7 +3233,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 210,
     "part": 7,
-    "category": "Emergency Radiology & Imaging",
+    "category": "Emergency Radiology Cases",
     "q": "22 year old female presented by the following CT findings after severe headache. The most probable diagnosis is:",
     "options": [
       "Cerebral ischemic infarct",
@@ -3249,7 +3249,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 211,
     "part": 7,
-    "category": "Emergency Radiology & Imaging",
+    "category": "Emergency Radiology Cases",
     "q": "In the same previous patient. The most appropriate next radiological imaging modality is:",
     "options": [
       "MR brain non-contrast",
@@ -3265,7 +3265,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 212,
     "part": 7,
-    "category": "Emergency Radiology & Imaging",
+    "category": "Emergency Radiology Cases",
     "q": "Plain X-ray abdomen standing. The initial diagnosis is:",
     "options": [
       "Acute cholecystitis",
@@ -3281,7 +3281,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 213,
     "part": 7,
-    "category": "Emergency Radiology & Imaging",
+    "category": "Emergency Radiology Cases",
     "q": "Plain X-ray abdomen standing. The initial diagnosis is:",
     "options": [
       "Acute cholecystitis",
@@ -3297,7 +3297,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 214,
     "part": 7,
-    "category": "Emergency Radiology & Imaging",
+    "category": "Emergency Radiology Cases",
     "q": "Plain X-ray abdomen standing. Does it exclude ruptured peptic ulcer?",
     "options": [
       "Yes",
@@ -3310,161 +3310,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   {
     "id": 215,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "What is the very first question you must ask before you respond to any emergency first aid situation?",
-    "options": [
-      "Age of the injured or ill person",
-      "Safety of the scene",
-      "Nature and extent of the injury",
-      "Exact time the injury occurred"
-    ],
-    "answer": 1,
-    "explanation": "Ensuring scene safety is critical to protect rescuers and prevent additional casualties."
-  },
-  {
-    "id": 216,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "Which of the following are considered essential standard Personal Protective Equipment (PPE)?",
-    "options": [
-      "Medical gloves",
-      "Protective face mask",
-      "Eye shield or goggles",
-      "All of the above"
-    ],
-    "answer": 3,
-    "explanation": "Gloves, masks, and eye protection form universal PPE against bloodborne and airborne pathogens."
-  },
-  {
-    "id": 217,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "Which of the following clinical signs is most consistent with an acute acute stroke?",
-    "options": [
-      "Generalized confusion only",
-      "Substernal chest pain",
-      "Unilateral facial droop",
-      "Isolated nausea and vomiting"
-    ],
-    "answer": 2,
-    "explanation": "Unilateral facial droop, arm weakness, and speech difficulty are cardinal signs of stroke (FAST)."
-  },
-  {
-    "id": 218,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "A 20-year-old dove off a dock into shallow water. Upon surfacing, he is motionless. What is the most likely injury?",
-    "options": [
-      "Acute myocardial infarction",
-      "Severe hypoglycemia",
-      "Cervical spine (neck) injury",
-      "Mammalian diving reflex"
-    ],
-    "answer": 2,
-    "explanation": "Diving into shallow water carries high risk of cervical spine fracture and spinal cord transection."
-  },
-  {
-    "id": 219,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "You find an unresponsive, pulseless victim who has vomited. You are uncomfortable with mouth-to-mouth. Best approach?",
-    "options": [
-      "Wipe off the face and wait for EMS",
-      "Perform Hands-Only (compression-only) CPR",
-      "Leave the scene immediately to find help",
-      "Do not initiate any resuscitation efforts"
-    ],
-    "answer": 1,
-    "explanation": "Hands-Only CPR maintains circulation and oxygen delivery, vastly improving survival over doing nothing."
-  },
-  {
-    "id": 220,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "You are performing single-rescuer CPR. The AED delivers a shock. What is the immediate next step?",
-    "options": [
-      "Call 911/EMS again",
-      "Immediately resume CPR starting with chest compressions",
-      "Stop and check the carotid pulse for 10 seconds",
-      "Deliver 2 rescue ventilations before compressions"
-    ],
-    "answer": 1,
-    "explanation": "Immediately resume chest compressions after shock delivery without pausing for a pulse check."
-  },
-  {
-    "id": 221,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "In single-rescuer arrest, what is the main operational difference between finding an adult vs a child if leaving to call EMS?",
-    "options": [
-      "There is no difference in procedure",
-      "Perform CPR first for adult; call EMS first for child",
-      "Deliver 2 minutes of CPR for child before calling; call immediately for adult",
-      "Always wait for bystanders before acting"
-    ],
-    "answer": 2,
-    "explanation": "Most pediatric arrests are asphyxial (give 2 min CPR first); adult arrests are primary cardiac (call first)."
-  },
-  {
-    "id": 222,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "A lone daycare provider finds an unwitnessed unresponsive, cyanotic 3-year-old child. What is the first priority?",
-    "options": [
-      "Perform 5 back blows immediately",
-      "Perform a blind finger sweep",
-      "Deliver 2 minutes of CPR before leaving to call EMS",
-      "Leave immediately to search for the parents"
-    ],
-    "answer": 2,
-    "explanation": "In unwitnessed pediatric cardiac arrest, a lone rescuer provides 5 cycles (~2 min) of CPR before activating EMS."
-  },
-  {
-    "id": 223,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "While attempting to relieve choking in a responsive infant, the infant becomes limp and unresponsive. Next step?",
-    "options": [
-      "Leave the infant to summon emergency help",
-      "Perform repeated blind finger sweeps",
-      "Place infant on a firm, flat surface and begin CPR",
-      "Perform forceful abdominal thrusts (Heimlich)"
-    ],
-    "answer": 2,
-    "explanation": "If a choking infant becomes unresponsive, place on a firm flat surface and begin CPR (look for object before breaths)."
-  },
-  {
-    "id": 224,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "Up to what developmental age/stage is it necessary to use pediatric AED pads with an attenuator if available?",
-    "options": [
-      "Up to 18 years of age",
-      "Up to 14 years of age",
-      "Up to 8 years of age (or pre-puberty)",
-      "Only for newborns under 1 month"
-    ],
-    "answer": 2,
-    "explanation": "Use pediatric pads/dose attenuator for infants and children up to 8 years old or pre-puberty."
-  },
-  {
-    "id": 225,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "What is the correct, universal sequence of steps for operating an Automated External Defibrillator (AED)?",
-    "options": [
-      "Power on -> Deliver shock -> Attach pads -> Analyze",
-      "Power on -> Attach electrode pads -> Analyze rhythm -> Deliver shock if advised",
-      "Attach pads -> Deliver shock -> Power on -> Analyze",
-      "Analyze rhythm -> Power on -> Attach pads -> Deliver shock"
-    ],
-    "answer": 1,
-    "explanation": "Turn on AED, attach pads to bare chest, allow device to analyze rhythm, and shock if indicated."
-  },
-  {
-    "id": 226,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "How deep should chest compressions be delivered for an adult victim of cardiac arrest?",
     "options": [
       "At least 5 to 6 cm (2 to 2.4 inches)",
@@ -3476,9 +3322,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Effective adult compressions must reach a depth of 5 to 6 cm (2 to 2.4 inches) to generate cardiac output."
   },
   {
-    "id": 227,
+    "id": 216,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "In standard single-rescuer adult CPR, how many chest compressions are given in each cycle before ventilations?",
     "options": [
       "15 compressions",
@@ -3490,9 +3336,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Standard CPR protocol uses cycles of 30 chest compressions followed by 2 rescue breaths (30:2 ratio)."
   },
   {
-    "id": 228,
+    "id": 217,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "What is the recommended maneuver to open the airway in an unresponsive victim without suspected spinal trauma?",
     "options": [
       "Tilt head forward and chin down",
@@ -3504,9 +3350,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "The head tilt-chin lift maneuver pulls the tongue away from the posterior pharynx, opening the airway."
   },
   {
-    "id": 229,
+    "id": 218,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "Does CPR alone typically restart a heart in ventricular fibrillation or asystole?",
     "options": [
       "Yes, chest compressions directly reset the pacemaker",
@@ -3518,23 +3364,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "CPR circulates oxygenated blood to the brain and myocardium; it does not directly restart electrical activity."
   },
   {
-    "id": 230,
+    "id": 219,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
-    "q": "What does the medical abbreviation CPR stand for?",
-    "options": [
-      "Cardiac Passive Resuscitation",
-      "Cardiopulmonary Resuscitation",
-      "Chest Pulmonary Revival",
-      "Cardiovascular Pressure Restoration"
-    ],
-    "answer": 1,
-    "explanation": "CPR stands for Cardiopulmonary Resuscitation."
-  },
-  {
-    "id": 231,
-    "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "In an infant (under 1 year of age), which artery is the primary recommended site for checking a pulse?",
     "options": [
       "Femoral artery only",
@@ -3546,9 +3378,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "The brachial artery on the medial upper arm is preferred in infants; short fat necks obscure the carotid."
   },
   {
-    "id": 232,
+    "id": 220,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "Under BLS guidelines, pediatric CPR algorithms apply to children from 1 year of age up to what milestone?",
     "options": [
       "Up to 4 years old",
@@ -3560,9 +3392,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Pediatric BLS guidelines apply to victims from age 1 year up to the onset of puberty (~8-12 years)."
   },
   {
-    "id": 233,
+    "id": 221,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "For BLS guidelines, an 'infant' is specifically defined as an individual of what age?",
     "options": [
       "Less than 6 months",
@@ -3574,9 +3406,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "In resuscitation terminology, infants are defined as children younger than 1 year of age (excluding newborns)."
   },
   {
-    "id": 234,
+    "id": 222,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "What does the resuscitation acronym 'CAB' stand for in modern emergency resuscitation algorithms?",
     "options": [
       "Circulation, Airway, Breathing",
@@ -3588,9 +3420,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "AHA guidelines reordered the sequence to CAB: Compressions, Airway, Breathing to prioritize perfusion."
   },
   {
-    "id": 235,
+    "id": 223,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "How should a healthcare provider or rescuer check responsiveness in an infant?",
     "options": [
       "Shaking the infant vigorously by the shoulders",
@@ -3602,9 +3434,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Flicking or tapping the soles of the feet checks responsiveness safely without risking shaken baby trauma."
   },
   {
-    "id": 236,
+    "id": 224,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "You find an adult victim collapsed in a hospital hallway with no one nearby. Scene is safe. What is your immediate next action?",
     "options": [
       "Check responsiveness; if unresponsive, call for help/activate code and get AED",
@@ -3616,9 +3448,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Confirm unresponsiveness, shout for nearby help, activate emergency system, and get the AED immediately."
   },
   {
-    "id": 237,
+    "id": 225,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "A 55-year-old colleague complains of sudden, crushing substernal chest pain lasting > 5 min. What is your primary concern and action?",
     "options": [
       "Gastroesophageal reflux; give an antacid tablet",
@@ -3630,9 +3462,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Crushing central chest pain lasting > 5 min suggests acute myocardial infarction; activate EMS immediately."
   },
   {
-    "id": 238,
+    "id": 226,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "In an adult cardiac arrest where CPR and EMS activation are underway, what is the third link in the Chain of Survival?",
     "options": [
       "Administration of intravenous vasopressors by paramedics",
@@ -3644,9 +3476,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "The adult Chain of Survival links: 1) Recognition/Activation, 2) Early CPR, 3) Rapid Defibrillation."
   },
   {
-    "id": 239,
+    "id": 227,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "A 60-year-old man suddenly develops unilateral facial drooping, right arm weakness, and garbled speech. What is the most likely diagnosis?",
     "options": [
       "Grand mal epileptic seizure",
@@ -3658,9 +3490,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Sudden focal neurological deficits (unilateral face weakness, arm drift, dysarthria) indicate acute stroke."
   },
   {
-    "id": 240,
+    "id": 228,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "A lone rescuer pulls a 3-year-old child from a swimming pool. She is limp and unresponsive. When should the lone rescuer call 911?",
     "options": [
       "After providing 5 cycles (~2 minutes) of CPR",
@@ -3672,9 +3504,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Drowning causes hypoxic arrest; lone rescuers perform 2 minutes (5 cycles) of CPR before leaving to call EMS."
   },
   {
-    "id": 241,
+    "id": 229,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "Why is CPR training required for responders even when automated external defibrillators (AEDs) are available?",
     "options": [
       "AEDs eliminate the need for manual chest compressions",
@@ -3686,9 +3518,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "CPR circulates oxygenated blood, preserving brain and heart viability until defibrillation can succeed."
   },
   {
-    "id": 242,
+    "id": 230,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "You respond to an unresponsive child in bed with no evidence or history of trauma. How should you open her airway?",
     "options": [
       "Pull forward forcefully on the lower teeth",
@@ -3700,9 +3532,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "In non-trauma pediatric patients, the gentle head tilt-chin lift maneuver is the standard method."
   },
   {
-    "id": 243,
+    "id": 231,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "Before attempting to deliver rescue ventilations to an unresponsive non-breathing victim, what must the rescuer do?",
     "options": [
       "Check pupillary light reflexes",
@@ -3714,9 +3546,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Opening the airway lifts the tongue and epiglottis, allowing air to enter the lungs rather than the stomach."
   },
   {
-    "id": 244,
+    "id": 232,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "Why are healthcare providers specifically cautioned to look for 'adequate' breathing rather than just any respiratory effort?",
     "options": [
       "Agonal gasps occur commonly after arrest but do not provide ventilation",
@@ -3728,9 +3560,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Agonal gasps are slow, irregular, reflex sounds seen in cardiac arrest; they do not oxygenate the patient."
   },
   {
-    "id": 245,
+    "id": 233,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "In a cafeteria, a woman suddenly clutches her neck with both hands, unable to speak or cough. What should you do first?",
     "options": [
       "Immediately perform a blind finger sweep in her mouth",
@@ -3742,9 +3574,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Universal choking sign: clutching neck. Asking 'Are you choking?' verifies complete vs partial obstruction."
   },
   {
-    "id": 246,
+    "id": 234,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "When delivering bag-mask rescue ventilations to a child who has a pulse but is in respiratory arrest, what is the correct rate?",
     "options": [
       "1 breath every 1 to 2 seconds",
@@ -3756,9 +3588,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Pediatric rescue breathing with a pulse is delivered at 1 breath every 2 to 3 seconds (20-30 breaths/min)."
   },
   {
-    "id": 247,
+    "id": 235,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "A 3-year-old child eating grapes suddenly chokes but is coughing forcefully and crying loudly. What is the best action?",
     "options": [
       "Perform immediate abdominal thrusts",
@@ -3770,9 +3602,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Good air exchange (coughing, crying) indicates partial obstruction; do not intervene, allow coughing."
   },
   {
-    "id": 248,
+    "id": 236,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "When providing bag-mask rescue breathing with supplemental oxygen for an adult in respiratory arrest, how should breaths be given?",
     "options": [
       "Deliver 20-30 rapid forceful breaths per minute",
@@ -3784,9 +3616,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Adult rescue breathing: 1 breath every 5-6 seconds, each lasting 1 second, causing visible chest rise."
   },
   {
-    "id": 249,
+    "id": 237,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "In 2-rescuer adult CPR, when the airway is opened and no normal breathing is present, what is given during ventilation cycles?",
     "options": [
       "1 quick puff of air",
@@ -3798,9 +3630,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Deliver 2 breaths, each over 1 second, with enough volume to produce visible chest rise."
   },
   {
-    "id": 250,
+    "id": 238,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "Why is delivering rescue ventilations effective in sustaining an unresponsive non-breathing victim?",
     "options": [
       "Exhaled air contains pure carbon dioxide",
@@ -3812,9 +3644,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Exhaled air contains ~16% oxygen and 4% CO2, sufficient to support oxygen transport during CPR."
   },
   {
-    "id": 251,
+    "id": 239,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "A 52-year-old collapses at a fitness center. What is the preferred anatomical site for a pulse check in this adult victim?",
     "options": [
       "Radial artery of the wrist",
@@ -3826,9 +3658,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "The carotid artery in the groove between the trachea and sternocleidomastoid muscle is preferred in adults."
   },
   {
-    "id": 252,
+    "id": 240,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "Where should a rescuer place their hands on an adult victim's chest to perform high-quality chest compressions?",
     "options": [
       "On the upper half of the sternum near the sternal notch",
@@ -3840,9 +3672,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Compressions should be delivered on the lower half of the breastbone (sternum) in the center of the chest."
   },
   {
-    "id": 253,
+    "id": 241,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "What is the recommended ratio of chest compressions to ventilations for single-rescuer adult CPR?",
     "options": [
       "30 compressions to 2 ventilations (30:2)",
@@ -3854,9 +3686,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "The universal adult compression-to-ventilation ratio for all rescuers is 30 compressions to 2 breaths."
   },
   {
-    "id": 254,
+    "id": 242,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "What is the recommended speed (rate) of chest compressions for an adult cardiac arrest victim?",
     "options": [
       "60 to 80 compressions per minute",
@@ -3868,9 +3700,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "The recommended rate for high-quality compressions across all age groups is 100 to 120 compressions per minute."
   },
   {
-    "id": 255,
+    "id": 243,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "When performing chest compressions on a 5-year-old child, which compression technique should be used?",
     "options": [
       "Tips of 2 fingers only",
@@ -3882,9 +3714,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "For children, use 1 or 2 hands on the lower half of the sternum to achieve a depth of ~5 cm (1/3 AP diameter)."
   },
   {
-    "id": 256,
+    "id": 244,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "Two rescuers confirm an adult is unresponsive with no breathing and no carotid pulse. What should they do immediately?",
     "options": [
       "Attach AED if ready, and start chest compressions and cycles of 30:2",
@@ -3896,9 +3728,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Immediately initiate high-quality chest compressions and apply the AED as soon as available."
   },
   {
-    "id": 257,
+    "id": 245,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "During ongoing adult CPR, when should rescuers pause compressions to re-evaluate the cardiac rhythm or pulse?",
     "options": [
       "After every single compression cycle",
@@ -3910,9 +3742,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Reassess rhythm/pulse every 2 minutes (~5 cycles of 30:2), taking no more than 10 seconds to minimize pauses."
   },
   {
-    "id": 258,
+    "id": 246,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "According to BLS algorithms, exactly when should chest compressions be initiated?",
     "options": [
       "As soon as unresponsiveness, absent breathing, and no pulse are identified",
@@ -3924,9 +3756,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Chest compressions should start within 10 seconds of recognizing cardiac arrest (unresponsive, no pulse/breathing)."
   },
   {
-    "id": 259,
+    "id": 247,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "How do immediate chest compressions and rescue breathing increase survival in sudden cardiac arrest?",
     "options": [
       "They prevent the need for cardiac catheterization",
@@ -3938,9 +3770,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "CPR maintains minimum vital perfusion to the heart and brain, extending the window for successful defibrillation."
   },
   {
-    "id": 260,
+    "id": 248,
     "part": 8,
-    "category": "BLS & CPR Fundamentals & Scenarios",
+    "category": "Basic Life Support Pretest & CPR",
     "q": "A 7-year-old child is struck by a vehicle and found unresponsive with a bleeding head laceration. How should his airway be opened?",
     "options": [
       "Forceful head tilt-chin lift",
@@ -3952,9 +3784,653 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "In suspected cervical trauma, open the airway using the jaw thrust without neck extension."
   },
   {
+    "id": 249,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "What is the very first question you must ask before you respond to any emergency first aid situation?",
+    "options": [
+      "Age of the injured or ill person",
+      "Safety of the scene",
+      "Nature and extent of the injury",
+      "Exact time the injury occurred"
+    ],
+    "answer": 1,
+    "explanation": "Ensuring scene safety is critical to protect rescuers and prevent additional casualties."
+  },
+  {
+    "id": 250,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Which of the following are considered essential standard Personal Protective Equipment (PPE)?",
+    "options": [
+      "Medical gloves",
+      "Protective face mask",
+      "Eye shield or goggles",
+      "All of the above"
+    ],
+    "answer": 3,
+    "explanation": "Gloves, masks, and eye protection form universal PPE against bloodborne and airborne pathogens."
+  },
+  {
+    "id": 251,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Which of the following clinical signs is most consistent with an acute acute stroke?",
+    "options": [
+      "Generalized confusion only",
+      "Substernal chest pain",
+      "Unilateral facial droop",
+      "Isolated nausea and vomiting"
+    ],
+    "answer": 2,
+    "explanation": "Unilateral facial droop, arm weakness, and speech difficulty are cardinal signs of stroke (FAST)."
+  },
+  {
+    "id": 252,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "A 20-year-old dove off a dock into shallow water. Upon surfacing, he is motionless. What is the most likely injury?",
+    "options": [
+      "Acute myocardial infarction",
+      "Severe hypoglycemia",
+      "Cervical spine (neck) injury",
+      "Mammalian diving reflex"
+    ],
+    "answer": 2,
+    "explanation": "Diving into shallow water carries high risk of cervical spine fracture and spinal cord transection."
+  },
+  {
+    "id": 253,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "You find an unresponsive, pulseless victim who has vomited. You are uncomfortable with mouth-to-mouth. Best approach?",
+    "options": [
+      "Wipe off the face and wait for EMS",
+      "Perform Hands-Only (compression-only) CPR",
+      "Leave the scene immediately to find help",
+      "Do not initiate any resuscitation efforts"
+    ],
+    "answer": 1,
+    "explanation": "Hands-Only CPR maintains circulation and oxygen delivery, vastly improving survival over doing nothing."
+  },
+  {
+    "id": 254,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "You are performing single-rescuer CPR. The AED delivers a shock. What is the immediate next step?",
+    "options": [
+      "Call 911/EMS again",
+      "Immediately resume CPR starting with chest compressions",
+      "Stop and check the carotid pulse for 10 seconds",
+      "Deliver 2 rescue ventilations before compressions"
+    ],
+    "answer": 1,
+    "explanation": "Immediately resume chest compressions after shock delivery without pausing for a pulse check."
+  },
+  {
+    "id": 255,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "In single-rescuer arrest, what is the main operational difference between finding an adult vs a child if leaving to call EMS?",
+    "options": [
+      "There is no difference in procedure",
+      "Perform CPR first for adult; call EMS first for child",
+      "Deliver 2 minutes of CPR for child before calling; call immediately for adult",
+      "Always wait for bystanders before acting"
+    ],
+    "answer": 2,
+    "explanation": "Most pediatric arrests are asphyxial (give 2 min CPR first); adult arrests are primary cardiac (call first)."
+  },
+  {
+    "id": 256,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "A lone daycare provider finds an unwitnessed unresponsive, cyanotic 3-year-old child. What is the first priority?",
+    "options": [
+      "Perform 5 back blows immediately",
+      "Perform a blind finger sweep",
+      "Deliver 2 minutes of CPR before leaving to call EMS",
+      "Leave immediately to search for the parents"
+    ],
+    "answer": 2,
+    "explanation": "In unwitnessed pediatric cardiac arrest, a lone rescuer provides 5 cycles (~2 min) of CPR before activating EMS."
+  },
+  {
+    "id": 257,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "While attempting to relieve choking in a responsive infant, the infant becomes limp and unresponsive. Next step?",
+    "options": [
+      "Leave the infant to summon emergency help",
+      "Perform repeated blind finger sweeps",
+      "Place infant on a firm, flat surface and begin CPR",
+      "Perform forceful abdominal thrusts (Heimlich)"
+    ],
+    "answer": 2,
+    "explanation": "If a choking infant becomes unresponsive, place on a firm flat surface and begin CPR (look for object before breaths)."
+  },
+  {
+    "id": 258,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Up to what developmental age/stage is it necessary to use pediatric AED pads with an attenuator if available?",
+    "options": [
+      "Up to 18 years of age",
+      "Up to 14 years of age",
+      "Up to 8 years of age (or pre-puberty)",
+      "Only for newborns under 1 month"
+    ],
+    "answer": 2,
+    "explanation": "Use pediatric pads/dose attenuator for infants and children up to 8 years old or pre-puberty."
+  },
+  {
+    "id": 259,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "What is the correct, universal sequence of steps for operating an Automated External Defibrillator (AED)?",
+    "options": [
+      "Power on -> Deliver shock -> Attach pads -> Analyze",
+      "Power on -> Attach electrode pads -> Analyze rhythm -> Deliver shock if advised",
+      "Attach pads -> Deliver shock -> Power on -> Analyze",
+      "Analyze rhythm -> Power on -> Attach pads -> Deliver shock"
+    ],
+    "answer": 1,
+    "explanation": "Turn on AED, attach pads to bare chest, allow device to analyze rhythm, and shock if indicated."
+  },
+  {
+    "id": 260,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "How deep should chest compressions be delivered for an adult victim of cardiac arrest?",
+    "options": [
+      "At least 5 to 6 cm (2 to 2.4 inches)",
+      "1 inch (2.5 cm)",
+      "2 to 3 cm",
+      "0.5 inches (1 cm)"
+    ],
+    "answer": 0,
+    "explanation": "Effective adult compressions must reach a depth of 5 to 6 cm (2 to 2.4 inches) to generate cardiac output."
+  },
+  {
     "id": 261,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "In standard single-rescuer adult CPR, how many chest compressions are given in each cycle before ventilations?",
+    "options": [
+      "15 compressions",
+      "20 compressions",
+      "30 compressions",
+      "50 compressions"
+    ],
+    "answer": 2,
+    "explanation": "Standard CPR protocol uses cycles of 30 chest compressions followed by 2 rescue breaths (30:2 ratio)."
+  },
+  {
+    "id": 262,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "What is the recommended maneuver to open the airway in an unresponsive victim without suspected spinal trauma?",
+    "options": [
+      "Tilt head forward and chin down",
+      "Tilt head backward and chin down",
+      "Tilt head forward and chin up",
+      "Tilt head backward and chin up (Head tilt-chin lift)"
+    ],
+    "answer": 3,
+    "explanation": "The head tilt-chin lift maneuver pulls the tongue away from the posterior pharynx, opening the airway."
+  },
+  {
+    "id": 263,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Does CPR alone typically restart a heart in ventricular fibrillation or asystole?",
+    "options": [
+      "Yes, chest compressions directly reset the pacemaker",
+      "No, CPR restores vital organ blood flow until defibrillation or ROSC",
+      "Yes, rescue breathing triggers automaticity",
+      "Only in pediatric cardiac arrests"
+    ],
+    "answer": 1,
+    "explanation": "CPR circulates oxygenated blood to the brain and myocardium; it does not directly restart electrical activity."
+  },
+  {
+    "id": 264,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "What does the medical abbreviation CPR stand for?",
+    "options": [
+      "Cardiac Passive Resuscitation",
+      "Cardiopulmonary Resuscitation",
+      "Chest Pulmonary Revival",
+      "Cardiovascular Pressure Restoration"
+    ],
+    "answer": 1,
+    "explanation": "CPR stands for Cardiopulmonary Resuscitation."
+  },
+  {
+    "id": 265,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "In an infant (under 1 year of age), which artery is the primary recommended site for checking a pulse?",
+    "options": [
+      "Femoral artery only",
+      "Carotid artery in the neck",
+      "Radial artery at the wrist",
+      "Brachial artery in the upper arm"
+    ],
+    "answer": 3,
+    "explanation": "The brachial artery on the medial upper arm is preferred in infants; short fat necks obscure the carotid."
+  },
+  {
+    "id": 266,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Under BLS guidelines, pediatric CPR algorithms apply to children from 1 year of age up to what milestone?",
+    "options": [
+      "Up to 4 years old",
+      "Up to 8 years old (or signs of puberty)",
+      "Up to 12 years old",
+      "Up to 18 years old"
+    ],
+    "answer": 1,
+    "explanation": "Pediatric BLS guidelines apply to victims from age 1 year up to the onset of puberty (~8-12 years)."
+  },
+  {
+    "id": 267,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "For BLS guidelines, an 'infant' is specifically defined as an individual of what age?",
+    "options": [
+      "Less than 6 months",
+      "Less than 1 year (12 months) of age",
+      "Less than 2 years of age",
+      "Less than 3 years of age"
+    ],
+    "answer": 1,
+    "explanation": "In resuscitation terminology, infants are defined as children younger than 1 year of age (excluding newborns)."
+  },
+  {
+    "id": 268,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "What does the resuscitation acronym 'CAB' stand for in modern emergency resuscitation algorithms?",
+    "options": [
+      "Circulation, Airway, Breathing",
+      "Chest, Air, Blood",
+      "Compressions, Airway, Breathing",
+      "Cardiac, Alert, Breathing"
+    ],
+    "answer": 2,
+    "explanation": "AHA guidelines reordered the sequence to CAB: Compressions, Airway, Breathing to prioritize perfusion."
+  },
+  {
+    "id": 269,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "How should a healthcare provider or rescuer check responsiveness in an infant?",
+    "options": [
+      "Shaking the infant vigorously by the shoulders",
+      "Tapping or patting the soles of the infant's feet",
+      "Splashing cold water on the infant's face",
+      "Performing a firm sternal rub"
+    ],
+    "answer": 1,
+    "explanation": "Flicking or tapping the soles of the feet checks responsiveness safely without risking shaken baby trauma."
+  },
+  {
+    "id": 270,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "You find an adult victim collapsed in a hospital hallway with no one nearby. Scene is safe. What is your immediate next action?",
+    "options": [
+      "Check responsiveness; if unresponsive, call for help/activate code and get AED",
+      "Leave the patient to wait outside for the rapid response team",
+      "Perform 2 blind finger sweeps in the oral cavity",
+      "Immediately deliver 100 chest compressions without checking response"
+    ],
+    "answer": 0,
+    "explanation": "Confirm unresponsiveness, shout for nearby help, activate emergency system, and get the AED immediately."
+  },
+  {
+    "id": 271,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "A 55-year-old colleague complains of sudden, crushing substernal chest pain lasting > 5 min. What is your primary concern and action?",
+    "options": [
+      "Gastroesophageal reflux; give an antacid tablet",
+      "Stable angina; advise scheduling a doctor appointment next week",
+      "Acute myocardial infarction (heart attack); call 911/EMS immediately",
+      "Musculoskeletal pain; drive him home"
+    ],
+    "answer": 2,
+    "explanation": "Crushing central chest pain lasting > 5 min suggests acute myocardial infarction; activate EMS immediately."
+  },
+  {
+    "id": 272,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "In an adult cardiac arrest where CPR and EMS activation are underway, what is the third link in the Chain of Survival?",
+    "options": [
+      "Administration of intravenous vasopressors by paramedics",
+      "Rapid hospital admission and ICU bed assignment",
+      "Rapid defibrillation with an AED or manual defibrillator",
+      "Post-cardiac arrest targeted temperature management"
+    ],
+    "answer": 2,
+    "explanation": "The adult Chain of Survival links: 1) Recognition/Activation, 2) Early CPR, 3) Rapid Defibrillation."
+  },
+  {
+    "id": 273,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "A 60-year-old man suddenly develops unilateral facial drooping, right arm weakness, and garbled speech. What is the most likely diagnosis?",
+    "options": [
+      "Grand mal epileptic seizure",
+      "Acute coronary syndrome",
+      "Acute cerebrovascular stroke",
+      "Diabetic ketoacidosis"
+    ],
+    "answer": 2,
+    "explanation": "Sudden focal neurological deficits (unilateral face weakness, arm drift, dysarthria) indicate acute stroke."
+  },
+  {
+    "id": 274,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "A lone rescuer pulls a 3-year-old child from a swimming pool. She is limp and unresponsive. When should the lone rescuer call 911?",
+    "options": [
+      "After providing 5 cycles (~2 minutes) of CPR",
+      "Immediately before touching the child in the water",
+      "Only after the child fully regains spontaneous consciousness",
+      "After 10 minutes of chest compressions"
+    ],
+    "answer": 0,
+    "explanation": "Drowning causes hypoxic arrest; lone rescuers perform 2 minutes (5 cycles) of CPR before leaving to call EMS."
+  },
+  {
+    "id": 275,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Why is CPR training required for responders even when automated external defibrillators (AEDs) are available?",
+    "options": [
+      "AEDs eliminate the need for manual chest compressions",
+      "Responders must diagnose complex ECG dysrhythmias themselves",
+      "CPR maintains vital organ perfusion before and between AED shocks",
+      "AEDs are only effective in 10% of cardiac arrests"
+    ],
+    "answer": 2,
+    "explanation": "CPR circulates oxygenated blood, preserving brain and heart viability until defibrillation can succeed."
+  },
+  {
+    "id": 276,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "You respond to an unresponsive child in bed with no evidence or history of trauma. How should you open her airway?",
+    "options": [
+      "Pull forward forcefully on the lower teeth",
+      "Jaw-thrust maneuver with cervical immobilization",
+      "Head tilt-chin lift maneuver",
+      "Hyperextend the neck fully backwards"
+    ],
+    "answer": 2,
+    "explanation": "In non-trauma pediatric patients, the gentle head tilt-chin lift maneuver is the standard method."
+  },
+  {
+    "id": 277,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Before attempting to deliver rescue ventilations to an unresponsive non-breathing victim, what must the rescuer do?",
+    "options": [
+      "Check pupillary light reflexes",
+      "Properly open the airway (head tilt-chin lift)",
+      "Insert a nasogastric tube",
+      "Deliver 5 rapid back blows"
+    ],
+    "answer": 1,
+    "explanation": "Opening the airway lifts the tongue and epiglottis, allowing air to enter the lungs rather than the stomach."
+  },
+  {
+    "id": 278,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Why are healthcare providers specifically cautioned to look for 'adequate' breathing rather than just any respiratory effort?",
+    "options": [
+      "Agonal gasps occur commonly after arrest but do not provide ventilation",
+      "Victims never make respiratory sounds after cardiac arrest",
+      "Hyperventilation occurs spontaneously in all arrest cases",
+      "Normal breathing always exceeds 30 breaths per minute"
+    ],
+    "answer": 0,
+    "explanation": "Agonal gasps are slow, irregular, reflex sounds seen in cardiac arrest; they do not oxygenate the patient."
+  },
+  {
+    "id": 279,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "In a cafeteria, a woman suddenly clutches her neck with both hands, unable to speak or cough. What should you do first?",
+    "options": [
+      "Immediately perform a blind finger sweep in her mouth",
+      "Ask her: 'Are you choking?' to assess airway compromise",
+      "Slap her vigorously on the back while she sits",
+      "Give her a glass of water to drink"
+    ],
+    "answer": 1,
+    "explanation": "Universal choking sign: clutching neck. Asking 'Are you choking?' verifies complete vs partial obstruction."
+  },
+  {
+    "id": 280,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "When delivering bag-mask rescue ventilations to a child who has a pulse but is in respiratory arrest, what is the correct rate?",
+    "options": [
+      "1 breath every 1 to 2 seconds",
+      "1 breath every 2 to 3 seconds (20-30 breaths/min)",
+      "1 breath every 8 to 10 seconds",
+      "1 breath every 15 seconds"
+    ],
+    "answer": 1,
+    "explanation": "Pediatric rescue breathing with a pulse is delivered at 1 breath every 2 to 3 seconds (20-30 breaths/min)."
+  },
+  {
+    "id": 281,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "A 3-year-old child eating grapes suddenly chokes but is coughing forcefully and crying loudly. What is the best action?",
+    "options": [
+      "Perform immediate abdominal thrusts",
+      "Perform back slaps and chest thrusts",
+      "Encourage the child to cough and monitor closely without interfering",
+      "Perform a blind finger sweep of the mouth"
+    ],
+    "answer": 2,
+    "explanation": "Good air exchange (coughing, crying) indicates partial obstruction; do not intervene, allow coughing."
+  },
+  {
+    "id": 282,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "When providing bag-mask rescue breathing with supplemental oxygen for an adult in respiratory arrest, how should breaths be given?",
+    "options": [
+      "Deliver 20-30 rapid forceful breaths per minute",
+      "1 breath every 5 to 6 seconds (10-12/min), each over 1 second with chest rise",
+      "Deliver as much volume as possible until resistance is met",
+      "Give 1 breath every 12 seconds"
+    ],
+    "answer": 1,
+    "explanation": "Adult rescue breathing: 1 breath every 5-6 seconds, each lasting 1 second, causing visible chest rise."
+  },
+  {
+    "id": 283,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "In 2-rescuer adult CPR, when the airway is opened and no normal breathing is present, what is given during ventilation cycles?",
+    "options": [
+      "1 quick puff of air",
+      "2 rescue breaths, each over 1 second, observing for visible chest rise",
+      "5 rapid ventilations without pause",
+      "Continuous blowing without allowing exhalation"
+    ],
+    "answer": 1,
+    "explanation": "Deliver 2 breaths, each over 1 second, with enough volume to produce visible chest rise."
+  },
+  {
+    "id": 284,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Why is delivering rescue ventilations effective in sustaining an unresponsive non-breathing victim?",
+    "options": [
+      "Exhaled air contains pure carbon dioxide",
+      "Exhaled air contains approximately 16-17% oxygen, adequate for oxygenation",
+      "Ventilation directly defibrillates the myocardium",
+      "Rescue breaths restore ventricular automaticity"
+    ],
+    "answer": 1,
+    "explanation": "Exhaled air contains ~16% oxygen and 4% CO2, sufficient to support oxygen transport during CPR."
+  },
+  {
+    "id": 285,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "A 52-year-old collapses at a fitness center. What is the preferred anatomical site for a pulse check in this adult victim?",
+    "options": [
+      "Radial artery of the wrist",
+      "Brachial artery of the upper arm",
+      "Carotid artery of the neck",
+      "Apical beat on the left chest"
+    ],
+    "answer": 2,
+    "explanation": "The carotid artery in the groove between the trachea and sternocleidomastoid muscle is preferred in adults."
+  },
+  {
+    "id": 286,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Where should a rescuer place their hands on an adult victim's chest to perform high-quality chest compressions?",
+    "options": [
+      "On the upper half of the sternum near the sternal notch",
+      "Over the left side of the rib cage directly over the apex",
+      "Over the xiphoid process at the bottom of the sternum",
+      "On the lower half of the breastbone (sternum), center of chest"
+    ],
+    "answer": 3,
+    "explanation": "Compressions should be delivered on the lower half of the breastbone (sternum) in the center of the chest."
+  },
+  {
+    "id": 287,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "What is the recommended ratio of chest compressions to ventilations for single-rescuer adult CPR?",
+    "options": [
+      "30 compressions to 2 ventilations (30:2)",
+      "15 compressions to 2 ventilations (15:2)",
+      "5 compressions to 1 ventilation (5:1)",
+      "50 compressions to 2 ventilations (50:2)"
+    ],
+    "answer": 0,
+    "explanation": "The universal adult compression-to-ventilation ratio for all rescuers is 30 compressions to 2 breaths."
+  },
+  {
+    "id": 288,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "What is the recommended speed (rate) of chest compressions for an adult cardiac arrest victim?",
+    "options": [
+      "60 to 80 compressions per minute",
+      "80 to 100 compressions per minute",
+      "100 to 120 compressions per minute",
+      "140 to 160 compressions per minute"
+    ],
+    "answer": 2,
+    "explanation": "The recommended rate for high-quality compressions across all age groups is 100 to 120 compressions per minute."
+  },
+  {
+    "id": 289,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "When performing chest compressions on a 5-year-old child, which compression technique should be used?",
+    "options": [
+      "Tips of 2 fingers only",
+      "Heel of one hand (or two hands if needed to achieve 5 cm depth)",
+      "Thumbs encircling technique only",
+      "Palms and flat fingers of both hands"
+    ],
+    "answer": 1,
+    "explanation": "For children, use 1 or 2 hands on the lower half of the sternum to achieve a depth of ~5 cm (1/3 AP diameter)."
+  },
+  {
+    "id": 290,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "Two rescuers confirm an adult is unresponsive with no breathing and no carotid pulse. What should they do immediately?",
+    "options": [
+      "Attach AED if ready, and start chest compressions and cycles of 30:2",
+      "Deliver 5 abdominal thrusts to clear the airway",
+      "Wait 2 minutes and recheck the pulse",
+      "Deliver 10 rescue breaths before starting compressions"
+    ],
+    "answer": 0,
+    "explanation": "Immediately initiate high-quality chest compressions and apply the AED as soon as available."
+  },
+  {
+    "id": 291,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "During ongoing adult CPR, when should rescuers pause compressions to re-evaluate the cardiac rhythm or pulse?",
+    "options": [
+      "After every single compression cycle",
+      "Every 30 seconds",
+      "After every 2 minutes of CPR (about 5 cycles of 30:2)",
+      "Only when EMS arrives at the scene"
+    ],
+    "answer": 2,
+    "explanation": "Reassess rhythm/pulse every 2 minutes (~5 cycles of 30:2), taking no more than 10 seconds to minimize pauses."
+  },
+  {
+    "id": 292,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "According to BLS algorithms, exactly when should chest compressions be initiated?",
+    "options": [
+      "As soon as unresponsiveness, absent breathing, and no pulse are identified",
+      "Only after delivering 5 initial rescue ventilations",
+      "Only after an AED has analyzed the rhythm",
+      "After checking bilateral pupillary reflexes"
+    ],
+    "answer": 0,
+    "explanation": "Chest compressions should start within 10 seconds of recognizing cardiac arrest (unresponsive, no pulse/breathing)."
+  },
+  {
+    "id": 293,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "How do immediate chest compressions and rescue breathing increase survival in sudden cardiac arrest?",
+    "options": [
+      "They prevent the need for cardiac catheterization",
+      "They restore normal sinus rhythm on their own without electricity",
+      "They maintain coronary and cerebral perfusion, preserving viability until defibrillation",
+      "They reduce systemic blood pressure to protect cerebral vessels"
+    ],
+    "answer": 2,
+    "explanation": "CPR maintains minimum vital perfusion to the heart and brain, extending the window for successful defibrillation."
+  },
+  {
+    "id": 294,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
+    "q": "A 7-year-old child is struck by a vehicle and found unresponsive with a bleeding head laceration. How should his airway be opened?",
+    "options": [
+      "Forceful head tilt-chin lift",
+      "Jaw-thrust maneuver with in-line cervical spine stabilization",
+      "Blind digital sweep of the oral cavity",
+      "Do not touch or position the airway under any circumstances"
+    ],
+    "answer": 1,
+    "explanation": "In suspected cervical trauma, open the airway using the jaw thrust without neck extension."
+  },
+  {
+    "id": 295,
+    "part": 9,
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "In an unresponsive individual, how should a rescuer assess victim responsiveness?",
     "options": [
       "Shaking the victim violently by the head",
@@ -3966,9 +4442,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Tap the shoulders firmly and shout 'Are you OK?' to check adult responsiveness safely."
   },
   {
-    "id": 262,
+    "id": 296,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "If an adult victim is found unresponsive and not breathing normally, what is the correct operational sequence?",
     "options": [
       "Perform CPR for 5 minutes, then search for a telephone",
@@ -3980,9 +4456,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Early activation of emergency medical services and prompt CPR initiation are vital for adult survival."
   },
   {
-    "id": 263,
+    "id": 297,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "When assessing whether an unresponsive victim is breathing normally, the rescuer should simultaneously:",
     "options": [
       "Look for chest rise and fall",
@@ -3994,9 +4470,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Look, listen, and feel for normal breathing for no more than 10 seconds before starting CPR."
   },
   {
-    "id": 264,
+    "id": 298,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "What is the single most common cause of upper airway obstruction in an unconscious, supine patient?",
     "options": [
       "Foreign body / food bolus",
@@ -4008,9 +4484,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Loss of muscle tone in unconsciousness causes the base of the tongue to occlude the hypopharynx."
   },
   {
-    "id": 265,
+    "id": 299,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "When providing mouth-to-mouth or bag-mask ventilations to an unconscious patient, the rescuer should:",
     "options": [
       "Pinch the nostrils closed during mouth-to-mouth",
@@ -4022,9 +4498,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Proper ventilation requires airway seal, avoiding gastric insufflation, and allowing passive recoil."
   },
   {
-    "id": 266,
+    "id": 300,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "During high-quality adult chest compressions, which principles must be strictly maintained?",
     "options": [
       "Compress at 100 to 120 beats per minute",
@@ -4036,9 +4512,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Optimal depth (5-6 cm), proper rate (100-120/min), and correct hand position maximize cardiac output."
   },
   {
-    "id": 267,
+    "id": 301,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "To perform effective external chest compressions, what is the mandatory position for the patient?",
     "options": [
       "Prone with head turned to side",
@@ -4050,9 +4526,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Chest compressions require a firm, flat surface (floor or backboard) so force compresses the heart."
   },
   {
-    "id": 268,
+    "id": 302,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "What airway opening maneuver is specifically indicated when cervical spine injury is suspected?",
     "options": [
       "Head tilt-chin lift maneuver",
@@ -4064,9 +4540,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "The jaw-thrust opens the airway by anterior displacement of the mandible without neck movement."
   },
   {
-    "id": 269,
+    "id": 303,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "To check circulation in an unresponsive adult victim, which pulse is assessed by healthcare professionals?",
     "options": [
       "Radial pulse at the wrist",
@@ -4078,9 +4554,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "The central carotid pulse remains palpable longer than peripheral pulses during shock and arrest."
   },
   {
-    "id": 270,
+    "id": 304,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "What is the most reliable objective clinical indicator of effective rescue breathing?",
     "options": [
       "Immediate resolution of all cyanosis",
@@ -4092,9 +4568,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Visible chest rise with each rescue breath confirms that sufficient volume is entering the lungs."
   },
   {
-    "id": 271,
+    "id": 305,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "Which cluster of signs and symptoms is typical of acute myocardial infarction (heart attack)?",
     "options": [
       "Substernal pressure or squeezing pain radiating to arm or jaw",
@@ -4106,9 +4582,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "MI presents with chest discomfort, diaphoresis, dyspnea, and radiation; presentation can be atypical."
   },
   {
-    "id": 272,
+    "id": 306,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "Before initiating external chest compressions in an adult, a healthcare professional must quickly confirm:",
     "options": [
       "Presence of severe external bleeding",
@@ -4120,9 +4596,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Healthcare providers confirm cardiac arrest by absence of a pulse and breathing within 10 seconds."
   },
   {
-    "id": 273,
+    "id": 307,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "Acute primary respiratory arrest requiring immediate rescue breathing can be precipitated by:",
     "options": [
       "Opioid or sedative overdose",
@@ -4134,9 +4610,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Drug overdoses, drowning, and asphyxiation cause primary respiratory arrest which progresses to cardiac arrest."
   },
   {
-    "id": 274,
+    "id": 308,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "How much time should a healthcare provider take to check for a carotid pulse before starting CPR?",
     "options": [
       "At least 20 seconds",
@@ -4148,9 +4624,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Check pulse for 5 to 10 seconds; if no pulse is definitely felt within 10 seconds, begin CPR immediately."
   },
   {
-    "id": 275,
+    "id": 309,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "For chest compressions to be maximally effective in producing perfusion, the rescuer must:",
     "options": [
       "Allow complete chest recoil after each compression",
@@ -4162,9 +4638,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Full recoil allows ventricular filling; proper duty cycle and hand placement ensure coronary perfusion."
   },
   {
-    "id": 276,
+    "id": 310,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "When performing adult chest compressions, the heel of the lower hand is positioned on the:",
     "options": [
       "Lower half of the sternum (breastbone)",
@@ -4176,9 +4652,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Position hands on the lower half of the sternum, avoiding the xiphoid process to prevent hepatic injury."
   },
   {
-    "id": 277,
+    "id": 311,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "In an unresponsive adult with a definite palpable carotid pulse but absent breathing, rescue breaths are given once every:",
     "options": [
       "1 to 2 seconds",
@@ -4190,9 +4666,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Adult rescue breathing with a pulse: 1 breath every 5-6 seconds (10-12 breaths/min), rechecking pulse every 2 min."
   },
   {
-    "id": 278,
+    "id": 312,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "What is the recommended ratio of compressions to ventilations for two-rescuer CPR on an adult victim?",
     "options": [
       "15 compressions to 2 ventilations (15:2)",
@@ -4204,9 +4680,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "In adult CPR, the compression-to-ventilation ratio remains 30:2 regardless of whether 1 or 2 rescuers are present."
   },
   {
-    "id": 279,
+    "id": 313,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "An automated external defibrillator (AED) is applied to an unresponsive individual only when:",
     "options": [
       "The patient is unconscious only",
@@ -4218,9 +4694,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "AED is indicated in cardiac arrest, defined by concurrent unresponsiveness, apnea/agonal gasps, and pulselessness."
   },
   {
-    "id": 280,
+    "id": 314,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "Which of the following statements regarding AED operation is correct?",
     "options": [
       "Universal steps: power on, attach pads, analyze, deliver shock",
@@ -4232,9 +4708,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Turn on AED, attach pads, clear to analyze, clear to shock, and immediately resume CPR for 2-minute cycles."
   },
   {
-    "id": 281,
+    "id": 315,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "What is the AHA recommended sequence of steps for basic life support?",
     "options": [
       "Airway, Breathing, Chest Compressions (ABC)",
@@ -4246,9 +4722,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "AHA guidelines established CAB (Compressions, Airway, Breathing) to initiate early blood circulation."
   },
   {
-    "id": 282,
+    "id": 316,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "Which of the following are critical components of high-quality cardiopulmonary resuscitation?",
     "options": [
       "Starting compressions within 10 seconds of arrest recognition",
@@ -4260,9 +4736,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Prompt start, adequate rate/depth, full recoil, and minimal interruptions define high-quality CPR."
   },
   {
-    "id": 283,
+    "id": 317,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "At what age or weight threshold is it necessary to use pediatric AED pads / dose attenuator if available?",
     "options": [
       "8 years of age or older",
@@ -4274,9 +4750,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Pediatric pads with dose attenuator are used for children 8 years of age or younger (< 25 kg)."
   },
   {
-    "id": 284,
+    "id": 318,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "The compression to ventilation ratio for single-rescuer CPR on an adult victim of cardiac arrest is:",
     "options": [
       "30:1",
@@ -4288,9 +4764,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "For single-rescuer adult CPR, 30 chest compressions followed by 2 rescue breaths (30:2) is the standard."
   },
   {
-    "id": 285,
+    "id": 319,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "Where should a healthcare provider attempt to perform a pulse check in an unresponsive adult?",
     "options": [
       "Brachial artery",
@@ -4302,9 +4778,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Check the carotid pulse in adults by feeling in the groove lateral to the trachea for 5 to 10 seconds."
   },
   {
-    "id": 286,
+    "id": 320,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "An AED can be safely and effectively deployed in all of the following clinical scenarios EXCEPT:",
     "options": [
       "Victim lying in dry snow",
@@ -4316,9 +4792,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Water conducts electricity; remove victim from water and dry the chest before attaching and firing an AED."
   },
   {
-    "id": 287,
+    "id": 321,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "The five links in the adult out-of-hospital Chain of Survival include all of the following EXCEPT:",
     "options": [
       "Early recognition and activation of EMS",
@@ -4330,9 +4806,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Routine cardiovascular medications are not one of the core 5 links in the primary Chain of Survival."
   },
   {
-    "id": 288,
+    "id": 322,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "A lone rescuer encounters a patient in apparent collapse. The first 3 steps are: Check for danger/safety, __________, and call for help.",
     "options": [
       "Establish peripheral IV access",
@@ -4344,9 +4820,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "The primary initial assessment: 1) Check scene danger, 2) Check patient responsiveness, 3) Call for help."
   },
   {
-    "id": 289,
+    "id": 323,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "In both infants and children, what is the compression to ventilation ratio for single-rescuer CPR?",
     "options": [
       "15:1",
@@ -4358,9 +4834,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Single rescuers use 30:2 for all age victims. (Two-rescuer pediatric CPR uses 15:2)."
   },
   {
-    "id": 290,
+    "id": 324,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "What is the proper, systematic sequence of steps for operating an automated external defibrillator (AED)?",
     "options": [
       "Attach pads -> Power on -> Shock patient -> Analyze",
@@ -4372,9 +4848,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "AED operating order: Power on -> Apply pads to bare chest -> Stand clear and analyze -> Shock if advised."
   },
   {
-    "id": 291,
+    "id": 325,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "A 21-year-old student collapses and turns cyanotic while eating a hot dog at a bar. What is the most probable cause?",
     "options": [
       "Primary arrhythmic cardiac arrest",
@@ -4386,9 +4862,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Sudden collapse while eating accompanied by cyanosis indicates acute foreign body airway obstruction."
   },
   {
-    "id": 292,
+    "id": 326,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "You assess the collapsed choking student from the previous question and determine he still has a pulse. What is the next step?",
     "options": [
       "Begin chest compressions immediately",
@@ -4400,9 +4876,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "If a pulse is present, the patient is in respiratory arrest; open the airway and attempt rescue breaths."
   },
   {
-    "id": 293,
+    "id": 327,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "For BLS training and algorithm purposes, an 'infant' is categorized as a patient of what age?",
     "options": [
       "Under 1 year of age",
@@ -4414,9 +4890,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "In BLS guidelines, an infant is defined as younger than 1 year (excluding newly born infants in delivery)."
   },
   {
-    "id": 294,
+    "id": 328,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "Why are rescue ventilations delivered to a pediatric arrest victim before seeking help in single-rescuer scenarios?",
     "options": [
       "EMS response times are invariably slower for children",
@@ -4428,9 +4904,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Unlike adults (primary ventricular arrhythmias), children arrest from hypoxia; initial CPR restores oxygenation."
   },
   {
-    "id": 295,
+    "id": 329,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "A daycare provider finds an unresponsive 3-year-old who is not breathing. Alone with no phone, what should she do first?",
     "options": [
       "5 forceful back slaps",
@@ -4442,9 +4918,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "A lone rescuer provides 2 minutes of CPR to treat hypoxia before briefly leaving to call 911."
   },
   {
-    "id": 296,
+    "id": 330,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "A resuscitated child begins breathing spontaneously at 18/min, but her heart rate is 50 bpm with signs of poor perfusion. Next action?",
     "options": [
       "Increase rescue breathing frequency only",
@@ -4456,9 +4932,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "In pediatric BLS, a heart rate < 60 bpm with signs of poor perfusion despite oxygenation requires CPR."
   },
   {
-    "id": 297,
+    "id": 331,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "What is the complete medical term represented by the abbreviation AED?",
     "options": [
       "Automatic Energy Delivery",
@@ -4470,9 +4946,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "AED stands for Automated External Defibrillator."
   },
   {
-    "id": 298,
+    "id": 332,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "A 49-year-old female in arrest has a subcutaneous pacemaker bulge with a healed scar in her upper chest. How should AED pads be placed?",
     "options": [
       "The AED cannot be used on this patient",
@@ -4484,9 +4960,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Avoid placing AED pads directly over an implanted pacemaker/ICD; place pad at least 2.5 cm (1 inch) away."
   },
   {
-    "id": 299,
+    "id": 333,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "The AED analyzes the rhythm and announces 'Shock Advised! Charging...'. What is the mandatory immediate action?",
     "options": [
       "Clear the patient ('Stand clear!') ensuring no one touches the patient",
@@ -4498,9 +4974,9 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "explanation": "Ensure rescuer and bystander safety by loudly clearing everyone from touching the patient before shock delivery."
   },
   {
-    "id": 300,
+    "id": 334,
     "part": 9,
-    "category": "BLS Practice MCQs & AED Mastery",
+    "category": "Comprehensive CPR, First Aid & BLS Bank",
     "q": "Immediately after the AED delivers an electric shock to a patient in cardiac arrest, what is the next step?",
     "options": [
       "Pause and check the carotid pulse for 10 seconds",
