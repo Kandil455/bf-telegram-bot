@@ -126,9 +126,19 @@ export function emergencyMenuRows(lang, premium) {
     ],
     [
       b(ar ? "🩸 كويز 5: نزيف الجهاز الهضمي (17 س)" : "🩸 Quiz 5: GI Bleeding (17 Qs)", "quiz", act("em", "p", "5")),
+      b(ar ? "🫁 كويز 6: الإنعاش المتقدم والقلب ALS (22 س)" : "🫁 Quiz 6: ALS & Resuscitation (22 Qs)", "quiz", act("em", "p", "6")),
     ],
     [
-      b(ar ? "📥 تحميل بنك أسئلة الطوارئ كامل HTML (182 سؤال)" : "📥 Download Full ER Bank HTML (182 Qs)", "file", act("em", "dl_all"), "success"),
+      b(ar ? "🩻 كويز 7: أشعة وحالات الطوارئ (10 س)" : "🩻 Quiz 7: ER Radiology Cases (10 Qs)", "quiz", act("em", "p", "7")),
+    ],
+    [
+      b(ar ? "🫀 كويز 8: أساسيات وحالات الإنعاش BLS 1 (46 س)" : "🫀 Quiz 8: BLS Core & Scenarios (46 Qs)", "quiz", act("em", "p", "8")),
+    ],
+    [
+      b(ar ? "⚡ كويز 9: تدريبات الإنعاش والصدمات BLS 2 (40 س)" : "⚡ Quiz 9: BLS MCQs & AED (40 Qs)", "quiz", act("em", "p", "9")),
+    ],
+    [
+      b(ar ? "📥 تحميل بنك أسئلة الطوارئ كامل HTML (300 سؤال)" : "📥 Download Full ER Bank HTML (300 Qs)", "file", act("em", "dl_all"), "success"),
     ],
     [b(ar ? "⬅️ القائمة الرئيسية" : "⬅️ Main Menu", "home", act("menu"))],
   ];
