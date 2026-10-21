@@ -1,8 +1,15 @@
 // Comprehensive Emergency Medicine & Resuscitation Question Bank (300 MCQs)
 // High-yield emergency medicine, resuscitation, trauma, cardiology, shock, GI bleeding, ALS, radiology, and BLS.
-// Each quiz matches an uploaded module/file and is capped at <= 50 questions (no images, pure clinical text).
+// Includes high-resolution imaging assets for emergency radiology and ALS ECG rhythm strips.
 
-export const EMERGENCY_QUIZ_TITLE = "Emergency Medicine & Resuscitation Question Bank (300 MCQs)";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export const EMERGENCY_QUIZ_TITLE = "Emergency Medicine & Resuscitation Question Bank (300 MCQs with Images)";
 
 export const EMERGENCY_QUIZ_CATEGORIES = Object.freeze([
   {
@@ -42,15 +49,15 @@ export const EMERGENCY_QUIZ_CATEGORIES = Object.freeze([
   },
   {
     "id": "als",
-    "nameAr": "الإنعاش المتقدم وتخطيط القلب (ALS)",
-    "nameEn": "ALS & Advanced Resuscitation",
+    "nameAr": "الإنعاش المتقدم ورسم القلب ALS (22 س بالصور)",
+    "nameEn": "ALS & ECG Rhythm Cases (22 Qs with Images)",
     "count": 22,
     "part": 6
   },
   {
     "id": "radio",
-    "nameAr": "أشعة وحالات الطوارئ (Radiology)",
-    "nameEn": "Emergency Radiology & Imaging",
+    "nameAr": "أشعة وحالات الطوارئ (10 أسئلة بالصور 🖼️)",
+    "nameEn": "Emergency Radiology (10 Qs with Images 🖼️)",
     "count": 10,
     "part": 7
   },
@@ -118,8 +125,8 @@ export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   },
   {
     "id": 6,
-    "name": "ALS & Advanced Resuscitation",
-    "nameAr": "الإنعاش المتقدم وتخطيط القلب (ALS)",
+    "name": "ALS & ECG Rhythm Cases (22 Qs with Images)",
+    "nameAr": "الإنعاش المتقدم ورسم القلب ALS (22 س بالصور)",
     "range": "Q183 - Q204",
     "count": 22,
     "start": 183,
@@ -127,8 +134,8 @@ export const EMERGENCY_QUIZ_PARTS = Object.freeze([
   },
   {
     "id": 7,
-    "name": "Emergency Radiology & Imaging",
-    "nameAr": "أشعة وحالات الطوارئ (Radiology)",
+    "name": "Emergency Radiology (10 Qs with Images 🖼️)",
+    "nameAr": "أشعة وحالات الطوارئ (10 أسئلة بالصور 🖼️)",
     "range": "Q205 - Q214",
     "count": 10,
     "start": 205,
@@ -3045,7 +3052,7 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
     "id": 198,
     "part": 6,
     "category": "ALS & Advanced Resuscitation",
-    "q": "(12-lead ECG showing marked ST-segment elevation in leads II, III, and aVF with reciprocal depression in I and aVL): Management includes:",
+    "q": "With reference to the 12-lead ECG shown in the image:",
     "options": [
       "Cardiac monitoring is optional",
       "Primary PCI is indicated immediately",
@@ -3053,13 +3060,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Aspirin should be avoided"
     ],
     "answer": 1,
-    "explanation": "Acute inferior STEMI requires emergent coronary reperfusion therapy, preferably primary PCI."
+    "explanation": "Acute inferior STEMI requires emergent coronary reperfusion therapy, preferably primary PCI.",
+    "imageFile": "q198_stemi_ecg.jpg"
   },
   {
     "id": 199,
     "part": 6,
     "category": "ALS & Advanced Resuscitation",
-    "q": "(ECG rhythm strip showing chaotic, coarse, disorganized waveform with no identifiable QRS complexes): In a pulseless patient, what is indicated?",
+    "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "Defibrillation is the treatment of choice",
       "A precordial thump is always indicated",
@@ -3067,13 +3075,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "This rhythm is associated with spontaneous circulation"
     ],
     "answer": 0,
-    "explanation": "Ventricular fibrillation (VF) in cardiac arrest mandates immediate unsynchronized electrical defibrillation."
+    "explanation": "Ventricular fibrillation (VF) in cardiac arrest mandates immediate unsynchronized electrical defibrillation.",
+    "imageFile": "q199_vf_strip.jpg"
   },
   {
     "id": 200,
     "part": 6,
     "category": "ALS & Advanced Resuscitation",
-    "q": "(ECG rhythm strip showing regular narrow-complex tachycardia at a rate of 180 bpm without visible P waves): Which statement is true?",
+    "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "The rhythm is regular",
       "The rhythm originates in the ventricles",
@@ -3081,13 +3090,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Heart rate is under 100 beats per minute"
     ],
     "answer": 0,
-    "explanation": "Supraventricular tachycardia (SVT) presents as a rapid, regular rhythm with narrow QRS complexes."
+    "explanation": "Supraventricular tachycardia (SVT) presents as a rapid, regular rhythm with narrow QRS complexes.",
+    "imageFile": "q200_svt_strip.jpg"
   },
   {
     "id": 201,
     "part": 6,
     "category": "ALS & Advanced Resuscitation",
-    "q": "(ECG rhythm strip showing complete AV dissociation with slow wide ventricular escape rate of 35 bpm): Management in a symptomatic hypotensive patient:",
+    "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "This rhythm is always associated with unconsciousness",
       "Transvenous cardiac pacing may be appropriate",
@@ -3095,13 +3105,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "The patient is not at risk of developing asystole"
     ],
     "answer": 1,
-    "explanation": "Third-degree (complete) AV block with adverse signs (hypotension) requires pacing."
+    "explanation": "Third-degree (complete) AV block with adverse signs (hypotension) requires pacing.",
+    "imageFile": "q201_pacing_strip.jpg"
   },
   {
     "id": 202,
     "part": 6,
     "category": "ALS & Advanced Resuscitation",
-    "q": "(ECG rhythm strip showing sinus bradycardia with normal P-QRS-T complexes at a rate of 42 bpm): Initial management if adverse signs are present:",
+    "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "Adrenaline is contraindicated in this rhythm",
       "Atropine 0.5 mg IV is the initial drug of choice",
@@ -3109,13 +3120,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "The ventricular rate is in the range 50-60 bpm"
     ],
     "answer": 1,
-    "explanation": "Atropine 0.5 mg (or 500 mcg) IV bolus is the initial first-line medication for unstable bradycardia."
+    "explanation": "Atropine 0.5 mg (or 500 mcg) IV bolus is the initial first-line medication for unstable bradycardia.",
+    "imageFile": "q202_brady_strip.jpg"
   },
   {
     "id": 203,
     "part": 6,
     "category": "ALS & Advanced Resuscitation",
-    "q": "(ECG rhythm strip showing rapid regular monomorphic wide tachycardia with a rate of 220 bpm): Which is correct?",
+    "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "P waves are clearly visible",
       "The rhythm is irregular",
@@ -3123,13 +3135,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "The ventricular rate is greater than 200 min-1"
     ],
     "answer": 3,
-    "explanation": "Rapid monomorphic VT or flutter with 1:1 conduction exceeds 200 bpm with wide regular QRS complexes."
+    "explanation": "Rapid monomorphic VT or flutter with 1:1 conduction exceeds 200 bpm with wide regular QRS complexes.",
+    "imageFile": "q203_fast_strip.jpg"
   },
   {
     "id": 204,
     "part": 6,
     "category": "ALS & Advanced Resuscitation",
-    "q": "(ECG rhythm strip showing rapid tachycardia with hypotension, systolic BP 70 mmHg): The definitive immediate treatment is:",
+    "q": "With reference to the rhythm strip shown in the image:",
     "options": [
       "Amiodarone 300 mg slow IV is the first option",
       "Atropine 0.5 mg IV is appropriate treatment",
@@ -3137,13 +3150,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Synchronised electrical cardioversion is treatment of choice"
     ],
     "answer": 3,
-    "explanation": "Any tachyarrhythmia with adverse features (systolic BP < 90 mmHg / shock) mandates synchronized DC cardioversion."
+    "explanation": "Any tachyarrhythmia with adverse features (systolic BP < 90 mmHg / shock) mandates synchronized DC cardioversion.",
+    "imageFile": "q204_cardiovert_strip.jpg"
   },
   {
     "id": 205,
     "part": 7,
     "category": "Emergency Radiology & Imaging",
-    "q": "A 56-year-old male presents post-RTA. (CT brain shows a biconvex/lens-shaped hyperdense extra-axial collection in the temporoparietal region): Diagnosis:",
+    "q": "56 year old male presented by the following CT findings after road traffic accident. The initial diagnosis is:",
     "options": [
       "Acute cerebrovascular ischemia",
       "Parenchymal contusion",
@@ -3152,25 +3166,27 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Subarachnoid hemorrhage"
     ],
     "answer": 3,
-    "explanation": "Biconvex (lens-shaped) hyperdense extra-axial collection limited by suture lines indicates epidural hematoma."
+    "explanation": "Biconvex (lens-shaped) hyperdense extra-axial collection limited by suture lines indicates epidural hematoma.",
+    "imageFile": "q205_epidural.jpg"
   },
   {
     "id": 206,
     "part": 7,
     "category": "Emergency Radiology & Imaging",
-    "q": "In the same patient with acute extra-dural (epidural) hematoma: Is this hematoma mostly associated with an underlying calvarial fracture?",
+    "q": "In the same previous patient: Is this hematoma mostly associated with underlying calvarial fracture?",
     "options": [
       "Yes",
       "No"
     ],
     "answer": 0,
-    "explanation": "Epidural hematomas are associated with an overlying skull (calvarial) fracture in 85-95% of adult cases."
+    "explanation": "Epidural hematomas are associated with an overlying skull (calvarial) fracture in 85-95% of adult cases.",
+    "imageFile": "q206_epidural.jpg"
   },
   {
     "id": 207,
     "part": 7,
     "category": "Emergency Radiology & Imaging",
-    "q": "In the same patient with acute extra-dural hematoma following temporoparietal trauma, the mostly affected vessel is:",
+    "q": "In the same previous patient. The mostly affected vessel is:",
     "options": [
       "Internal carotid artery",
       "Middle meningeal artery",
@@ -3179,13 +3195,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Bridging subdural veins"
     ],
     "answer": 1,
-    "explanation": "Laceration of the middle meningeal artery (MMA) beneath the pterion is the primary cause of epidural hematoma."
+    "explanation": "Laceration of the middle meningeal artery (MMA) beneath the pterion is the primary cause of epidural hematoma.",
+    "imageFile": "q207_epidural.jpg"
   },
   {
     "id": 208,
     "part": 7,
     "category": "Emergency Radiology & Imaging",
-    "q": "A 62-year-old male presents after acute left hemiplegia. (CT brain shows large hyperdense parenchymal lesion in the right basal ganglia with edema): Diagnosis:",
+    "q": "62 year old male presented by the following CT findings after recent left hemiplegic insult. The most probable diagnosis is:",
     "options": [
       "Acute cerebral ischemic infarct",
       "Cerebral parenchymal hemorrhage (ICH)",
@@ -3194,13 +3211,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Diffuse axonal injury"
     ],
     "answer": 1,
-    "explanation": "Acute intraparenchymal hyperattenuation (bright white) with surrounding vasogenic edema indicates hemorrhage."
+    "explanation": "Acute intraparenchymal hyperattenuation (bright white) with surrounding vasogenic edema indicates hemorrhage.",
+    "imageFile": "q208_ich.jpg"
   },
   {
     "id": 209,
     "part": 7,
     "category": "Emergency Radiology & Imaging",
-    "q": "A 59-year-old female presents after acute left hemiplegia. (CT brain shows wedge-shaped area of hypodensity involving the right MCA territory): Diagnosis:",
+    "q": "59 year old female presented by the following CT findings after recent left hemiplegic insult. The most probable diagnosis is:",
     "options": [
       "Cerebral ischemic infarct",
       "Cerebral hemorrhage",
@@ -3209,13 +3227,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Subarachnoid hemorrhage"
     ],
     "answer": 0,
-    "explanation": "A wedge-shaped area of parenchymal hypodensity conforming to a vascular territory indicates ischemic infarction."
+    "explanation": "A wedge-shaped area of parenchymal hypodensity conforming to a vascular territory indicates ischemic infarction.",
+    "imageFile": "q209_infarct.jpg"
   },
   {
     "id": 210,
     "part": 7,
     "category": "Emergency Radiology & Imaging",
-    "q": "A 22-year-old female presents with sudden severe 'thunderclap' headache. (CT brain shows hyperdense blood filling the basal cisterns and sylvian fissures): Diagnosis:",
+    "q": "22 year old female presented by the following CT findings after severe headache. The most probable diagnosis is:",
     "options": [
       "Cerebral ischemic infarct",
       "Subarachnoid hemorrhage (SAH)",
@@ -3224,13 +3243,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Epidural hematoma"
     ],
     "answer": 1,
-    "explanation": "High-attenuation acute blood within the basal cisterns, sulci, and sylvian fissures is pathognomonic for SAH."
+    "explanation": "High-attenuation acute blood within the basal cisterns, sulci, and sylvian fissures is pathognomonic for SAH.",
+    "imageFile": "q210_sah.jpg"
   },
   {
     "id": 211,
     "part": 7,
     "category": "Emergency Radiology & Imaging",
-    "q": "In the same 22-year-old female diagnosed with non-traumatic subarachnoid hemorrhage (SAH), what is the most appropriate next imaging modality?",
+    "q": "In the same previous patient. The most appropriate next radiological imaging modality is:",
     "options": [
       "MR brain non-contrast",
       "CT angiography (CTA)",
@@ -3239,13 +3259,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Diffusion-weighted sequence"
     ],
     "answer": 1,
-    "explanation": "CT Angiography (CTA) of intracranial vessels is the preferred emergent test to identify a ruptured aneurysm."
+    "explanation": "CT Angiography (CTA) of intracranial vessels is the preferred emergent test to identify a ruptured aneurysm.",
+    "imageFile": "q211_sah.jpg"
   },
   {
     "id": 212,
     "part": 7,
     "category": "Emergency Radiology & Imaging",
-    "q": "A 50-year-old with vomiting and distension. (Erect plain abdominal X-ray shows multiple central air-fluid levels in a step-ladder pattern): Diagnosis:",
+    "q": "Plain X-ray abdomen standing. The initial diagnosis is:",
     "options": [
       "Acute cholecystitis",
       "Acute pancreatitis",
@@ -3254,13 +3275,14 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Acute appendicitis"
     ],
     "answer": 3,
-    "explanation": "Multiple dilated small bowel loops with air-fluid levels arranged in a step-ladder configuration indicate obstruction."
+    "explanation": "Multiple dilated small bowel loops with air-fluid levels arranged in a step-ladder configuration indicate obstruction.",
+    "imageFile": "q212_obstruction.jpg"
   },
   {
     "id": 213,
     "part": 7,
     "category": "Emergency Radiology & Imaging",
-    "q": "A 45-year-old with severe abdominal pain and rigidity. (Erect plain abdominal X-ray shows crescentic radiolucent free gas under the diaphragm): Diagnosis:",
+    "q": "Plain X-ray abdomen standing. The initial diagnosis is:",
     "options": [
       "Acute cholecystitis",
       "Acute pancreatitis",
@@ -3269,19 +3291,21 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
       "Acute appendicitis"
     ],
     "answer": 2,
-    "explanation": "Free air under the diaphragmatic dome (pneumoperitoneum) indicates perforation of an abdominal hollow viscus."
+    "explanation": "Free air under the diaphragmatic dome (pneumoperitoneum) indicates perforation of an abdominal hollow viscus.",
+    "imageFile": "q213_pneumoperitoneum.jpg"
   },
   {
     "id": 214,
     "part": 7,
     "category": "Emergency Radiology & Imaging",
-    "q": "In a patient with suspected perforated peptic ulcer: Does a normal erect plain abdominal/chest X-ray (no free air under diaphragm) exclude perforation?",
+    "q": "Plain X-ray abdomen standing. Does it exclude ruptured peptic ulcer?",
     "options": [
       "Yes",
       "No"
     ],
     "answer": 1,
-    "explanation": "No; free gas is absent on plain radiographs in 20-30% of perforated peptic ulcers; emergent CT is needed."
+    "explanation": "No; free gas is absent on plain radiographs in 20-30% of perforated peptic ulcers; emergent CT is needed.",
+    "imageFile": "q214_peptic_ulcer.jpg"
   },
   {
     "id": 215,
@@ -4489,12 +4513,39 @@ export const EMERGENCY_QUIZ_ITEMS = Object.freeze([
   }
 ]);
 
+const imageCache = new Map();
+
+export function getEmergencyQuizImageBuffer(imageFile) {
+  if (!imageFile) return null;
+  if (imageCache.has(imageFile)) return imageCache.get(imageFile);
+  try {
+    const p = path.join(__dirname, "assets/emergency", imageFile);
+    if (fs.existsSync(p)) {
+      const buf = fs.readFileSync(p);
+      imageCache.set(imageFile, buf);
+      return buf;
+    }
+  } catch {}
+  return null;
+}
+
 export function getEmergencyQuizPart(pid) {
-  return EMERGENCY_QUIZ_ITEMS.filter((item) => item.part === Number(pid));
+  return EMERGENCY_QUIZ_ITEMS.filter((item) => item.part === Number(pid)).map((item) => {
+    if (item.imageFile) {
+      const buf = getEmergencyQuizImageBuffer(item.imageFile);
+      return {
+        ...item,
+        imageBuffer: buf,
+        imageBase64: buf ? buf.toString("base64") : null,
+        imageName: item.imageFile,
+      };
+    }
+    return { ...item };
+  });
 }
 
 export function getEmergencyQuizCategory(catId) {
   const cat = EMERGENCY_QUIZ_CATEGORIES.find((c) => c.id === catId);
   if (!cat) return [];
-  return EMERGENCY_QUIZ_ITEMS.filter((item) => item.part === cat.part);
+  return getEmergencyQuizPart(cat.part);
 }

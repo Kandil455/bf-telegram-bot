@@ -55,11 +55,19 @@ export function createGroups({ store, ui, now = () => Date.now(), logger = conso
   async function askNext(chatId, state) {
     clearPollTimer(chatId);
     const item = state.items[state.index];
+    if (item.imageBuffer && typeof ui.sendPhoto === "function") {
+      await ui.sendPhoto(
+        chatId,
+        item.imageBuffer,
+        item.imageName || `q${state.index + 1}.jpg`,
+        `🖼️ <b>صورة السؤال ${state.index + 1} من ${state.items.length}</b>`
+      ).catch(() => {});
+    }
     const pollId = await ui.sendPoll(chatId, {
-      question: `Q${state.index + 1}/${state.items.length} · ${item.q}`,
-      options: item.options,
+      question: `Q${state.index + 1}/${state.items.length} · ${item.q}`.slice(0, 300),
+      options: item.options.map((o) => o.slice(0, 100)),
       correct: item.answer,
-      explanation: item.explanation || "",
+      explanation: (item.explanation || "").slice(0, 195),
       openPeriod: state.openPeriod || 60,
     });
     if (pollId) store.set(pollKey(pollId), { chatId, index: state.index }, 3 * 3600 * 1000);

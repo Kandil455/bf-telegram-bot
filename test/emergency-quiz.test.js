@@ -15,11 +15,13 @@ function setup(lang = "ar") {
   const calls = [];
   const polls = [];
   const docs = [];
+  const photos = [];
 
   const ui = {
     calls,
     polls,
     docs,
+    photos,
     async send(chatId, html, rows) {
       calls.push({ type: "send", chatId, html, rows });
       return calls.length;
@@ -34,6 +36,10 @@ function setup(lang = "ar") {
     async sendPoll(chatId, poll) {
       polls.push({ chatId, ...poll });
       return `poll-${polls.length}`;
+    },
+    async sendPhoto(chatId, buffer, name, caption = "", rows = null) {
+      photos.push({ chatId, buffer, name, caption, rows });
+      return photos.length;
     },
     async sendDocument(chatId, html, name, caption) {
       docs.push({ chatId, html, name, caption });
@@ -54,7 +60,7 @@ function setup(lang = "ar") {
     groups,
   });
 
-  return { router, ui, store, calls, polls, docs };
+  return { router, ui, store, calls, polls, docs, photos };
 }
 
 test("emergency quiz data: exactly 300 questions across 9 quizzes matching the uploaded files (<= 50 Qs each)", () => {
@@ -188,4 +194,25 @@ test("emergency download: sends HTML file for single quiz and full 300-question 
   assert.equal(docs.length, 2);
   assert.equal(docs[1].name, "emergency-medicine-300-mcqs-complete.html");
   assert.match(docs[1].html, /Emergency Medicine &amp; Resuscitation 300 MCQs Complete Bank/);
+});
+
+test("emergency radiology quiz: sends photos in interactive mode, poll mode and embeds in HTML", async () => {
+  const { router, photos, polls, docs } = setup();
+
+  // Test Quiz 7 interactive mode sends photo of CT scan for Q1
+  await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 1, callbackId: "cb1", data: act("em", "start_i", "7") });
+  assert.ok(photos.length >= 1, "Should send a photo for Q205 (CT epidural hematoma)");
+  assert.equal(photos[0].name, "q205_epidural.jpg");
+  assert.ok(photos[0].buffer && photos[0].buffer.length > 0, "Photo buffer must not be empty");
+  assert.match(photos[0].caption, /56 year old male presented by the following CT findings/i);
+
+  // Test Quiz 7 poll mode sends photo before poll
+  await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 2, callbackId: "cb2", data: act("em", "start_p", "7", "30") });
+  assert.ok(photos.length >= 2, "Poll mode should send case photo before starting the poll");
+  assert.equal(polls.length, 1);
+
+  // Test HTML download includes base64 image
+  await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 3, callbackId: "cb3", data: act("em", "dl", "7") });
+  assert.equal(docs.length, 1);
+  assert.match(docs[0].html, /data:image\/jpeg;base64,/i, "HTML should embed base64 image");
 });

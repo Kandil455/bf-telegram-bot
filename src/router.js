@@ -327,8 +327,12 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const dir = lang === "ar" ? "rtl" : "ltr";
     const cards = items.map((it, idx) => {
       const opts = it.options.map((o, i) => `<li style="padding:4px 8px;margin:3px 0;border-radius:4px;${i === it.answer ? "background:#fde047;color:#000;font-weight:700;" : ""}"><b>${letters[i]})</b> ${esc(o)}${i === it.answer ? " ✓" : ""}</li>`).join("");
+      const imgTag = it.imageBase64
+        ? `<div style="margin:12px 0;text-align:center"><img src="data:image/jpeg;base64,${it.imageBase64}" style="max-width:100%;max-height:380px;border-radius:8px;border:1px solid #cbd5e1;box-shadow:0 2px 6px rgba(0,0,0,0.08)" alt="Case Image"></div>`
+        : "";
       return `<div style="border:1px solid #cbd5e1;border-radius:8px;padding:14px;margin:12px 0;background:#fff;break-inside:avoid">
         <div style="font-weight:800;color:#0f172a;margin-bottom:8px">Q${idx + 1}. ${esc(it.q)}</div>
+        ${imgTag}
         <ul style="list-style:none;padding:0;margin:0">${opts}</ul>
         ${it.explanation ? `<div style="margin-top:8px;font-size:13.5px;color:#334155;background:#f8fafc;padding:6px 10px;border-radius:4px">💡 <b>Explanation:</b> ${esc(it.explanation)}</div>` : ""}
       </div>`;
@@ -552,7 +556,18 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       quiz.index = qIndex + 1;
       const item = quiz.items[quiz.index];
       const html = c.quizQuestion({ index: quiz.index + 1, total: quiz.items.length, q: item.q, options: item.options });
-      const sentMsgId = await ui.send(m.chatId, `${html}\n${HR}\n${progress(quiz.index, quiz.items.length)}`, quizRows(quiz.index, item.options, premium));
+      let sentMsgId;
+      if (item.imageBuffer && typeof ui.sendPhoto === "function") {
+        sentMsgId = await ui.sendPhoto(
+          m.chatId,
+          item.imageBuffer,
+          item.imageName || "case.jpg",
+          `${html}\n${HR}\n${progress(quiz.index, quiz.items.length)}`,
+          quizRows(quiz.index, item.options, premium)
+        );
+      } else {
+        sentMsgId = await ui.send(m.chatId, `${html}\n${HR}\n${progress(quiz.index, quiz.items.length)}`, quizRows(quiz.index, item.options, premium));
+      }
       saveSession(m.chatId, { quiz, quizMsgId: sentMsgId });
       return { ok: true };
     }
@@ -1740,27 +1755,27 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
   /** Emergency Medicine 182 MCQs Complete Quiz Bank (5 Quizzes directly matching the 5 files, max 50 Qs per quiz) */
   function showEmergencyMenu(m, lang) {
     const ar = lang === "ar";
-    const title = ar ? "🚨 <b>بنك كويزات الطوارئ الشامل (Emergency Medicine 182 MCQs)</b>" : "🚨 <b>Complete Emergency Medicine 182 MCQs Bank</b>";
+    const title = ar ? "🚨 <b>بنك كويزات الطوارئ والأشعة الشامل (Emergency Medicine 300 MCQs 🖼️)</b>" : "🚨 <b>Complete ER & Radiology 300 MCQs Bank (with Images 🖼️)</b>";
     const desc = ar
-      ? `${title}\n${HR}\nبنك أسئلة طب وجراحة الطوارئ والإنعاش والعناية المركزة (300 سؤال) مقسم إلى 9 كويزات متكاملة حسب الملفات (كل كويز بحد أقصى 50 سؤال بالإجابات النموذجية والشرح بدون صور):\n\n` +
+      ? `${title}\n${HR}\nبنك أسئلة طب وجراحة الطوارئ والإنعاش والعناية المركزة (300 سؤال) مقسم إلى 9 كويزات متكاملة حسب الملفات (تشمل الصور الأصلية للأشعة المقطعية والعادية ورسم القلب):\n\n` +
         `• <b>🚨 كويز 1:</b> امتحان الطوارئ الشامل (50 سؤال)\n` +
         `• <b>🫀 كويز 2:</b> آلام الصدر واضطراب النبض (45 سؤال)\n` +
         `• <b>💥 كويز 3:</b> الحوادث وإصابات التروما (43 سؤال)\n` +
         `• <b>⚡ كويز 4:</b> أنواع الصدمات والعناية الحرجة (27 سؤال)\n` +
         `• <b>🩸 كويز 5:</b> نزيف وطوارئ الجهاز الهضمي (17 سؤال)\n` +
-        `• <b>🫁 كويز 6:</b> الإنعاش المتقدم وتخطيط القلب ALS (22 سؤال)\n` +
-        `• <b>🩻 كويز 7:</b> أشعة وحالات الطوارئ (10 أسئلة)\n` +
+        `• <b>🫁 كويز 6:</b> الإنعاش المتقدم وتخطيط القلب ALS (22 سؤال بالصور 🖼️)\n` +
+        `• <b>🩻 كويز 7:</b> أشعة وحالات الطوارئ المقطعية والعادية (10 أسئلة بالصور 🖼️)\n` +
         `• <b>🫀 كويز 8:</b> أساسيات وحالات الإنعاش BLS 1 (46 سؤال)\n` +
         `• <b>⚡ كويز 9:</b> تدريبات الإنعاش وجهاز الصدمات BLS 2 (40 سؤال)\n\n` +
         `<i>اختر الكويز المطلوب للبدء فوراً 👇</i>`
-      : `${title}\n${HR}\nComprehensive 300-question Emergency Medicine Question Bank divided into 9 quizzes matching your files (max 50 Qs each, text-only with clinical answers & explanations):\n\n` +
+      : `${title}\n${HR}\nComprehensive 300-question Emergency Medicine & Radiology Bank divided into 9 quizzes matching your files (including original CT scans, X-rays & ECG strips):\n\n` +
         `• <b>🚨 Quiz 1:</b> Core Emergency Exam (50 Qs)\n` +
         `• <b>🫀 Quiz 2:</b> Chest Pain & Dysrhythmias (45 Qs)\n` +
         `• <b>💥 Quiz 3:</b> Trauma & Resuscitation (43 Qs)\n` +
         `• <b>⚡ Quiz 4:</b> Shock & Critical Care (27 Qs)\n` +
         `• <b>🩸 Quiz 5:</b> GI Bleeding (17 Qs)\n` +
-        `• <b>🫁 Quiz 6:</b> ALS & Advanced Resuscitation (22 Qs)\n` +
-        `• <b>🩻 Quiz 7:</b> Emergency Radiology Cases (10 Qs)\n` +
+        `• <b>🫁 Quiz 6:</b> ALS & Advanced Resuscitation (22 Qs with Images 🖼️)\n` +
+        `• <b>🩻 Quiz 7:</b> Emergency Radiology Cases (10 Qs with Images 🖼️)\n` +
         `• <b>🫀 Quiz 8:</b> BLS Core & Scenarios (46 Qs)\n` +
         `• <b>⚡ Quiz 9:</b> BLS Practice MCQs & AED (40 Qs)\n\n` +
         `<i>Select a quiz below to start 👇</i>`;
@@ -1784,18 +1799,18 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       ? `🚨 <b>كويز الطوارئ رقم ${pid}: ${part.nameAr} (${items.length} سؤال)</b>`
       : `🚨 <b>Emergency Quiz ${pid}: ${part.name} (${items.length} Qs)</b>`;
     const desc = ar
-      ? `${title}\n${HR}\nعدد الأسئلة: <b>${items.length} سؤال</b> بالإجابات النموذجية والشرح الكامل (أسئلة نصية بدون صور).\n\n` +
+      ? `${title}\n${HR}\nعدد الأسئلة: <b>${items.length} سؤال</b> بالإجابات النموذجية والشرح الكامل${items.some((x) => x.imageBuffer) ? " مع الصور المرفقة 🖼️" : ""}.\n\n` +
         `اختر طريقة الحل المفضلة:\n` +
-        `• <b>استفتاءات تيليجرام بمؤقت:</b> بمؤقت تيليجرام وسرعة فائقة.\n` +
-        `• <b>كويز تفاعلي بأزرار البوت:</b> حل براحتك بأزرار البوت بدون مؤقت.\n` +
-        `• <b>إرسال كامل الأسئلة للشات:</b> بيبعت الـ ${items.length} استفتاء للشات للمذاكرة الجماعية.\n` +
-        `• <b>تحميل ملف HTML:</b> ملف ويب تفاعلي للمذاكرة بدون نت.`
-      : `${title}\n${HR}\nTotal questions: <b>${items.length} MCQs</b> with clinical explanations (text-only).\n\n` +
+        `• <b>استفتاءات تيليجرام بمؤقت:</b> بمؤقت تيليجرام وسرعة فائقة (مع إرسال الصورة قبل السؤال).\n` +
+        `• <b>كويز تفاعلي بأزرار البوت:</b> حل براحتك بأزرار البوت مع عرض الصورة مباشرة.\n` +
+        `• <b>إرسال كامل الأسئلة للشات:</b> بيبعت الـ ${items.length} استفتاء مع صورها للشات للمذاكرة الجماعية.\n` +
+        `• <b>تحميل ملف HTML:</b> ملف ويب تفاعلي للمذاكرة بدون نت مدمج فيه الصور.`
+      : `${title}\n${HR}\nTotal questions: <b>${items.length} MCQs</b> with clinical explanations${items.some((x) => x.imageBuffer) ? " and original images 🖼️" : ""}.\n\n` +
         `Select your preferred mode:\n` +
-        `• <b>Telegram Polls:</b> Native poll countdown timer.\n` +
-        `• <b>Interactive Buttons:</b> Untimed in-bot questions.\n` +
-        `• <b>Send All Polls:</b> Drops all ${items.length} polls into chat.\n` +
-        `• <b>Download HTML:</b> Standalone offline study file.`;
+        `• <b>Telegram Polls:</b> Native poll countdown timer (with case image).\n` +
+        `• <b>Interactive Buttons:</b> Untimed in-bot questions with photo display.\n` +
+        `• <b>Send All Polls:</b> Drops all ${items.length} polls with photos into chat.\n` +
+        `• <b>Download HTML:</b> Standalone offline study file with embedded images.`;
     return ui.send(m.chatId, desc, emergencyQuizLaunchRows(pid, lang, premium, items.length));
   }
 
@@ -1830,8 +1845,20 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     }
     saveSession(m.chatId, { quiz, awaiting: null, lastQuizTitle: quizTitle, lastShareId: shareId, lastQuizItems: items });
     const c = copy(lang);
-    const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q, options: items[0].options })}`;
-    return ui.send(m.chatId, html, [...quizRows(0, items[0].options, premium), ...appRows(qid, lang)]);
+    const firstItem = items[0];
+    const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: firstItem.q, options: firstItem.options })}`;
+    if (firstItem.imageBuffer && typeof ui.sendPhoto === "function") {
+      const sentMsgId = await ui.sendPhoto(
+        m.chatId,
+        firstItem.imageBuffer,
+        firstItem.imageName || "case.jpg",
+        html,
+        [...quizRows(0, firstItem.options, premium), ...appRows(qid, lang)]
+      );
+      saveSession(m.chatId, { quizMsgId: sentMsgId });
+      return sentMsgId;
+    }
+    return ui.send(m.chatId, html, [...quizRows(0, firstItem.options, premium), ...appRows(qid, lang)]);
   }
 
   async function sendAllEmergencyPolls(m, lang, partId) {
@@ -1844,6 +1871,14 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     let sent = 0;
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
+      if (item.imageBuffer && typeof ui.sendPhoto === "function") {
+        await ui.sendPhoto(
+          m.chatId,
+          item.imageBuffer,
+          item.imageName || `q${item.id}.jpg`,
+          `🖼️ <b>صورة سؤال ${i + 1} (${item.category}):</b>`
+        ).catch(() => {});
+      }
       await ui.sendPoll(m.chatId, {
         question: `Q${item.id}. ${item.q}`.slice(0, 300),
         options: item.options.map((o) => o.slice(0, 100)),
@@ -1879,7 +1914,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const title = "Emergency Medicine & Resuscitation 300 MCQs Complete Bank";
     const fileHtml = renderQuizBankHtml(title, EMERGENCY_QUIZ_ITEMS, lang);
     const fileName = "emergency-medicine-300-mcqs-complete.html";
-    const caption = lang === "ar" ? "📎 بنك أسئلة طب الطوارئ والإنعاش الشامل كاملاً (300 سؤال بالإجابات النموذجية والشرح السريري بدون صور)" : "📎 Complete Emergency Medicine 300 MCQs Bank (Full 300 Qs with clinical answers, text-only)";
+    const caption = lang === "ar" ? "📎 بنك أسئلة طب الطوارئ والإنعاش والأشعة كاملاً (300 سؤال بالإجابات النموذجية والشرح والصور)" : "📎 Complete Emergency Medicine 300 MCQs Bank (Full 300 Qs with clinical answers and images)";
     await ui.sendDocument(m.chatId, fileHtml, fileName, caption);
   }
 
