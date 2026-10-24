@@ -15,6 +15,8 @@ export const PRIVATE_COMMANDS = Object.freeze([
   { name: "plans", en: "Plans and how to pay", ar: "الباقات وطرق الدفع" },
   { name: "new", en: "Clear the current file", ar: "امسح الملف الحالي" },
   { name: "lang", en: "Language: /lang en or /lang ar", ar: "اللغة: /lang ar أو /lang en" },
+  { name: "link", en: "Link your platform account: /link CODE", ar: "اربط حسابك بالمنصة: /link CODE" },
+  { name: "me", en: "Your platform plan and credits", ar: "باقتك ورصيدك على المنصة" },
   { name: "help", en: "How to use the bot", ar: "إزاي تستخدم البوت" },
 ]);
 

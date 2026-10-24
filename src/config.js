@@ -186,7 +186,13 @@ export function loadConfig(env = process.env) {
     imageReview: String(env.IMAGE_REVIEW || "on").toLowerCase() !== "off",
     pdfimagesBin: String(env.PDFIMAGES_BIN || "pdfimages").trim(),
     chromePath: String(env.CHROME_PATH || "").trim() || null,
-    appUrl: String(env.APP_URL || "").trim().replace(/\/$/, ""),
+    // APP_BASE_URL is the name the website uses for the same thing. Accepting both
+    // removes a one-sided env name that silently disabled the Mini App button.
+    appUrl: String(env.APP_URL || env.APP_BASE_URL || "").trim().replace(/\/$/, ""),
+    // Server-to-server bridge with the website: lets the bot resolve which site
+    // account a Telegram chat belongs to (the bot has no Firebase credentials).
+    siteBridgeUrl: String(env.SITE_BRIDGE_URL || env.APP_BASE_URL || env.APP_URL || "").trim().replace(/\/$/, ""),
+    siteBridgeSecret: String(env.SITE_BRIDGE_SECRET || "").trim(),
     requiredChannel: String(env.REQUIRED_CHANNEL || "").trim() || null,
     channelInviteLink: String(env.CHANNEL_INVITE_LINK || "").trim() || null,
     referralBonusFiles: positive("REFERRAL_BONUS_FILES", 1),

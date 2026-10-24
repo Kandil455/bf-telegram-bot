@@ -83,6 +83,28 @@ async function main() {
 
   if (cfg.mode === "polling") {
     server.listen(cfg.port, () => log.info(`http on :${cfg.port} (admin: ${cfg.adminToken ? "on" : "off"})`));
+
+    // Polling REQUIRES deleting the webhook, so a local run silently steals updates
+    // from the website, which handles /link and writes Firestore. Refuse to hijack a
+    // registered production webhook unless the operator opts in explicitly.
+    let existingWebhook = "";
+    try {
+      const info = await bot.api.getWebhookInfo();
+      existingWebhook = String(info?.url || "");
+    } catch (err) {
+      log.warn(`could not read webhook info: ${err?.description || err?.message || err}`);
+    }
+    const takeover = String(process.env.BOT_ALLOW_TAKEOVER || "").toLowerCase() === "1";
+    if (existingWebhook && !takeover) {
+      // Stay up but idle instead of crashing: a crash loop on a host with a health
+      // check would just keep restarting and re-deleting the webhook.
+      log.error(`a webhook is registered (${existingWebhook}) — polling would delete it and steal updates from the site.`);
+      log.error("not polling. Set BOT_ALLOW_TAKEOVER=1 only if this bot should own Telegram updates.");
+      return;
+    }
+    if (existingWebhook && takeover) {
+      log.warn(`taking over updates from ${existingWebhook} (BOT_ALLOW_TAKEOVER=1)`);
+    }
     await bot.api.deleteWebhook({ drop_pending_updates: true });
     log.info(`@${cfg.botUsername} polling`);
     for (let attempt = 1; ; attempt++) {

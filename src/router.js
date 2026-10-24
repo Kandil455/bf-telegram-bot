@@ -60,7 +60,30 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     }, 30 * 24 * 3600 * 1000);
     return shareId;
   }
-  const appRows = (qid, lang) => (qid && cfg.appUrl ? [[button({ label: lang === "ar" ? "افتح الكويز في التطبيق" : "Open quiz in the app", icon: "app", webApp: `${cfg.appUrl}/app?qid=${qid}`, style: "primary", premium })]] : []);
+  // The website serves the Mini App at /tg and resolves ?startapp=quiz_<id> to the
+  // real quiz. The old /app?qid= path exists on neither side and 404'd.
+  // ── Website bridge ──────────────────────────────────────────────────
+  // The bot keeps its own users/quotas, so it cannot see site entitlements. This
+  // calls the site's /api/telegram-bridge (shared secret) to bind or look up the
+  // site account behind a chat. Returns null when unconfigured, so callers can
+  // degrade to a "link from settings" message instead of failing.
+  async function callSiteBridge(action, payload = {}) {
+    if (!cfg.siteBridgeUrl || !cfg.siteBridgeSecret) return null;
+    try {
+      const res = await fetch(`${cfg.siteBridgeUrl}/api/telegram-bridge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-bridge-secret": cfg.siteBridgeSecret },
+        body: JSON.stringify({ action, ...payload }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { ok: false, error: data?.error || `HTTP_${res.status}` };
+      return data;
+    } catch (err) {
+      return { ok: false, error: String(err?.message || err) };
+    }
+  }
+
+  const appRows = (qid, lang) => (qid && cfg.appUrl ? [[button({ label: lang === "ar" ? "افتح الكويز في التطبيق" : "Open quiz in the app", icon: "app", webApp: `${cfg.appUrl}/tg?startapp=quiz_${qid}`, style: "primary", premium })]] : []);
   const EFFECT = { confetti: "5046509860389126442", fire: "5104841245755180586" };
   const MEDIA_KINDS = ["pdf", "docx", "pptx"];
   const busy = new Set();
@@ -2086,6 +2109,81 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       case "/upgrade":
       case "/pay":
         return showPlans(m, lang);
+      case "/link":
+      case "/ربط": {
+        const code = String(arg || "").trim();
+        if (!cfg.siteBridgeSecret) {
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? `⚠️ <b>ربط الحساب غير مُهيّأ على البوت.</b>\n${HR}\nاربط حسابك من إعدادات المنصة: ${cfg.appUrl || ""}/settings`
+              : `⚠️ <b>Account linking is not configured on this bot.</b>\n${HR}\nLink from the platform settings: ${cfg.appUrl || ""}/settings`,
+            menuRows(lang, premium, { isAdmin: admin })
+          );
+        }
+        if (!code) {
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? `🔗 <b>ربط حساب التيليجرام بالمنصة</b>\n${HR}\n١. افتح المنصة ← الإعدادات ← «ربط تيليجرام»\n٢. خد كود الربط (8 حروف) وابعته هنا:\n<code>/link ABC123XY</code>`
+              : `🔗 <b>Link Telegram to the platform</b>\n${HR}\n1. Open the site → Settings → “Link Telegram”\n2. Send the 8-character code here:\n<code>/link ABC123XY</code>`,
+            menuRows(lang, premium, { isAdmin: admin })
+          );
+        }
+        const linkResult = await callSiteBridge("link", {
+          code,
+          chatId: String(m.chatId),
+          username: m.username || "",
+          firstName: m.firstName || "",
+        });
+        if (!linkResult || !linkResult.ok) {
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? `❌ <b>تعذر ربط الحساب</b> (${esc(linkResult?.error || "UNKNOWN")})\n${HR}\nالكود صالح ١٠ دقايق ويُستخدم مرة واحدة. اطلب كود جديد من الإعدادات وحاول تاني.`
+              : `❌ <b>Could not link the account</b> (${esc(linkResult?.error || "UNKNOWN")})\n${HR}\nThe code is valid for 10 minutes and works once. Get a fresh code from Settings and retry.`,
+            menuRows(lang, premium, { isAdmin: admin })
+          );
+        }
+        const linkedProfile = linkResult.profile || {};
+        return ui.send(
+          m.chatId,
+          lang === "ar"
+            ? `✅ <b>تم ربط الحساب بنجاح</b>\n${HR}\n👤 ${esc(linkedProfile.name || "")}\n💎 الباقة: <b>${esc(linkedProfile.premium ? "Pro" : "Free")}</b>\n🪙 الرصيد: <b>${Number(linkedProfile.credits) || 0}</b>`
+            : `✅ <b>Account linked</b>\n${HR}\n👤 ${esc(linkedProfile.name || "")}\n💎 Plan: <b>${esc(linkedProfile.premium ? "Pro" : "Free")}</b>\n🪙 Credits: <b>${Number(linkedProfile.credits) || 0}</b>`,
+          menuRows(lang, premium, { isAdmin: admin })
+        );
+      }
+      case "/me":
+      case "/حسابي": {
+        const meResult = await callSiteBridge("me", { chatId: String(m.chatId) });
+        if (!meResult) {
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? `⚠️ <b>مفيش اتصال بالمنصة.</b>\n${HR}\nاربط حسابك من: ${cfg.appUrl || ""}/settings`
+              : `⚠️ <b>No link to the platform.</b>\n${HR}\nLink from: ${cfg.appUrl || ""}/settings`,
+            menuRows(lang, premium, { isAdmin: admin })
+          );
+        }
+        if (!meResult.linked) {
+          return ui.send(
+            m.chatId,
+            lang === "ar"
+              ? `🔗 <b>حسابك مش مربوط بالمنصة.</b>\n${HR}\nمن الإعدادات ← «ربط تيليجرام» خد الكود وابعته: <code>/link CODE</code>`
+              : `🔗 <b>No platform account linked.</b>\n${HR}\nSettings → “Link Telegram”, then send: <code>/link CODE</code>`,
+            menuRows(lang, premium, { isAdmin: admin })
+          );
+        }
+        const myProfile = meResult.profile || {};
+        return ui.send(
+          m.chatId,
+          lang === "ar"
+            ? `👤 <b>${esc(myProfile.name || "")}</b>\n${HR}\n💎 الباقة: <b>${esc(myProfile.premium ? "Pro" : "Free")}</b>\n🪙 الرصيد: <b>${Number(myProfile.credits) || 0}</b>\n🔥 الأيام المتتالية: <b>${Number(myProfile.streak) || 0}</b>`
+            : `👤 <b>${esc(myProfile.name || "")}</b>\n${HR}\n💎 Plan: <b>${esc(myProfile.premium ? "Pro" : "Free")}</b>\n🪙 Credits: <b>${Number(myProfile.credits) || 0}</b>\n🔥 Streak: <b>${Number(myProfile.streak) || 0}</b>`,
+          menuRows(lang, premium, { isAdmin: admin })
+        );
+      }
       case "/txid":
         return onTxId(m, lang, arg || "");
       case "/review":
