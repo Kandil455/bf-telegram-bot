@@ -104,21 +104,18 @@ test("ortho poll mode: launches telegram poll quiz with openPeriod timer", async
   assert.match(confirmMsg.html, /تم إطلاق كويز العظام 1/);
 });
 
-test("ortho interactive mode: starts in-bot quiz with clean letter buttons", async () => {
-  const { router, calls, store } = setup();
+test("ortho interactive mode: starts as a native poll carrying every option", async () => {
+  const { router, polls, store } = setup();
   await router.onCallback({ chatId: 123, userId: 123, firstName: "Student", messageId: 1, callbackId: "cb1", data: act("ortho", "start_i", "2") });
 
-  const startMsg = calls[calls.length - 1];
-  assert.match(startMsg.html, /سؤال 1 من 50/);
   const sess = store.get("s:123");
   assert.ok(sess.quiz);
   assert.equal(sess.quiz.items.length, 50);
 
-  // Buttons are letters [A], [B], [C], [D], [E]
-  const labels = startMsg.rows.flat().map((b) => b.text);
-  assert.ok(labels.includes("A"));
-  assert.ok(labels.includes("B"));
-  assert.ok(labels.includes("C"));
+  const sent = polls[polls.length - 1];
+  assert.match(sent.question, /سؤال 1 من 50/);
+  assert.equal(sent.options.length, sess.quiz.items[0].options.length);
+  assert.equal(sent.correct, sess.quiz.items[0].answer);
 });
 
 test("ortho download: single part and all parts HTML export", async () => {

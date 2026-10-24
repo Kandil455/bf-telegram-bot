@@ -110,27 +110,29 @@ test("burns quiz: admin in group can trigger /burns with custom timer", async ()
   assert.equal(polls[0].openPeriod, 30);
 });
 
-test("interactive quiz: options are rendered in full in text and mistakes can be retried", async () => {
-  const { router, calls, store } = setup();
+test("interactive quiz: every question goes out as a native poll with all options, and mistakes are retryable", async () => {
+  const { router, calls, polls, store } = setup();
   store.set(`s:${ADMIN}`, { lang: "ar" });
 
   // Start burns interactive
   await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 1, callbackId: "cb1", data: act("admin", "burn_i") });
-  const startMsg = calls[calls.length - 1];
-  // Verify full options are in the HTML text
-  assert.match(startMsg.html, /<b>A\)<\/b>/);
-  assert.match(startMsg.html, /<b>B\)<\/b>/);
-  assert.match(startMsg.html, /سؤال 1 من 30/);
 
-  // Pick a wrong answer for Q0
-  const sess = store.get(`s:${ADMIN}`);
-  const wrongChoice = (sess.quiz.items[0].answer + 1) % 4;
-  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 2, callbackId: "cb2", data: act("qa", "0", String(wrongChoice)) });
+  const q0 = BURNS_QUIZ_ITEMS[0];
+  assert.equal(polls.length, 1, "the first question is a native poll, not inline buttons");
+  assert.match(polls[0].question, /سؤال 1 من 30/);
+  assert.equal(polls[0].options.length, q0.options.length, "every option is included in the poll");
+  assert.equal(polls[0].correct, q0.answer, "the poll knows the correct option");
 
-  // Check wrongItems tracked
+  // Answer wrong through poll_answer — the poll id maps back to the question
+  const wrongChoice = (q0.answer + 1) % q0.options.length;
+  await router.onPollAnswer({ pollId: "poll-1", userId: ADMIN, name: "Admin", optionIds: [wrongChoice] });
+
   const sessAfter = store.get(`s:${ADMIN}`);
   assert.equal(sessAfter.quiz.wrongItems.length, 1);
-  assert.equal(sessAfter.quiz.wrongItems[0].q, sess.quiz.items[0].q);
+  assert.equal(sessAfter.quiz.wrongItems[0].q, q0.q);
+  assert.equal(sessAfter.quiz.index, 1, "answering the poll advances the quiz");
+  assert.equal(polls.length, 2, "the next question is posed immediately");
+  assert.match(polls[1].question, /سؤال 2 من 30/);
 
   // Fast-forward to the last question to simulate quiz completion
   sessAfter.quiz.index = 29;
@@ -153,29 +155,20 @@ test("interactive quiz: options are rendered in full in text and mistakes can be
   const retrySess = store.get(`s:${ADMIN}`);
   assert.ok(retrySess.quiz);
   assert.equal(retrySess.quiz.items.length, 1);
-  assert.equal(retrySess.quiz.items[0].q, sess.quiz.items[0].q);
+  assert.equal(retrySess.quiz.items[0].q, q0.q);
 });
 
-test("interactive quiz: option buttons are clean letter keys and timer choices update session", async () => {
-  const { router, calls, store } = setup();
+test("interactive quiz: a timer bounds each poll and timer choices update the session", async () => {
+  const { router, polls, store } = setup();
   store.set(`s:${ADMIN}`, { lang: "ar" });
 
-  // Start burns interactive
-  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 1, callbackId: "cb1", data: act("admin", "burn_i") });
-  const startMsg = calls[calls.length - 1];
-  // Buttons should be concise letter labels [A], [B], [C], [D]
-  const labels = startMsg.rows.flat().map((b) => b.text);
-  assert.ok(labels.includes("A"));
-  assert.ok(labels.includes("B"));
-  assert.ok(labels.includes("C"));
-  assert.ok(labels.includes("D"));
+  // Timer on, then start: the poll carries open_period so Telegram counts down.
+  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 1, callbackId: "cb1", data: act("qtimer", "45", "text") });
+  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 2, callbackId: "cb2", data: act("admin", "burn_i") });
+  assert.equal(polls.length, 1);
+  assert.equal(polls[0].openPeriod, 45, "a timed quiz uses the Telegram poll timer");
 
   // Check timer setting via qtimer
-  await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 2, callbackId: "cb2", data: act("qtimer", "45", "text") });
-  const afterTimerSess = store.get(`s:${ADMIN}`);
-  assert.equal(afterTimerSess.quizTimer, 45);
-
-  // Turn off timer
   await router.onCallback({ chatId: ADMIN, userId: ADMIN, firstName: "Admin", messageId: 3, callbackId: "cb3", data: act("qtimer", "0", "text") });
   const afterOffSess = store.get(`s:${ADMIN}`);
   assert.equal(afterOffSess.quizTimer, 0);

@@ -9,8 +9,14 @@ import { act } from "../src/core/actions.js";
 function fakeUi() {
   let next = 100;
   const calls = [];
+  const polls = [];
   return {
     calls,
+    polls,
+    async sendPoll(chatId, poll) {
+      polls.push({ chatId, ...poll });
+      return `poll-${polls.length}`;
+    },
     async send(chatId, html, rows = null) {
       const id = next++;
       calls.push({ type: "send", chatId, html, rows, id });
@@ -109,7 +115,11 @@ test("quiz sharing: user can share quiz link, and recipient consumes 1 file slot
   await router.onMessage(msg(2, 2, `/start quiz_${shareId}`));
   const user2StartMsg = ui.calls[ui.calls.length - 1];
   assert.match(user2StartMsg.html, /Shared Quiz Opened|تم فتح كويز مشترك بنجاح/);
-  assert.match(user2StartMsg.html, /1.*(?:of|من أصل).*2/);
+  // The question itself arrives as a native poll that carries every option.
+  const firstPoll = ui.polls[ui.polls.length - 1];
+  assert.match(firstPoll.question, /(?:سؤال 1 من 2|Question 1 of 2)/);
+  assert.equal(firstPoll.options.length, 4);
+  assert.equal(typeof firstPoll.correct, "number");
 
   // Verify User 2 had 1 file slot deducted
   assert.equal(entitle.fileStatus(2).used, 1);

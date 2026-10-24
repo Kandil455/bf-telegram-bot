@@ -169,7 +169,7 @@ test("emergency poll mode: launches telegram poll quiz with openPeriod timer", a
 });
 
 test("emergency interactive mode: initiates interactive session with all questions from that file", async () => {
-  const { router, calls, store } = setup();
+  const { router, polls, store } = setup();
   await router.onCallback({ chatId: 123, userId: 123, firstName: "Doctor", messageId: 1, callbackId: "cb1", data: act("em", "start_i", "1") });
 
   const sess = store.get("s:123");
@@ -177,10 +177,13 @@ test("emergency interactive mode: initiates interactive session with all questio
   assert.equal(sess.quiz.items.length, 50, "Quiz 1 should load all 50 questions");
   assert.equal(sess.quiz.index, 0);
 
-  const last = calls[calls.length - 1];
-  assert.match(last.html, /The recommended maternal position/i);
-  const qaButtons = last.rows.flat().filter((b) => b.callback_data && b.callback_data.startsWith("a:qa:"));
-  assert.equal(qaButtons.length, 4); // 4 option buttons A, B, C, D
+  // Questions are delivered as native polls: the question text and every option
+  // travel inside the poll, so nothing can be hidden behind inline buttons.
+  const sent = polls[polls.length - 1];
+  assert.match(sent.question, /The recommended maternal position/i);
+  assert.match(sent.question, /سؤال 1 من 50|Question 1 of 50/);
+  assert.equal(sent.options.length, 4);
+  assert.equal(typeof sent.correct, "number");
 });
 
 test("emergency download: sends HTML file for single quiz and full 334-question bank", async () => {

@@ -566,39 +566,107 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     return { ok: true };
   }
 
-  async function nextQuestion(m, qIndex) {
-    clearActiveTimer(m.chatId);
-    const s = session(m.chatId);
-    const quiz = s.quiz;
-    const lang = pickLang(s, "");
-    const c = copy(lang);
-    if (!quiz || quiz.index !== qIndex || quiz.answered !== qIndex) return { stale: true };
+  // ───────────── question delivery ─────────────
+  // Quizzes go out as NATIVE Telegram quiz polls: every option is always visible,
+  // Telegram enforces a single answer, and it reveals the correct option with the
+  // explanation the moment the student answers. The old text + inline-button
+  // question is kept only as a fallback (image questions, >10 options, poll API
+  // failure), because inline buttons were hiding options and made the numbering
+  // drift (header said 16 while the progress bar said 15).
+  const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
-    ui.clearKeyboard(m.chatId, m.messageId).catch(() => {});
-    if (qIndex + 1 < quiz.items.length) {
-      quiz.index = qIndex + 1;
-      const item = quiz.items[quiz.index];
-      const html = c.quizQuestion({ index: quiz.index + 1, total: quiz.items.length, q: item.q, options: item.options });
-      let sentMsgId;
-      if (item.imageBuffer && typeof ui.sendPhoto === "function") {
-        sentMsgId = await ui.sendPhoto(
-          m.chatId,
-          item.imageBuffer,
-          item.imageName || "case.jpg",
-          `${html}\n${HR}\n${progress(quiz.index, quiz.items.length)}`,
-          quizRows(quiz.index, item.options, premium)
-        );
-      } else {
-        sentMsgId = await ui.send(m.chatId, `${html}\n${HR}\n${progress(quiz.index, quiz.items.length)}`, quizRows(quiz.index, item.options, premium));
+  function pollQuestionHead(lang, index, total) {
+    return lang === "ar" ? `سؤال ${index} من ${total}` : `Question ${index} of ${total}`;
+  }
+
+  function pollQuestionText(lang, index, total, q) {
+    const head = pollQuestionHead(lang, index, total);
+    const body = String(q || "").replace(/\s+/g, " ").trim();
+    const room = Math.max(20, 300 - head.length - 3); // Telegram caps the question at 300
+    return `${head} — ${body.length > room ? `${body.slice(0, room - 1)}…` : body}`;
+  }
+
+  function gradeOne(quiz, qIndex, choice) {
+    const item = quiz.items[qIndex];
+    const correct = choice === item.answer;
+    quiz.score += correct ? 1 : 0;
+    quiz.streak = correct ? (quiz.streak || 0) + 1 : 0;
+    quiz.answered = qIndex;
+    if (!correct) {
+      quiz.wrongItems = quiz.wrongItems || [];
+      if (!quiz.wrongItems.some((w) => w.q === item.q)) quiz.wrongItems.push(item);
+    }
+    return { correct, item };
+  }
+
+  async function poseQuestion(m, lang, quiz, qIndex, { intro = "", introRows = null } = {}) {
+    clearActiveTimer(m.chatId);
+    const c = copy(lang);
+    const item = quiz?.items?.[qIndex];
+    if (!item) return { ok: false };
+    const total = quiz.items.length;
+    quiz.index = qIndex;
+    saveSession(m.chatId, { quiz });
+
+    if (intro) await ui.send(m.chatId, intro, introRows || undefined).catch(() => {});
+
+    const pollable = !quiz.noPolls
+      && typeof ui.sendPoll === "function"
+      && Array.isArray(item.options)
+      && item.options.length >= 2
+      && item.options.length <= 10
+      && !item.imageBuffer;
+
+    if (pollable) {
+      try {
+        const pollId = await ui.sendPoll(m.chatId, {
+          question: pollQuestionText(lang, qIndex + 1, total, item.q),
+          options: item.options,
+          correct: item.answer,
+          explanation: item.explanation || "",
+          // Only bound the poll when the student asked for a timer.
+          openPeriod: Number(quiz.timerSec) > 0 ? quiz.timerSec : 0,
+        });
+        if (pollId) {
+          store.set(`quizpoll:${pollId}`, { chatId: String(m.chatId), qIndex }, 6 * 3600 * 1000);
+          quiz.mode = "poll";
+          saveSession(m.chatId, { quiz, quizMsgId: null });
+          if (Number(quiz.timerSec) > 0) armQuestionTimer(m.chatId, qIndex, quiz.timerSec);
+          return { ok: true, mode: "poll" };
+        }
+      } catch (err) {
+        logger.warn?.("[bot] poll send failed, falling back to buttons:", err?.message || err);
       }
-      saveSession(m.chatId, { quiz, quizMsgId: sentMsgId });
-      return { ok: true };
     }
 
+    quiz.noPolls = true;
+    const html = c.quizQuestion({ index: qIndex + 1, total, q: item.q, options: item.options });
+    let sentMsgId;
+    if (item.imageBuffer && typeof ui.sendPhoto === "function") {
+      sentMsgId = await ui.sendPhoto(
+        m.chatId,
+        item.imageBuffer,
+        item.imageName || "case.jpg",
+        `${html}\n${HR}\n${progress(qIndex + 1, total)}`,
+        quizRows(qIndex, item.options, premium)
+      );
+    } else {
+      sentMsgId = await ui.send(m.chatId, `${html}\n${HR}\n${progress(qIndex + 1, total)}`, quizRows(qIndex, item.options, premium));
+    }
+    quiz.mode = "buttons";
+    saveSession(m.chatId, { quiz, quizMsgId: sentMsgId });
+    if (Number(quiz.timerSec) > 0) armQuestionTimer(m.chatId, qIndex, quiz.timerSec);
+    return { ok: true, mode: "buttons" };
+  }
+
+  /** Ends the quiz: stores the wrong-item retry list and posts the score card. */
+  async function finishQuiz(chatId, quiz, lang, userId) {
+    const s = session(chatId);
+    const c = copy(lang);
     const wrongItems = quiz.wrongItems || [];
     const remaining = Number(s.remainingQuizTotal || 0);
-    const shareId = quiz.shareId || s.lastShareId || registerSharedQuiz(quiz.items, quiz.title, lang, m.userId);
-    saveSession(m.chatId, {
+    const shareId = quiz.shareId || s.lastShareId || registerSharedQuiz(quiz.items, quiz.title, lang, userId);
+    saveSession(chatId, {
       quiz: null,
       quizMsgId: null,
       retryQuizItems: wrongItems.length ? wrongItems : null,
@@ -608,12 +676,57 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     });
     stat("quizzes");
     await ui.sendWithEffect(
-      m.chatId,
+      chatId,
       c.quizDone(quiz.score, quiz.items.length),
       finishRows(lang, premium, wrongItems.length, remaining, shareId),
       quiz.score === quiz.items.length ? EFFECT.confetti : EFFECT.fire
     );
     return { ok: true };
+  }
+
+  /** Moves to the next question (or finishes) after the current one is graded. */
+  async function advanceQuiz(chatId, quiz, lang, userId, qIndex) {
+    if (qIndex + 1 < quiz.items.length) return poseQuestion({ chatId }, lang, quiz, qIndex + 1);
+    return finishQuiz(chatId, quiz, lang, userId);
+  }
+
+  /** Grades a native poll answer and continues the quiz. */
+  async function onQuizPollAnswer(answer) {
+    const pollId = answer?.pollId;
+    const ref = pollId ? store.get(`quizpoll:${pollId}`) : null;
+    if (!ref) return { ignored: true };
+    const chatId = ref.chatId;
+    const s = session(chatId);
+    const quiz = s.quiz;
+    if (!quiz || quiz.answered === ref.qIndex) return { ignored: true };
+    if (quiz.index !== ref.qIndex) return { ignored: true };
+
+    const lang = pickLang(s, "");
+    const c = copy(lang);
+    const chosen = Array.isArray(answer.optionIds) && answer.optionIds.length ? answer.optionIds[0] : -1;
+    const { correct, item } = gradeOne(quiz, ref.qIndex, chosen);
+    saveSession(chatId, { quiz });
+
+    const verdict = correct
+      ? c.right(item.explanation)
+      : (lang === "ar"
+          ? `❌ <b>إجابة غير صحيحة.</b>\n• الصحيح: <b>(${LETTERS[item.answer] || ""})</b> <b>${esc(item.options[item.answer])}</b>${item.explanation ? `\n\n💡 <i>${esc(item.explanation)}</i>` : ""}`
+          : `❌ <b>Not quite.</b>\n• Correct: <b>(${LETTERS[item.answer] || ""})</b> <b>${esc(item.options[item.answer])}</b>${item.explanation ? `\n\n💡 <i>${esc(item.explanation)}</i>` : ""}`);
+    await ui.send(chatId, verdict).catch(() => {});
+
+    if (correct && quiz.streak >= 3 && quiz.streak % 3 === 0) {
+      await ui.sendWithEffect(chatId, c.streak(quiz.streak), null, EFFECT.fire).catch(() => {});
+    }
+    return advanceQuiz(chatId, quiz, lang, answer.userId, ref.qIndex);
+  }
+
+  async function nextQuestion(m, qIndex) {
+    const s = session(m.chatId);
+    const quiz = s.quiz;
+    const lang = pickLang(s, "");
+    if (!quiz || quiz.index !== qIndex || quiz.answered !== qIndex) return { stale: true };
+    ui.clearKeyboard(m.chatId, m.messageId).catch(() => {});
+    return advanceQuiz(m.chatId, quiz, lang, m.userId, qIndex);
   }
 
   // ───────────── grounded Q&A and general chat (free) ─────────────
@@ -1089,7 +1202,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
       await ui.edit(
         m.chatId,
         msgId,
-        `${c.quizIntro(made.items.length)}\n\n${c.quizQuestion({ index: 1, total: made.items.length, q: made.items[0].q, options: made.items[0].options })}`,
+        `${c.quizIntro(made.items.length)}\n\n${c.quizQuestion({ index: 1, total: made.items.length, q: made.items[0].q, options: made.items[0].options })}\n${HR}\n${progress(1, made.items.length)}`,
         [...quizRows(0, made.items[0].options, premium), ...appRows(null, lang)]
       );
     } catch (err) {
@@ -1617,7 +1730,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     if (!quota.isAdmin(m.userId)) return ui.send(m.chatId, copy(lang).menu, menuRows(lang, premium));
     const items = BURNS_QUIZ_ITEMS.map((item) => ({ ...item }));
     const shareId = registerSharedQuiz(items, BURNS_QUIZ_TITLE, lang, m.userId);
-    const quiz = { items, index: 0, score: 0, answered: -1, title: BURNS_QUIZ_TITLE, wrongItems: [], shareId };
+    const quiz = { items, index: 0, score: 0, answered: -1, title: BURNS_QUIZ_TITLE, wrongItems: [], shareId, timerSec: Number(session(m.chatId).quizTimer || 0) };
     const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
     if (qid) {
       store.set(`appquiz:${qid}`, { userId: m.userId, items, title: BURNS_QUIZ_TITLE, lang, at: now() }, 30 * 24 * 3600 * 1000);
@@ -1625,8 +1738,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     }
     saveSession(m.chatId, { quiz, awaiting: null, lastQuizTitle: BURNS_QUIZ_TITLE, lastShareId: shareId, lastQuizItems: items });
     const c = copy(lang);
-    const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q, options: items[0].options })}`;
-    return ui.send(m.chatId, html, [...quizRows(0, items[0].options, premium), ...appRows(qid, lang)]);
+    return poseQuestion(m, lang, quiz, 0, { intro: c.quizIntro(items.length), introRows: appRows(qid, lang) });
   }
 
   async function sendAllBurnsPolls(m, lang) {
@@ -1723,7 +1835,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const items = getOrthoQuizPart(pid).map((item) => ({ ...item }));
     const quizTitle = `Ortho Quiz ${pid} (${part.range})`;
     const shareId = registerSharedQuiz(items, quizTitle, lang, m.userId);
-    const quiz = { items, index: 0, score: 0, answered: -1, title: quizTitle, wrongItems: [], shareId };
+    const quiz = { items, index: 0, score: 0, answered: -1, title: quizTitle, wrongItems: [], shareId, timerSec: Number(session(m.chatId).quizTimer || 0) };
     const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
     if (qid) {
       store.set(`appquiz:${qid}`, { userId: m.userId, items, title: quizTitle, lang, at: now() }, 30 * 24 * 3600 * 1000);
@@ -1731,8 +1843,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     }
     saveSession(m.chatId, { quiz, awaiting: null, lastQuizTitle: quizTitle, lastShareId: shareId, lastQuizItems: items });
     const c = copy(lang);
-    const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: items[0].q, options: items[0].options })}`;
-    return ui.send(m.chatId, html, [...quizRows(0, items[0].options, premium), ...appRows(qid, lang)]);
+    return poseQuestion(m, lang, quiz, 0, { intro: c.quizIntro(items.length), introRows: appRows(qid, lang) });
   }
 
   async function sendAllOrthoPolls(m, lang, partId) {
@@ -1860,7 +1971,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     const items = getEmergencyQuizPart(pid).map((item) => ({ ...item }));
     const quizTitle = `ER Quiz ${pid}: ${part.name} (${items.length} Qs)`;
     const shareId = registerSharedQuiz(items, quizTitle, lang, m.userId);
-    const quiz = { items, index: 0, score: 0, answered: -1, title: quizTitle, wrongItems: [], shareId };
+    const quiz = { items, index: 0, score: 0, answered: -1, title: quizTitle, wrongItems: [], shareId, timerSec: Number(session(m.chatId).quizTimer || 0) };
     const qid = cfg.appUrl ? randomBytes(8).toString("hex") : null;
     if (qid) {
       store.set(`appquiz:${qid}`, { userId: m.userId, items, title: quizTitle, lang, at: now() }, 30 * 24 * 3600 * 1000);
@@ -1868,20 +1979,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     }
     saveSession(m.chatId, { quiz, awaiting: null, lastQuizTitle: quizTitle, lastShareId: shareId, lastQuizItems: items });
     const c = copy(lang);
-    const firstItem = items[0];
-    const html = `${c.quizIntro(items.length)}\n\n${c.quizQuestion({ index: 1, total: items.length, q: firstItem.q, options: firstItem.options })}`;
-    if (firstItem.imageBuffer && typeof ui.sendPhoto === "function") {
-      const sentMsgId = await ui.sendPhoto(
-        m.chatId,
-        firstItem.imageBuffer,
-        firstItem.imageName || "case.jpg",
-        html,
-        [...quizRows(0, firstItem.options, premium), ...appRows(qid, lang)]
-      );
-      saveSession(m.chatId, { quizMsgId: sentMsgId });
-      return sentMsgId;
-    }
-    return ui.send(m.chatId, html, [...quizRows(0, firstItem.options, premium), ...appRows(qid, lang)]);
+    return poseQuestion(m, lang, quiz, 0, { intro: c.quizIntro(items.length), introRows: appRows(qid, lang) });
   }
 
   async function sendAllEmergencyPolls(m, lang, partId) {
@@ -1993,7 +2091,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
             answered: -1,
             title: shared.title || "Shared Quiz",
             wrongItems: [],
-            timerSec: 0,
+            timerSec: Number(session(m.chatId).quizTimer || 0),
             shareId,
           };
           saveSession(m.chatId, {
@@ -2016,12 +2114,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
             ? `🎯 <b>تم فتح كويز مشترك بنجاح!</b>\n${HR}\n📌 <b>العنوان:</b> ${esc(quiz.title)}\n❓ <b>عدد الأسئلة:</b> <b>${quiz.items.length}</b> سؤال\n${quotaNotice}\n\n${c.quizQuestion({ index: 1, total: quiz.items.length, q: quiz.items[0].q, options: quiz.items[0].options })}`
             : `🎯 <b>Shared Quiz Opened!</b>\n${HR}\n📌 <b>Title:</b> ${esc(quiz.title)}\n❓ <b>Questions:</b> <b>${quiz.items.length}</b> Qs\n${quotaNotice}\n\n${c.quizQuestion({ index: 1, total: quiz.items.length, q: quiz.items[0].q, options: quiz.items[0].options })}`;
 
-          const sentMsgId = await ui.send(
-            m.chatId,
-            `${quizIntroHtml}\n${HR}\n${progress(0, quiz.items.length)}`,
-            [...quizRows(0, quiz.items[0].options, premium), ...appRows(shareId, lang)]
-          );
-          saveSession(m.chatId, { quizMsgId: sentMsgId });
+          await poseQuestion(m, lang, quiz, 0, { intro: quizIntroHtml, introRows: appRows(shareId, lang) });
           return { ok: true };
         }
 
@@ -2398,8 +2491,7 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         const intro = lang === "ar"
           ? `🔄 <b>جولة تصحيح الأخطاء (${retryItems.length} سؤال)</b>\n${HR}\nركز وصحح الأسئلة اللي غلطت فيها 👇`
           : `🔄 <b>Mistakes Retry Round (${retryItems.length} questions)</b>\n${HR}\nFocus and correct the questions you missed 👇`;
-        const html = `${intro}\n\n${c.quizQuestion({ index: 1, total: retryItems.length, q: item0.q, options: item0.options })}`;
-        return ui.send(m.chatId, html, [...quizRows(0, item0.options, premium), ...appRows(null, lang)]);
+        return poseQuestion(m, lang, quiz, 0, { intro, introRows: appRows(null, lang) });
       }
       case "qshare": {
         await ui.ack(m.callbackId);
@@ -2690,7 +2782,12 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
     },
     /** Poll answers from group quizzes: { pollId, userId, name, optionIds }. */
     async onPollAnswer(a) {
-      return groups ? groups.onAnswer(a) : { ignored: true };
+      // Group quizzes first (they own their own poll ids), then private 1:1 quizzes.
+      if (groups) {
+        const groupResult = await groups.onAnswer(a);
+        if (groupResult && !groupResult.ignored) return groupResult;
+      }
+      return onQuizPollAnswer(a);
     },
     /** Stars pre-checkout: true only for a known paid plan. */
     onPreCheckout(query) {
