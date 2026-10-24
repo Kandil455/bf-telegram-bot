@@ -1,5 +1,6 @@
 // Reads and validates the environment once, at startup. Fails fast with a clear message.
 
+import crypto from "node:crypto";
 import { parsePremiumMap } from "./core/icons.js";
 
 function compile(src) {
@@ -191,8 +192,13 @@ export function loadConfig(env = process.env) {
     appUrl: String(env.APP_URL || env.APP_BASE_URL || "").trim().replace(/\/$/, ""),
     // Server-to-server bridge with the website: lets the bot resolve which site
     // account a Telegram chat belongs to (the bot has no Firebase credentials).
-    siteBridgeUrl: String(env.SITE_BRIDGE_URL || env.APP_BASE_URL || env.APP_URL || "").trim().replace(/\/$/, ""),
-    siteBridgeSecret: String(env.SITE_BRIDGE_SECRET || "").trim(),
+    // Defaults to the production site so a hosted bot needs no new configuration;
+    // SITE_BRIDGE_URL still wins when pointing at a staging host.
+    siteBridgeUrl: String(env.SITE_BRIDGE_URL || env.APP_BASE_URL || env.APP_URL || "https://blackfighters.site").trim().replace(/\/$/, ""),
+    // The site accepts the explicit SITE_BRIDGE_SECRET, or a value derived from the
+    // bot token both sides already hold — so linking works out of the box.
+    siteBridgeSecret: String(env.SITE_BRIDGE_SECRET || "").trim()
+      || (env.TELEGRAM_BOT_TOKEN ? crypto.createHmac("sha256", String(env.TELEGRAM_BOT_TOKEN).trim()).update("bf-bridge-v1").digest("hex") : ""),
     requiredChannel: String(env.REQUIRED_CHANNEL || "").trim() || null,
     channelInviteLink: String(env.CHANNEL_INVITE_LINK || "").trim() || null,
     referralBonusFiles: positive("REFERRAL_BONUS_FILES", 1),
