@@ -1953,7 +1953,17 @@ export function createRouter({ cfg, ui, store, ai, quota, files, getFilePath, pl
         const quizMatch = String(m.text || "").match(/^\/start\s+(?:quiz_|qz_)([a-zA-Z0-9_-]+)/i);
         if (quizMatch) {
           const shareId = quizMatch[1];
-          const shared = store.get(`shared_quiz:${shareId}`) || store.get(`appquiz:${shareId}`);
+          let shared = store.get(`shared_quiz:${shareId}`) || store.get(`appquiz:${shareId}`);
+          // Quizzes exported from the website live in Firestore, not in this bot's
+          // local store, so a website "open in bot" link used to answer "quiz not
+          // found". Fall back to the site bridge, which reads the same document.
+          if ((!shared || !Array.isArray(shared.items) || !shared.items.length) && cfg.siteBridgeUrl) {
+            const fetched = await callSiteBridge("quiz", { quizId: shareId });
+            if (fetched?.ok && Array.isArray(fetched.questions) && fetched.questions.length) {
+              const items = normaliseQuiz({ questions: fetched.questions }, 50);
+              if (items.length) shared = { items, title: fetched.title || "Quiz", lang };
+            }
+          }
           if (!shared || !shared.items || !shared.items.length) {
             return ui.send(
               m.chatId,
