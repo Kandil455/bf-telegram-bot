@@ -27,6 +27,17 @@ const log = {
 
 const UPDATES = ["message", "callback_query", "pre_checkout_query", "poll_answer"];
 
+// A single stray async error used to kill the process. On a host with a health
+// check that meant a restart loop, and every restart calls deleteWebhook — which
+// is what kept wiping the webhook and taking the bot offline. Log and keep
+// serving instead; a genuinely broken configuration still exits below.
+process.on("unhandledRejection", (reason) => {
+  log.error("unhandled rejection (kept alive):", reason?.stack || reason?.message || reason);
+});
+process.on("uncaughtException", (err) => {
+  log.error("uncaught exception (kept alive):", err?.stack || err?.message || err);
+});
+
 async function main() {
   let cfg;
   try {
