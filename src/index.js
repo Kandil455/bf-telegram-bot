@@ -135,7 +135,13 @@ async function main() {
     return;
   }
 
-  await bot.api.setWebhook(cfg.publicUrl, { secret_token: cfg.webhookSecret, allowed_updates: UPDATES });
+  if (String(process.env.WEBHOOK_SELF_REGISTER || "true").toLowerCase() !== "false") {
+    await bot.api.setWebhook(cfg.publicUrl, { secret_token: cfg.webhookSecret, allowed_updates: UPDATES });
+  } else {
+    // The platform owns the Telegram webhook and proxies study updates to us.
+    // Self-registering here would steal the webhook back from the site engine.
+    log.info("WEBHOOK_SELF_REGISTER=false — serving platform-proxied updates only");
+  }
   server.listen(cfg.port, () => log.info(`@${cfg.botUsername} is live (webhook) on :${cfg.port}`));
 }
 
