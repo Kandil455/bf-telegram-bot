@@ -10,8 +10,16 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Platform-proxied production: the SITE owns the Telegram webhook and
+      # forwards study updates here. Never run polling against prod.
       - key: BOT_MODE
-        value: polling
+        value: webhook
+      - key: PUBLIC_URL
+        value: https://bf-telegram-bot-hh9l.onrender.com/tg
+      - key: WEBHOOK_SELF_REGISTER
+        value: "false"
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false # shared secret with the site gateway (set in dashboard)
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: GEMINI_API_KEY

@@ -1,0 +1,19 @@
+# Keep the Render free-tier service warm so the first message isn't a 30-60s
+# cold start. Hits the public health endpoint; secrets not required.
+name: keep-alive
+
+on:
+  schedule:
+    # Render frees spin down after ~15 min idle — ping well inside that window.
+    - cron: "*/11 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping bot health
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 25 https://bf-telegram-bot-hh9l.onrender.com/health || true)
+          echo "health probe → HTTP ${code:-000}"
+          [ "${code:-000}" = "200" ] || exit 1
