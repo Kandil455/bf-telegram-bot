@@ -168,6 +168,8 @@ export function loadConfig(env = process.env) {
     adminToken: String(env.ADMIN_TOKEN || "").trim(),
     adminPublicUrl: String(env.ADMIN_PUBLIC_URL || "").trim(),
     redisUrl: String(env.REDIS_URL || "").trim(),
+    remoteStateUrl: String(env.BOT_STATE_URL || "").trim(),
+    remoteStateSecret: String(env.BOT_STATE_SECRET || "").trim(),
     botUsername: "",
     apiRoot: String(env.TELEGRAM_API_ROOT || "").trim() || null,
     proEgp: positive("PRO_EGP", 75),
@@ -214,6 +216,16 @@ export function loadConfig(env = process.env) {
     if (!cfg.appUrl) cfg.appUrl = new URL(cfg.publicUrl).origin;
     if (!/^https:\/\//.test(cfg.publicUrl)) throw new ConfigError("PUBLIC_URL must be an https:// URL.");
     if (cfg.webhookSecret.length < 16) throw new ConfigError("TELEGRAM_WEBHOOK_SECRET should be at least 16 characters.");
+  }
+
+  // Durable store over the platform API (free Firestore-backed persistence).
+  // Both vars together or neither — one without the other is a typos trap.
+  if (cfg.remoteStateUrl || cfg.remoteStateSecret) {
+    if (!cfg.remoteStateUrl || !cfg.remoteStateSecret) {
+      throw new ConfigError("Set BOTH BOT_STATE_URL and BOT_STATE_SECRET, or neither.");
+    }
+    if (!/^https:\/\//.test(cfg.remoteStateUrl)) throw new ConfigError("BOT_STATE_URL must be an https:// URL.");
+    if (cfg.remoteStateSecret.length < 16) throw new ConfigError("BOT_STATE_SECRET should be at least 16 characters.");
   }
 
   return cfg;

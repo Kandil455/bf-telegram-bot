@@ -14,6 +14,7 @@ if (typeof process.loadEnvFile === "function" && fs.existsSync(".env")) {
 import { createApp } from "./bot.js";
 import { ConfigError, loadConfig } from "./config.js";
 import { createRedisStore } from "./store/redis.js";
+import { createRemoteStore } from "./store/remote.js";
 import { createStore } from "./services/store.js";
 import { startReminderLoop } from "./features/reviews.js";
 import { createHttpServer } from "./server.js";
@@ -50,10 +51,25 @@ async function main() {
     throw err;
   }
 
-  const store = cfg.redisUrl
-    ? await createRedisStore({ url: cfg.redisUrl, logger: log })
-    : createStore({ dataDir: cfg.dataDir || null });
-  log.info(cfg.redisUrl ? "store: redis (write-behind)" : cfg.dataDir ? `store: file (${cfg.dataDir})` : "store: memory");
+  let store;
+  let storeDesc;
+  if (cfg.redisUrl) {
+    store = await createRedisStore({ url: cfg.redisUrl, logger: log });
+    storeDesc = "redis (write-behind)";
+  } else if (cfg.remoteStateUrl && cfg.remoteStateSecret) {
+    // Durable free persistence via the platform API — survives redeploys on
+    // ephemeral disks (Render free tier).
+    store = await createRemoteStore({
+      baseUrl: cfg.remoteStateUrl,
+      secret: cfg.remoteStateSecret,
+      logger: log,
+    });
+    storeDesc = `remote (${cfg.remoteStateUrl} — write-behind)`;
+  } else {
+    store = createStore({ dataDir: cfg.dataDir || null });
+    storeDesc = cfg.dataDir ? `file (${cfg.dataDir})` : "memory";
+  }
+  log.info(`store: ${storeDesc}`);
 
   const app = createApp(cfg, { store, logger: log });
   const { bot, router, aiMetrics } = app;
@@ -85,7 +101,7 @@ async function main() {
     stopReminders();
     server.close();
     if (cfg.mode === "polling") await bot.stop();
-    if (cfg.redisUrl) await store.close();
+    if (cfg.redisUrl || cfg.remoteStateUrl) await store.close();
     else store.flush();
     process.exit(0);
   };
